@@ -1,0 +1,23 @@
+# local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+.ntvs
+*.njsproj
+*.sln
+*.sw?
+
+# python junk
+*.pyc
+.pytest_cache
+__pycache__
+
+# ignore for backend
+env

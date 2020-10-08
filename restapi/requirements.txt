@@ -1,0 +1,7 @@
+Cython
+email-validator
+pydantic --no-binary pydantic
+SQLAlchemy
+
+uvicorn
+fastapi
