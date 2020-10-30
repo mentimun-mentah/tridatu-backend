@@ -20,4 +20,5 @@
 __pycache__
 
 # ignore for backend
+/restapi/alembic/versions/*
 env
