@@ -1,6 +1,11 @@
 Cython
 email-validator
 pydantic --no-binary pydantic
+python-dotenv
 SQLAlchemy
+databases[postgresql]
+alembic
 fastapi
 uvicorn
+bcrypt
+orjson
