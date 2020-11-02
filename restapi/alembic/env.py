@@ -5,7 +5,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
-import os, sys
+import os, sys, warnings
 BASE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)),"..")
 sys.path.append(BASE_DIR)
 
@@ -23,18 +23,23 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from sqlalchemy import MetaData
-from models import UserModel
+from sqlalchemy import MetaData, exc
+from models import UserModel, ConfirmationModel
 
-def combine_metadata(*args):
-    m = MetaData()
-    for metadata in args:
-        for t in metadata.tables.values():
-            t.tometadata(m)
-    return m
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore",category=exc.SAWarning)
 
+    def combine_metadata(*args):
+        m = MetaData()
+        for metadata in args:
+            for t in metadata.tables.values():
+                t.tometadata(m)
+        return m
 
-target_metadata = combine_metadata(UserModel.metadata)
+    target_metadata = combine_metadata(
+        UserModel.metadata,
+        ConfirmationModel.metadata
+    )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")

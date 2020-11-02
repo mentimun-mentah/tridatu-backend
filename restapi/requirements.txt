@@ -9,3 +9,8 @@ fastapi
 uvicorn
 bcrypt
 orjson
+jinja2
+redis
+aiofiles
+aiosmtplib
+fastapi-jwt-auth[asymmetric]
