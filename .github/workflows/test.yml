@@ -12,6 +12,8 @@ jobs:
         run: docker-compose up -d
         working-directory: ./restapi
       - name: Migrate Database
-        run: bash restapi/scripts/migrate.sh
+        run: bash scripts/migrate.sh
+        working-directory: ./restapi
       - name: Test
-        run: bash restapi/scripts/test.sh
+        run: bash scripts/test.sh
+        working-directory: ./restapi
