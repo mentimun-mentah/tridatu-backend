@@ -19,5 +19,4 @@ fastapi-jwt-auth[asymmetric]
 pytest
 pytest-cov
 pytest-asyncio
-coveralls
 httpx
