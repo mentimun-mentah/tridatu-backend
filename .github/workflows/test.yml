@@ -17,7 +17,7 @@ jobs:
       - name: Test
         run: bash scripts/test.sh
         working-directory: ./restapi
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
