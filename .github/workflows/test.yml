@@ -20,4 +20,5 @@ jobs:
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
+          base-path: ./restapi
           github-token: ${{ secrets.GITHUB_TOKEN }}
