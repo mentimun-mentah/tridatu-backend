@@ -23,6 +23,7 @@ jobs:
       - name: Install Coveralls
         run: pip install coveralls
       - name: Coveralls
+        working-directory: ./restapi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
