@@ -17,10 +17,7 @@ jobs:
       - name: Test
         run: bash scripts/test.sh
         working-directory: ./restapi
-      - name: Install Coveralls
-        run: pip install coveralls
-      - name: Coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          coveralls
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
