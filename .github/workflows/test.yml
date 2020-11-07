@@ -1,0 +1,15 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: action/checkout@v2
+      - name: Copy .env file
+        run: cp restapi/.env.example restapi/.env
+      - name: Build the stack
+        run: docker-compose up -d
+      - name: Migrate Database
+        run: bash restapi/scripts/migrate.sh
+      - name: Test
+        run: bash restapi/scripts/test.sh
