@@ -18,16 +18,16 @@ services:
     restart: always
     environment: 
       - TZ=Asia/Kuala_Lumpur
-      - POSTGRES_DB=tridatu
-      - POSTGRES_USER=tridatu
-      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
   pgadmin4:
     image: "dpage/pgadmin4"
     ports: 
       - "0.0.0.0:5437:80"
     environment:
-      - PGADMIN_DEFAULT_EMAIL=oman@tridatu.com
-      - PGADMIN_DEFAULT_PASSWORD=123
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
   redis-server:
     image: "redis"
     sysctls:

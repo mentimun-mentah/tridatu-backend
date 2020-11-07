@@ -54,4 +54,4 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-app.include_router(Users.router,tags=['users'])
+app.include_router(Users.router,tags=['users'],prefix="/users")

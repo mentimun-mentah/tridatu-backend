@@ -9,5 +9,5 @@ users = Table('users', metadata,
     Column('role', String(10), server_default="guest"),
     Column('avatar', String(100), server_default="default.jpg"),
     Column('created_at', DateTime, default=func.now()),
-    Column('updated_at', DateTime, default=func.now())
+    Column('updated_at', DateTime, default=func.now()),
 )

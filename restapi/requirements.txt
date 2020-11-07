@@ -14,3 +14,10 @@ redis
 aiofiles
 aiosmtplib
 fastapi-jwt-auth[asymmetric]
+
+# testing
+pytest
+pytest-cov
+pytest-asyncio
+coveralls
+httpx
