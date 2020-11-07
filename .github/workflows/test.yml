@@ -6,9 +6,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Copy .env file
-        run: cp restapi/.env.example restapi/.env
+        run: cp .env.example .env
+        working-directory: ./restapi
       - name: Build the stack
         run: docker-compose up -d
+        working-directory: ./restapi
       - name: Migrate Database
         run: bash restapi/scripts/migrate.sh
       - name: Test
