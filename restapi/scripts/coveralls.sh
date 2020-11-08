@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-docker-compose run --env GITHUB_TOKEN=$secrets.GITHUB_TOKEN backend coveralls
+docker-compose run -e GITHUB_TOKEN=$secrets.GITHUB_TOKEN -T backend coveralls
