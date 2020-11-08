@@ -5,20 +5,20 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - name: Copy .env file
-        run: cp .env.example .env
-        working-directory: ./restapi
-      - name: Build the stack
-        run: docker-compose up -d
-        working-directory: ./restapi
-      - name: Migrate Database
-        run: bash scripts/migrate.sh
-        working-directory: ./restapi
-      - name: Test
-        run: bash scripts/test.sh
-        working-directory: ./restapi
+      # - name: Copy .env file
+      #   run: cp .env.example .env
+      #   working-directory: ./restapi
+      # - name: Build the stack
+      #   run: docker-compose up -d
+      #   working-directory: ./restapi
+      # - name: Migrate Database
+      #   run: bash scripts/migrate.sh
+      #   working-directory: ./restapi
+      # - name: Test
+      #   run: bash scripts/test.sh
+      #   working-directory: ./restapi
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: github token was configure ${GITHUB_TOKEN}
+        run: echo github token was configure $GITHUB_TOKEN
         working-directory: ./restapi
