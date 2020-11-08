@@ -19,6 +19,6 @@ jobs:
         working-directory: ./restapi
       - name: Coveralls
         env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash scripts/coveralls.sh
         working-directory: ./restapi
