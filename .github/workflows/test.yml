@@ -18,7 +18,8 @@ jobs:
       #   run: bash scripts/test.sh
       #   working-directory: ./restapi
       - name: Coveralls
+        run: echo github token was configure ${GITHUB_TOKEN} by ${FIRST_NAME}
+        working-directory: ./restapi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo github token was configure ${GITHUB_TOKEN}
-        working-directory: ./restapi
+          FIRST_NAME: oman
