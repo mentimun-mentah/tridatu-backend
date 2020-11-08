@@ -7,7 +7,6 @@ databases[postgresql]
 alembic
 fastapi
 uvicorn
-requests
 bcrypt
 orjson
 jinja2
@@ -20,4 +19,5 @@ fastapi-jwt-auth[asymmetric]
 pytest
 pytest-cov
 pytest-asyncio
+coveralls
 httpx

@@ -20,4 +20,6 @@
 __pycache__
 
 # ignore for backend
+.coverage
+htmlcov
 env
