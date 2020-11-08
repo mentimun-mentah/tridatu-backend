@@ -20,5 +20,5 @@ jobs:
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo github token was configure $GITHUB_TOKEN
+        run: echo github token was configure ${GITHUB_TOKEN}
         working-directory: ./restapi
