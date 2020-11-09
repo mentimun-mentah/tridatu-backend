@@ -1,4 +1,4 @@
-from config import database, redis_conn
+from config import database, redis_conn, settings
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,7 +13,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # change in production
+    allow_origins=[settings.frontend_uri],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

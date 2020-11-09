@@ -113,9 +113,12 @@ async def resend_email(request: Request, user: UserResendEmail, background_tasks
         raise HTTPException(status_code=400,detail="You can try 5 minute later.")
     raise HTTPException(status_code=404,detail="Email not found.")
 
-@router.post('/login',status_code=307,response_class=RedirectResponse,
+@router.post('/login',
     responses={
-        307: {"description":"Redirect to frontend app"},
+        200: {
+            "description":"Successful Response",
+            "content": {"application/json":{"example": {"detail":"Successfully login."}}}
+        },
         400: {
             "description":"Account not yet activate",
             "content": {"application/json":{"example": {"detail":"Please check your email to activate your account."}}}
@@ -130,10 +133,9 @@ async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
                 access_token = authorize.create_access_token(subject=user['id'],fresh=True)
                 refresh_token = authorize.create_refresh_token(subject=user['id'])
                 # set jwt in cookies
-                response = RedirectResponse(settings.frontend_uri)
-                authorize.set_access_cookies(access_token,response)
-                authorize.set_refresh_cookies(refresh_token,response)
-                return response
+                authorize.set_access_cookies(access_token)
+                authorize.set_refresh_cookies(refresh_token)
+                return {"detail":"Successfully login."}
             raise HTTPException(status_code=400,detail="Please check your email to activate your account.")
         raise HTTPException(status_code=422,detail="Invalid credential.")
     raise HTTPException(status_code=422,detail="Invalid credential.")
