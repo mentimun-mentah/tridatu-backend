@@ -7,10 +7,10 @@ from fastapi import (
 )
 from fastapi.responses import RedirectResponse
 from fastapi_jwt_auth import AuthJWT
-from controllers.UserController import UserCrud, UserFetch
+from controllers.UserController import UserCrud, UserFetch, UserLogic
 from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFetch, ConfirmationLogic
 from schemas.users.RegisterSchema import RegisterSchema
-from schemas.users.UserSchema import UserResendEmail
+from schemas.users.UserSchema import UserResendEmail, UserLogin
 from libs.MailSmtp import send_email
 from config import settings
 
@@ -61,7 +61,7 @@ async def user_confirm(token: str, authorize: AuthJWT = Depends()):
         if not confirmation['activated']:
             await ConfirmationCrud.user_activated(token)
 
-        access_token = authorize.create_access_token(subject=confirmation['user_id'],fresh=True)
+        access_token = authorize.create_access_token(subject=confirmation['user_id'])
         refresh_token = authorize.create_refresh_token(subject=confirmation['user_id'])
         # set jwt in cookies
         response = RedirectResponse(settings.frontend_uri)
@@ -112,3 +112,28 @@ async def resend_email(request: Request, user: UserResendEmail, background_tasks
         # try 5 minute laters
         raise HTTPException(status_code=400,detail="You can try 5 minute later.")
     raise HTTPException(status_code=404,detail="Email not found.")
+
+@router.post('/login',status_code=307,response_class=RedirectResponse,
+    responses={
+        307: {"description":"Redirect to frontend app"},
+        400: {
+            "description":"Account not yet activate",
+            "content": {"application/json":{"example": {"detail":"Please check your email to activate your account."}}}
+        }
+    }
+)
+async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
+    if user := await UserFetch.filter_by_email(user_data.email):
+        if user['password'] and UserLogic.password_is_same_as_hash(user_data.password,user['password']):
+            confirm = await ConfirmationFetch.filter_by_user_id(user['id'])
+            if confirm['activated']:
+                access_token = authorize.create_access_token(subject=user['id'],fresh=True)
+                refresh_token = authorize.create_refresh_token(subject=user['id'])
+                # set jwt in cookies
+                response = RedirectResponse(settings.frontend_uri)
+                authorize.set_access_cookies(access_token,response)
+                authorize.set_refresh_cookies(refresh_token,response)
+                return response
+            raise HTTPException(status_code=400,detail="Please check your email to activate your account.")
+        raise HTTPException(status_code=422,detail="Invalid credential.")
+    raise HTTPException(status_code=422,detail="Invalid credential.")

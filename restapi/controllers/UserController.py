@@ -4,7 +4,9 @@ from sqlalchemy import select
 from models.UserModel import users
 
 class UserLogic:
-    pass
+    @staticmethod
+    def password_is_same_as_hash(password: str, password_db: str) -> bool:
+        return bcrypt.checkpw(password.encode(),password_db.encode())
 
 class UserCrud:
     @staticmethod

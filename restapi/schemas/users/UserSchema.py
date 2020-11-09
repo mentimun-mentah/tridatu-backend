@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, constr, EmailStr
 
 class UserSchema(BaseModel):
     # id: StrictInt
@@ -18,3 +18,7 @@ class UserSchema(BaseModel):
 
 class UserResendEmail(UserSchema):
     email: EmailStr
+
+class UserLogin(UserSchema):
+    email: EmailStr
+    password: constr(strict=True, min_length=6)
