@@ -9,10 +9,21 @@ class TestUser:
     account_1 = {'email':'testtesting@gmail.com','username':'testtesting','password':'testtesting'}
 
     @pytest.mark.asyncio
-    async def get_confirmation(self):
-        user = await database.fetch_one(query=select([users]).where(users.c.email == self.account_1['email']))
+    async def get_confirmation(self, email: str):
+        user = await database.fetch_one(query=select([users]).where(users.c.email == email))
         confirm = await database.fetch_one(query=select([confirmation]).where(confirmation.c.user_id == user['id']))
         return confirm['id']
+
+    @pytest.mark.asyncio
+    async def set_account_to_unactivated(self, id_: str):
+        query = confirmation.update().where(confirmation.c.id == id_)
+        await database.execute(query=query,values={"activated": False})
+
+    @pytest.mark.asyncio
+    async def set_account_to_unexpired(self, id_: str):
+        confirm = await database.fetch_one(query=select([confirmation]).where(confirmation.c.id == id_))
+        query = confirmation.update().where(confirmation.c.id == id_)
+        await database.execute(query=query,values={"resend_expired": confirm['resend_expired'] - 300})  # decrease 5 minute
 
     def test_validation_register(self,client):
         url = self.prefix + '/register'
@@ -73,7 +84,7 @@ class TestUser:
                 'confirm_password': self.account_1['password']
             }
         )
-        assert response.status_code == 422
+        assert response.status_code == 400
         assert response.json() == {"detail":"The email has already been taken."}
 
     def test_invalid_token_email(self,client):
@@ -86,7 +97,7 @@ class TestUser:
     @pytest.mark.asyncio
     async def test_confirm_email(self,async_client):
         url = self.prefix + '/user-confirm'
-        confirm_id = await self.get_confirmation()
+        confirm_id = await self.get_confirmation(self.account_1['email'])
         # email activated
         response = await async_client.get(url + f"/{confirm_id}")
         assert response.history[0].status_code == 307
@@ -103,6 +114,64 @@ class TestUser:
 
         assert response.history[0].cookies.get("refresh_token_cookie") is not None
         assert response.history[0].cookies.get("csrf_refresh_token") is not None
+
+    @pytest.mark.asyncio
+    async def test_resend_email_already_activated(self,async_client):
+        url = self.prefix + '/resend-email'
+        # email already activated
+        response = await async_client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 400
+        assert response.json() == {'detail': 'Your account already activated.'}
+        # set email inactivated
+        confirm_id = await self.get_confirmation(self.account_1['email'])
+        await self.set_account_to_unactivated(confirm_id)
+
+    def test_validation_resend_email_confirm(self,client):
+        url = self.prefix + '/resend-email'
+
+        # field required
+        response = client.post(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'field required'
+        # check email blank
+        response = client.post(url,json={'email':''})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+        # invalid format
+        response = client.post(url,json={'email':'dwq@ad'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+        # email not found in db
+        response = client.post(url,json={'email':'o1hwefno@gmail.com'})
+        assert response.status_code == 404
+        assert response.json() == {'detail': 'Email not found.'}
+
+    def test_resend_email_confirm(self,client):
+        url = self.prefix + '/resend-email'
+        response = client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 200
+        assert response.json() == {"detail":"Email confirmation has send."}
+
+    def test_attempt_to_resend_email_back(self,client):
+        # try again 5 minute later
+        url = self.prefix + '/resend-email'
+        response = client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 400
+        assert response.json() == {"detail": "You can try 5 minute later."}
+
+    @pytest.mark.asyncio
+    async def test_attempt_to_resend_email_after_not_expired(self,async_client):
+        url = self.prefix + '/resend-email'
+        # reset time expired
+        confirm_id = await self.get_confirmation(self.account_1['email'])
+        await self.set_account_to_unexpired(confirm_id)
+
+        response = await async_client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 200
+        assert response.json() == {"detail":"Email confirmation has send."}
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,client):
