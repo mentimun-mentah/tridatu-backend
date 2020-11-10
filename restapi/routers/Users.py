@@ -139,3 +139,19 @@ async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
             raise HTTPException(status_code=400,detail="Please check your email to activate your account.")
         raise HTTPException(status_code=422,detail="Invalid credential.")
     raise HTTPException(status_code=422,detail="Invalid credential.")
+
+@router.post('/refresh-token',operation_id='authorize_refresh_token',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"The token has been refreshed."}}}
+        }
+    }
+)
+def refresh_token(authorize: AuthJWT = Depends()):
+    authorize.jwt_refresh_token_required()
+
+    user_id = authorize.get_jwt_subject()
+    new_token = authorize.create_access_token(subject=user_id)
+    authorize.set_access_cookies(new_token)
+    return {"detail": "The token has been refreshed."}

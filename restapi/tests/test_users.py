@@ -229,6 +229,25 @@ class TestUser:
         assert response.cookies.get('refresh_token_cookie') is not None
         assert response.cookies.get('csrf_refresh_token') is not None
 
+    def test_refresh_token(self,client):
+        url = self.prefix + '/login'
+        # login to get token from cookie
+        response = client.post(url,json={'email': self.account_1['email'], 'password': self.account_1['password']})
+        # set cookie to variable
+        access_token_cookie = response.cookies.get('access_token_cookie')
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        csrf_refresh_token = response.cookies.get('csrf_refresh_token')
+
+        # refresh the token
+        url = self.prefix + '/refresh-token'
+        response = client.post(url,headers={"X-CSRF-TOKEN": csrf_refresh_token})
+        assert response.status_code == 200
+        assert response.json() == {'detail': 'The token has been refreshed.'}
+
+        # check access cookie not same again
+        assert access_token_cookie != response.cookies.get('access_token_cookie')
+        assert csrf_access_token != response.cookies.get('csrf_access_token')
+
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,client):
         query = users.delete().where(users.c.email == self.account_1['email'])

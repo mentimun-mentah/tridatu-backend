@@ -3,12 +3,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import MetaData
 from databases import Database
 from redis import Redis
-from pydantic import (
-    BaseSettings,
-    PostgresDsn,
-    RedisDsn,
-    validator
-)
+from pydantic import BaseSettings, PostgresDsn, validator
 
 with open("public_key.txt") as f:
     public_key = f.read().strip()
@@ -28,7 +23,7 @@ class Settings(BaseSettings):
 
     frontend_uri: str
     database_uri: PostgresDsn
-    redis_uri: RedisDsn
+    redis_db_host: str
     smtp_server: str
     smtp_port: int
     smtp_username: str
@@ -49,7 +44,7 @@ metadata = MetaData()
 settings = Settings()
 database = Database(settings.database_uri)
 templates = Jinja2Templates(directory="templates")
-redis_conn = Redis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_conn = Redis(host=settings.redis_db_host, port=6379, db=0, decode_responses=True)
 
 @AuthJWT.load_config
 def get_config():
