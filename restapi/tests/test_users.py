@@ -15,6 +15,11 @@ class TestUser:
         return confirm['id']
 
     @pytest.mark.asyncio
+    async def set_account_to_activated(self, id_: str):
+        query = confirmation.update().where(confirmation.c.id == id_)
+        await database.execute(query=query,values={"activated": True})
+
+    @pytest.mark.asyncio
     async def set_account_to_unactivated(self, id_: str):
         query = confirmation.update().where(confirmation.c.id == id_)
         await database.execute(query=query,values={"activated": False})
@@ -172,6 +177,57 @@ class TestUser:
         response = await async_client.post(url,json={"email": self.account_1['email']})
         assert response.status_code == 200
         assert response.json() == {"detail":"Email confirmation has send."}
+
+    def test_validation_login_user(self,client):
+        url = self.prefix + '/login'
+        # field required
+        response = client.post(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'field required'
+        # email & password blank
+        response = client.post(url,json={'email':'','password':''})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # invalid email format
+        response = client.post(url,json={'email':'asdd@gmasd','password':'asdasd'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+        # invalid credential
+        response = client.post(url,json={'email': self.account_1['email'],'password':'asdasd'})
+        assert response.status_code == 422
+        assert response.json() == {"detail":"Invalid credential."}
+
+    @pytest.mark.asyncio
+    async def test_login_user_email_not_activated(self,async_client):
+        url = self.prefix + '/login'
+
+        response = await async_client.post(url,json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        assert response.status_code == 400
+        assert response.json() == {"detail":"Please check your email to activate your account."}
+        # set account to activated
+        confirm_id = await self.get_confirmation(self.account_1['email'])
+        await self.set_account_to_activated(confirm_id)
+
+    def test_login_user(self,client):
+        url = self.prefix + '/login'
+
+        response = client.post(url,json={'email': self.account_1['email'], 'password': self.account_1['password']})
+        assert response.status_code == 200
+        assert response.json() == {"detail":"Successfully login."}
+        # check cookies exists
+        assert response.cookies.get('access_token_cookie') is not None
+        assert response.cookies.get('csrf_access_token') is not None
+
+        assert response.cookies.get('refresh_token_cookie') is not None
+        assert response.cookies.get('csrf_refresh_token') is not None
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,client):
