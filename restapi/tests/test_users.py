@@ -1,4 +1,5 @@
 import pytest
+from app import app
 from config import database
 from models.UserModel import users
 from models.ConfirmationModel import confirmation
@@ -247,6 +248,46 @@ class TestUser:
         # check access cookie not same again
         assert access_token_cookie != response.cookies.get('access_token_cookie')
         assert csrf_access_token != response.cookies.get('csrf_access_token')
+
+    def test_revoke_access_token(self,client,authorize):
+        # login to get token from cookie
+        url = self.prefix + '/login'
+        response = client.post(url,json={'email': self.account_1['email'], 'password': self.account_1['password']})
+        # set token and csrf to variable
+        access_token_cookie = response.cookies.get('access_token_cookie')
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/access-revoke'
+        response = client.delete(url,headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {'detail': 'An access token has revoked.'}
+        # check token has been revoked
+        response = client.delete(url,headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 401
+        assert response.json() == {"detail": "Token has been revoked"}
+        # check jti store in redis
+        jti = authorize.get_raw_jwt(access_token_cookie)['jti']
+        assert app.state.redis.get(jti) == "true"
+
+    def test_revoke_refresh_token(self,client,authorize):
+        # login to get token from cookie
+        url = self.prefix + '/login'
+        response = client.post(url,json={'email': self.account_1['email'], 'password': self.account_1['password']})
+        # set token and csrf to variable
+        refresh_token_cookie = response.cookies.get('refresh_token_cookie')
+        csrf_refresh_token = response.cookies.get('csrf_refresh_token')
+
+        url = self.prefix + '/refresh-revoke'
+        response = client.delete(url,headers={"X-CSRF-TOKEN": csrf_refresh_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "An refresh token has revoked."}
+        # check token has been revoked
+        response = client.delete(url,headers={"X-CSRF-TOKEN": csrf_refresh_token})
+        assert response.status_code == 401
+        assert response.json() == {"detail": "Token has been revoked"}
+        # check jti store in redis
+        jti = authorize.get_raw_jwt(refresh_token_cookie)['jti']
+        assert app.state.redis.get(jti) == "true"
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,client):

@@ -1,8 +1,10 @@
 from fastapi_jwt_auth import AuthJWT
 from fastapi.templating import Jinja2Templates
+from redis import Redis
 from sqlalchemy import MetaData
 from databases import Database
-from redis import Redis
+from datetime import timedelta
+from typing import Optional
 from pydantic import BaseSettings, PostgresDsn, validator
 
 with open("public_key.txt") as f:
@@ -30,10 +32,21 @@ class Settings(BaseSettings):
     smtp_password: str
     smtp_tls: bool
 
+    access_expires: Optional[int] = None
+    refresh_expires: Optional[int] = None
+
     @validator('database_uri')
     def validator_database_ur(cls, v):
         assert v.path and len(v.path) > 1, 'database must be provided'
         return v
+
+    @validator('access_expires',always=True)
+    def validate_access_expires(cls, v):
+        return int(timedelta(minutes=15).total_seconds())
+
+    @validator('refresh_expires',always=True)
+    def validate_refresh_expires(cls, v):
+        return int(timedelta(days=30).total_seconds())
 
     class Config:
         env_file = '.env'

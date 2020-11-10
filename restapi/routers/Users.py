@@ -140,7 +140,7 @@ async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
         raise HTTPException(status_code=422,detail="Invalid credential.")
     raise HTTPException(status_code=422,detail="Invalid credential.")
 
-@router.post('/refresh-token',operation_id='authorize_refresh_token',
+@router.post('/refresh-token',
     responses={
         200: {
             "description": "Successful Response",
@@ -155,3 +155,33 @@ def refresh_token(authorize: AuthJWT = Depends()):
     new_token = authorize.create_access_token(subject=user_id)
     authorize.set_access_cookies(new_token)
     return {"detail": "The token has been refreshed."}
+
+@router.delete('/access-revoke',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"An access token has revoked."}}}
+        }
+    }
+)
+def access_revoke(request: Request, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    jti = authorize.get_raw_jwt()['jti']
+    request.app.state.redis.set(jti,'true',settings.access_expires)
+    return {"detail": "An access token has revoked."}
+
+@router.delete('/refresh-revoke',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"An refresh token has revoked."}}}
+        }
+    }
+)
+def refresh_revoke(request: Request, authorize: AuthJWT = Depends()):
+    authorize.jwt_refresh_token_required()
+
+    jti = authorize.get_raw_jwt()['jti']
+    request.app.state.redis.set(jti,'true',settings.refresh_expires)
+    return {"detail": "An refresh token has revoked."}
