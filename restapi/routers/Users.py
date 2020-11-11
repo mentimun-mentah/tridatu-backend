@@ -9,8 +9,9 @@ from fastapi.responses import RedirectResponse
 from fastapi_jwt_auth import AuthJWT
 from controllers.UserController import UserCrud, UserFetch, UserLogic
 from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFetch, ConfirmationLogic
+from controllers.PasswordResetController import PasswordResetFetch, PasswordResetCrud, PasswordResetLogic
 from schemas.users.RegisterSchema import RegisterSchema
-from schemas.users.UserSchema import UserResendEmail, UserLogin
+from schemas.users.UserSchema import UserEmail, UserLogin
 from libs.MailSmtp import send_email
 from config import settings
 
@@ -35,8 +36,8 @@ async def register(request: Request, user: RegisterSchema, background_tasks: Bac
     user_id = await UserCrud.create_user(**user.dict(exclude={'confirm_password'}))
     confirm_id = await ConfirmationCrud.create_confirmation(user_id)
 
-    email_content = {"link": request.url_for("user_confirm",token=confirm_id), "username": user.username}
     # Send email confirm to user
+    email_content = {"link": request.url_for("user_confirm",token=confirm_id), "username": user.username}
     background_tasks.add_task(send_email,
         [user.email],
         'Activated User',
@@ -86,7 +87,7 @@ async def user_confirm(token: str, authorize: AuthJWT = Depends()):
         }
     }
 )
-async def resend_email(request: Request, user: UserResendEmail, background_tasks: BackgroundTasks):
+async def resend_email(request: Request, user: UserEmail, background_tasks: BackgroundTasks):
     # email not found
     if user := await UserFetch.filter_by_email(user.email):
         confirm = await ConfirmationFetch.filter_by_user_id(user['id'])
@@ -96,8 +97,8 @@ async def resend_email(request: Request, user: UserResendEmail, background_tasks
 
         # send email confirm
         if confirm['resend_expired'] is None or ConfirmationLogic.resend_is_expired(confirm['resend_expired']):
-            email_content = {"link": request.url_for("user_confirm",token=confirm['id']), "username": user['username']}
             # Send email confirm to user
+            email_content = {"link": request.url_for("user_confirm",token=confirm['id']), "username": user['username']}
             background_tasks.add_task(send_email,
                 [user['email']],
                 'Activated User',
@@ -185,3 +186,53 @@ def refresh_revoke(request: Request, authorize: AuthJWT = Depends()):
     jti = authorize.get_raw_jwt()['jti']
     request.app.state.redis.set(jti,'true',settings.refresh_expires)
     return {"detail": "An refresh token has revoked."}
+
+@router.post('/password-reset/send',
+    responses={
+        200: {
+            "description":"Successful Response",
+            "content": {"application/json":{"example": {"detail":"We have sent a password reset link to your email."}}}
+        },
+        400: {
+            "description": "Account not yet activate or Cooldown time send an email",
+            "content": {"application/json":{"example": {"detail":"string"}}}
+        },
+        404: {
+            "description": "Email address not found",
+            "content": {"application/json":{"example": {"detail":"We can't find a user with that e-mail address."}}}
+        }
+    }
+)
+async def password_reset_send(user: UserEmail, background_tasks: BackgroundTasks):
+    if user := await UserFetch.filter_by_email(user.email):
+        confirm = await ConfirmationFetch.filter_by_user_id(user['id'])
+        if not confirm['activated']:
+            raise HTTPException(status_code=400,detail="Please activate your account first.")
+
+        password_reset = await PasswordResetFetch.filter_by_email(user['email'])
+        if password_reset is None or PasswordResetLogic.resend_is_expired(password_reset['resend_expired']):
+            # add to database if password reset None
+            if password_reset is None:
+                reset_id = await PasswordResetCrud.create_password_reset(user['email'])
+            else:
+                reset_id = password_reset['id']
+                # increase expired time to 5 minute
+                await PasswordResetCrud.change_resend_expired(reset_id)
+
+            # send email reset password to user
+            email_content = {"link": settings.frontend_uri + router.url_path_for("password_reset",token=reset_id)}
+            background_tasks.add_task(send_email,
+                [user['email']],
+                'Reset Password',
+                'dont-reply',
+                'email/EmailResetPassword.html',
+                **email_content
+            )
+            return {"detail": "We have sent a password reset link to your email."}
+        # try 5 minute laters
+        raise HTTPException(status_code=400,detail="You can try 5 minute later.")
+    raise HTTPException(status_code=404,detail="We can't find a user with that e-mail address.")
+
+@router.put('/password-reset/{token}')
+async def password_reset(token: str):
+    pass

@@ -1,8 +1,9 @@
 import pytest
 from app import app
 from config import database
-from models.UserModel import users
+from models.UserModel import user
 from models.ConfirmationModel import confirmation
+from models.PasswordResetModel import password_reset
 from sqlalchemy.sql import select
 
 class TestUser:
@@ -11,8 +12,8 @@ class TestUser:
 
     @pytest.mark.asyncio
     async def get_confirmation(self, email: str):
-        user = await database.fetch_one(query=select([users]).where(users.c.email == email))
-        confirm = await database.fetch_one(query=select([confirmation]).where(confirmation.c.user_id == user['id']))
+        user_data = await database.fetch_one(query=select([user]).where(user.c.email == email))
+        confirm = await database.fetch_one(query=select([confirmation]).where(confirmation.c.user_id == user_data['id']))
         return confirm['id']
 
     @pytest.mark.asyncio
@@ -30,6 +31,12 @@ class TestUser:
         confirm = await database.fetch_one(query=select([confirmation]).where(confirmation.c.id == id_))
         query = confirmation.update().where(confirmation.c.id == id_)
         await database.execute(query=query,values={"resend_expired": confirm['resend_expired'] - 300})  # decrease 5 minute
+
+    @pytest.mark.asyncio
+    async def decrease_password_reset(self, email: str):
+        reset = await database.fetch_one(query=select([password_reset]).where(password_reset.c.email == email))
+        query = password_reset.update().where(password_reset.c.email == email)
+        await database.execute(query=query,values={"resend_expired": reset['resend_expired'] - 300})  # decrease 5 minute
 
     def test_validation_register(self,client):
         url = self.prefix + '/register'
@@ -128,7 +135,7 @@ class TestUser:
         response = await async_client.post(url,json={"email": self.account_1['email']})
         assert response.status_code == 400
         assert response.json() == {'detail': 'Your account already activated.'}
-        # set email inactivated
+        # set email unactivated
         confirm_id = await self.get_confirmation(self.account_1['email'])
         await self.set_account_to_unactivated(confirm_id)
 
@@ -289,7 +296,64 @@ class TestUser:
         jti = authorize.get_raw_jwt(refresh_token_cookie)['jti']
         assert app.state.redis.get(jti) == "true"
 
+    def test_validation_send_email_reset_password(self,client):
+        url = self.prefix + '/password-reset/send'
+        # field required
+        response = client.post(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'field required'
+        # email blank
+        response = client.post(url,json={'email': ''})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+        # invalid format email
+        response = client.post(url,json={'email': 'asdd@gmasd'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+        # email not found in database
+        response = client.post(url,json={'email': 'ngasalbgtasddd@gmail.com'})
+        assert response.status_code == 404
+        assert response.json() == {"detail":"We can't find a user with that e-mail address."}
+
+    @pytest.mark.asyncio
+    async def test_send_email_reset_password_user_not_activated(self,async_client):
+        # set user not activated
+        confirm_id = await self.get_confirmation(self.account_1['email'])
+        await self.set_account_to_unactivated(confirm_id)
+
+        url = self.prefix + '/password-reset/send'
+        response = await async_client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 400
+        assert response.json() == {"detail": "Please activate your account first."}
+        # set user to activated
+        await self.set_account_to_activated(confirm_id)
+
+    @pytest.mark.asyncio
+    async def test_send_email_reset_password(self,async_client):
+        url = self.prefix + '/password-reset/send'
+        # success send email
+        response = await async_client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "We have sent a password reset link to your email."}
+        # cooldown 5 minutes
+        response = await async_client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 400
+        assert response.json() == {"detail": "You can try 5 minute later."}
+        # decrease resend_expired 5 minute
+        await self.decrease_password_reset(self.account_1['email'])
+        # success send email
+        response = await async_client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "We have sent a password reset link to your email."}
+        # cooldown 5 minutes again
+        response = await async_client.post(url,json={"email": self.account_1['email']})
+        assert response.status_code == 400
+        assert response.json() == {"detail": "You can try 5 minute later."}
+
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,client):
-        query = users.delete().where(users.c.email == self.account_1['email'])
+        query = user.delete().where(user.c.email == self.account_1['email'])
         await database.execute(query=query)

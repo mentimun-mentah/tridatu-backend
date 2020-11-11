@@ -16,7 +16,7 @@ class UserSchema(BaseModel):
         max_anystr_length = 100
         anystr_strip_whitespace = True
 
-class UserResendEmail(UserSchema):
+class UserEmail(UserSchema):
     email: EmailStr
 
 class UserLogin(UserSchema):

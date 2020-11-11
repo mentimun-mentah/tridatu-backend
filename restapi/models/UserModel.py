@@ -1,7 +1,7 @@
 from sqlalchemy import Table, Column, Integer, String, DateTime, func
 from config import metadata
 
-users = Table('users', metadata,
+user = Table('users', metadata,
     Column('id', Integer, primary_key=True),
     Column('username', String(100), nullable=False),
     Column('email', String(100), unique=True, index=True, nullable=False),

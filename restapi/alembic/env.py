@@ -24,7 +24,11 @@ fileConfig(config.config_file_name)
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from sqlalchemy import MetaData, exc
-from models import UserModel, ConfirmationModel
+from models import (
+    UserModel,
+    ConfirmationModel,
+    PasswordResetModel
+)
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore",category=exc.SAWarning)
@@ -38,7 +42,8 @@ with warnings.catch_warnings():
 
     target_metadata = combine_metadata(
         UserModel.metadata,
-        ConfirmationModel.metadata
+        ConfirmationModel.metadata,
+        PasswordResetModel.metadata
     )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
