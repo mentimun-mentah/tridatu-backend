@@ -15,6 +15,12 @@ class UserCrud:
         kwargs.update({'password': hashed_pass.decode('utf-8')})
         return await database.execute(query=user.insert(),values=kwargs)
 
+    @staticmethod
+    async def update_password_user(id_: int, password: str) -> None:
+        query = user.update().where(user.c.id == id_)
+        hashed_pass = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+        await database.execute(query=query,values={"password": hashed_pass.decode('utf-8')})
+
 class UserFetch:
     @staticmethod
     async def filter_by_email(email: str) -> user:

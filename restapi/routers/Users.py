@@ -10,8 +10,7 @@ from fastapi_jwt_auth import AuthJWT
 from controllers.UserController import UserCrud, UserFetch, UserLogic
 from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFetch, ConfirmationLogic
 from controllers.PasswordResetController import PasswordResetFetch, PasswordResetCrud, PasswordResetLogic
-from schemas.users.RegisterSchema import RegisterSchema
-from schemas.users.UserSchema import UserEmail, UserLogin
+from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword
 from libs.MailSmtp import send_email
 from config import settings
 
@@ -29,7 +28,7 @@ router = APIRouter()
         }
     }
 )
-async def register(request: Request, user: RegisterSchema, background_tasks: BackgroundTasks):
+async def register(request: Request, user: UserRegister, background_tasks: BackgroundTasks):
     if await UserFetch.filter_by_email(user.email):
         raise HTTPException(status_code=400,detail="The email has already been taken.")
 
@@ -233,6 +232,33 @@ async def password_reset_send(user: UserEmail, background_tasks: BackgroundTasks
         raise HTTPException(status_code=400,detail="You can try 5 minute later.")
     raise HTTPException(status_code=404,detail="We can't find a user with that e-mail address.")
 
-@router.put('/password-reset/{token}')
-async def password_reset(token: str):
-    pass
+@router.put('/password-reset/{token}',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json": {"example": {"detail":"Successfully reset your password."}}}
+        },
+        400: {
+            "description": "Email password reset not same as input user",
+            "content": {"application/json": {"example": {"detail":"The password reset token is invalid."}}}
+        },
+        404: {
+            "description": "Token or Email address not found",
+            "content": {"application/json": {"example": {"detail":"string"}}}
+        }
+    }
+)
+async def password_reset(token: str, user_data: UserResetPassword):
+    if user := await UserFetch.filter_by_email(user_data.email):
+        password_reset = await PasswordResetFetch.filter_by_id(token)
+        if not password_reset:
+            raise HTTPException(status_code=404,detail="Token not found!")
+
+        if not PasswordResetLogic.password_reset_email_same_as_db(user['email'],password_reset['email']):
+            raise HTTPException(status_code=400,detail="The password reset token is invalid.")
+
+        await UserCrud.update_password_user(user['id'],user_data.password)  # update password
+        await PasswordResetCrud.delete_password_reset(token)  # delete password reset in db
+
+        return {"detail": "Successfully reset your password."}
+    raise HTTPException(status_code=404,detail="We can't find a user with that e-mail address.")

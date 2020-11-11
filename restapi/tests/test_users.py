@@ -7,8 +7,11 @@ from models.PasswordResetModel import password_reset
 from sqlalchemy.sql import select
 
 class TestUser:
+    # ===================== CONFIGURATION =====================
+
     prefix = "/users"
     account_1 = {'email':'testtesting@gmail.com','username':'testtesting','password':'testtesting'}
+    account_2 = {'email':'testtesting2@gmail.com','username':'testtesting2','password':'testtesting2'}
 
     @pytest.mark.asyncio
     async def get_confirmation(self, email: str):
@@ -37,6 +40,31 @@ class TestUser:
         reset = await database.fetch_one(query=select([password_reset]).where(password_reset.c.email == email))
         query = password_reset.update().where(password_reset.c.email == email)
         await database.execute(query=query,values={"resend_expired": reset['resend_expired'] - 300})  # decrease 5 minute
+
+    @pytest.mark.asyncio
+    async def get_password_reset(self, email: str):
+        reset = await database.fetch_one(query=select([password_reset]).where(password_reset.c.email == email))
+        return reset['id']
+
+    @pytest.mark.asyncio
+    async def test_add_another_user(self,async_client):
+        url = self.prefix + '/register'
+        # register another user
+        response = await async_client.post(url,
+            json={
+                'username': self.account_2['username'],
+                'email': self.account_2['email'],
+                'password': self.account_2['password'],
+                'confirm_password': self.account_2['password']
+            }
+        )
+        assert response.status_code == 201
+        assert response.json() == {"detail":"Check your email to activated user."}
+        # activated the user
+        confirm_id = await self.get_confirmation(self.account_2['email'])
+        await self.set_account_to_activated(confirm_id)
+
+    # ===================== TESTING =====================
 
     def test_validation_register(self,client):
         url = self.prefix + '/register'
@@ -200,6 +228,12 @@ class TestUser:
         for x in response.json()['detail']:
             if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
             if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # check all field type data
+        response = client.post(url,json={'email':123,'password':123})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'str type expected'
         # invalid email format
         response = client.post(url,json={'email':'asdd@gmasd','password':'asdasd'})
         assert response.status_code == 422
@@ -353,7 +387,91 @@ class TestUser:
         assert response.status_code == 400
         assert response.json() == {"detail": "You can try 5 minute later."}
 
+    def test_validation_reset_password(self,client):
+        url = self.prefix + '/password-reset/ngawur'
+        # field required
+        response = client.put(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.put(url,json={'email':'','password':'','confirm_password':''})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # check all field type data
+        response = client.put(url,json={'email':123,'password':123,'confirm_password':123})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'str type expected'
+        # check valid format email
+        response = client.put(url,json={'email':'asdsd@asd'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+        # password and confirm not same
+        response = client.put(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+        # email not found in database
+        response = client.put(url,json={'email': 'ngawrubeta@example.com','password':'asdasd','confirm_password':'asdasd'})
+        assert response.status_code == 404
+        assert response.json() == {"detail":"We can't find a user with that e-mail address."}
+
+    def test_token_not_found_reset_password(self,client):
+        url = self.prefix + '/password-reset/ngawur'
+
+        response = client.put(url,json={'email': self.account_2['email'],'password':'asdasd','confirm_password':'asdasd'})
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Token not found!"}
+
+    @pytest.mark.asyncio
+    async def test_email_not_match_with_reset_password(self,async_client):
+        reset_id = await self.get_password_reset(self.account_1['email'])
+        url = self.prefix + f'/password-reset/{reset_id}'
+
+        response = await async_client.put(url,json={
+            'email': self.account_2['email'],
+            'password':'asdasd',
+            'confirm_password':'asdasd'
+        })
+        assert response.status_code == 400
+        assert response.json() == {"detail":"The password reset token is invalid."}
+
+    @pytest.mark.asyncio
+    async def test_reset_password(self,async_client):
+        reset_id = await self.get_password_reset(self.account_1['email'])
+        url = self.prefix + f'/password-reset/{reset_id}'
+
+        response = await async_client.put(url,json={
+            'email': self.account_1['email'],
+            'password':'asdasd',
+            'confirm_password':'asdasd'
+        })
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully reset your password."}
+
+        # check token has been deleted in db
+        response = await async_client.put(url,json={
+            'email': self.account_1['email'],
+            'password':'asdasd',
+            'confirm_password':'asdasd'
+        })
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Token not found!"}
+
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,client):
+        # delete user 1
         query = user.delete().where(user.c.email == self.account_1['email'])
+        await database.execute(query=query)
+        # delete user 2
+        query = user.delete().where(user.c.email == self.account_2['email'])
         await database.execute(query=query)
