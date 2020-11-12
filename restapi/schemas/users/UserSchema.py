@@ -1,15 +1,6 @@
 from pydantic import BaseModel, EmailStr, constr, validator
 
 class UserSchema(BaseModel):
-    # id: StrictInt
-    # username: constr(strict=True, min_length=3)
-    # password: constr(strict=True, min_length=6)
-    # role: constr(strict=True, max_length=10)
-    # avatar: constr(strict=True)
-
-    # created_at: datetime
-    # updated_at: datetime
-
     email: EmailStr
 
     class Config:

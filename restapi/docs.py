@@ -29,7 +29,7 @@ csrf_token_header = {
 }
 
 list_access_token = [
-    'access_revoke'
+    'access_revoke', 'add_password'
 ]
 
 list_refresh_token = [

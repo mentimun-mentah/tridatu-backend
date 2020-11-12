@@ -3,7 +3,7 @@ from PIL import Image
 from io import BytesIO
 from uuid import uuid4
 from config import database
-from sqlalchemy import select
+from sqlalchemy import select, func
 from models.UserModel import user
 
 dir_avatars = os.path.join(os.path.dirname(__file__),'../static/avatars/')
@@ -39,7 +39,10 @@ class UserCrud:
     async def update_password_user(id_: int, password: str) -> None:
         query = user.update().where(user.c.id == id_)
         hashed_pass = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-        await database.execute(query=query,values={"password": hashed_pass.decode('utf-8')})
+        await database.execute(query=query,values={
+            "password": hashed_pass.decode('utf-8'),
+            "updated_at": func.now()
+        })
 
 class UserFetch:
     @staticmethod

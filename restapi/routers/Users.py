@@ -11,6 +11,7 @@ from controllers.UserController import UserCrud, UserFetch, UserLogic
 from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFetch, ConfirmationLogic
 from controllers.PasswordResetController import PasswordResetFetch, PasswordResetCrud, PasswordResetLogic
 from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword
+from schemas.users.UserPasswordSchema import UserAddPassword
 from libs.MailSmtp import send_email
 from config import settings
 
@@ -262,3 +263,26 @@ async def password_reset(token: str, user_data: UserResetPassword):
 
         return {"detail": "Successfully reset your password."}
     raise HTTPException(status_code=404,detail="We can't find a user with that e-mail address.")
+
+@router.post('/add-password',status_code=201,
+    responses={
+        201: {
+            "description": "Successful Response",
+            "content": {"application/json": {"example": {"detail":"Success add a password to your account."}}}
+        },
+        400: {
+            "description": "Account already has a password",
+            "content": {"application/json": {"example": {"detail":"Your account already has a password."}}}
+        }
+    }
+)
+async def add_password(user_data: UserAddPassword, authorize: AuthJWT = Depends()):
+    authorize.fresh_jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if user['password']:
+            raise HTTPException(status_code=400,detail="Your account already has a password.")
+
+        await UserCrud.update_password_user(user['id'],user_data.password)  # add password
+        return {"detail": "Success add a password to your account."}
