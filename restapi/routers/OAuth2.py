@@ -38,7 +38,7 @@ async def google_authorize(request: Request, authorize: AuthJWT = Depends()):
         user_id = user['id']
 
     # set token and redirect to frontend app
-    access_token = authorize.create_access_token(subject=user_id,fresh=True)
+    access_token = authorize.create_access_token(subject=user_id)
     refresh_token = authorize.create_refresh_token(subject=user_id)
 
     response = RedirectResponse(settings.frontend_uri)
@@ -77,7 +77,7 @@ async def facebook_authorize(request: Request, authorize: AuthJWT = Depends()):
         user_id = user['id']
 
     # set token and redirect to frontend app
-    access_token = authorize.create_access_token(subject=user_id,fresh=True)
+    access_token = authorize.create_access_token(subject=user_id)
     refresh_token = authorize.create_refresh_token(subject=user_id)
 
     response = RedirectResponse(settings.frontend_uri)

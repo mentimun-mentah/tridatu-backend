@@ -1,4 +1,4 @@
-import pytest
+import pytest, bcrypt
 from app import app
 from config import database
 from models.UserModel import user
@@ -17,6 +17,12 @@ class TestUser:
     async def delete_password_user(self,email: str):
         query = user.update().where(user.c.email == email)
         await database.execute(query=query,values={"password": None})
+
+    @pytest.mark.asyncio
+    async def add_password_user(self,email: str, password: str):
+        query = user.update().where(user.c.email == email)
+        hashed_pass = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+        await database.execute(query=query,values={"password": hashed_pass.decode('utf-8')})
 
     @pytest.mark.asyncio
     async def get_confirmation(self, email: str):
@@ -529,6 +535,89 @@ class TestUser:
         )
         assert response.status_code == 201
         assert response.json() == {"detail": "Success add a password to your account."}
+
+    def test_validation_update_password(self,client):
+        url = self.prefix + '/update-password'
+        # field required
+        response = client.put(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'old_password': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.put(url,json={'old_password':'','password':'','confirm_password':''})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'old_password': assert x['msg'] == 'ensure this value has at least 6 characters'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # check all field type data
+        response = client.put(url,json={'old_password':123,'password':123,'confirm_password':123})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'old_password': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'str type expected'
+        # check password same as confirm_password
+        response = client.put(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # old password not same as database
+        response = client.put(url,
+            headers={"X-CSRF-TOKEN": csrf_access_token},
+            json={
+                'old_password': 'asdasd',
+                'password': self.account_2['password'],
+                'confirm_password': self.account_2['password']
+            }
+        )
+        assert response.status_code == 422
+        assert response.json() == {"detail": "Password does not match with our records."}
+
+    @pytest.mark.asyncio
+    async def test_update_password_not_exists_in_db(self,async_client):
+        url = self.prefix + '/update-password'
+        # user login
+        response = await async_client.post(self.prefix + '/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # delete password
+        await self.delete_password_user(self.account_2['email'])
+
+        response = await async_client.put(url,
+            headers={"X-CSRF-TOKEN": csrf_access_token},
+            json={'old_password': 'asdasd','password':'asdasd','confirm_password':'asdasd'}
+        )
+        assert response.status_code == 400
+        assert response.json() == {"detail":"Please add your password first."}
+        # add password again
+        await self.add_password_user(self.account_2['email'],self.account_2['password'])
+
+    def test_update_password(self,client):
+        url = self.prefix + '/update-password'
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        response = client.put(url,
+            headers={"X-CSRF-TOKEN": csrf_access_token},
+            json={'old_password': self.account_2['password'],'password':'asdasd','confirm_password':'asdasd'}
+        )
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Success update your password."}
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,client):

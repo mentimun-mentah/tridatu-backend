@@ -11,7 +11,7 @@ from controllers.UserController import UserCrud, UserFetch, UserLogic
 from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFetch, ConfirmationLogic
 from controllers.PasswordResetController import PasswordResetFetch, PasswordResetCrud, PasswordResetLogic
 from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword
-from schemas.users.UserPasswordSchema import UserAddPassword
+from schemas.users.UserPasswordSchema import UserAddPassword, UserUpdatePassword
 from libs.MailSmtp import send_email
 from config import settings
 
@@ -277,7 +277,7 @@ async def password_reset(token: str, user_data: UserResetPassword):
     }
 )
 async def add_password(user_data: UserAddPassword, authorize: AuthJWT = Depends()):
-    authorize.fresh_jwt_required()
+    authorize.jwt_required()
 
     user_id = authorize.get_jwt_subject()
     if user := await UserFetch.filter_by_id(user_id):
@@ -286,3 +286,29 @@ async def add_password(user_data: UserAddPassword, authorize: AuthJWT = Depends(
 
         await UserCrud.update_password_user(user['id'],user_data.password)  # add password
         return {"detail": "Success add a password to your account."}
+
+@router.put('/update-password',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json": {"example": {"detail":"Success update your password."}}}
+        },
+        400: {
+            "description": "Password not found in database",
+            "content": {"application/json": {"example": {"detail":"Please add your password first."}}}
+        }
+    }
+)
+async def update_password(user_data: UserUpdatePassword, authorize: AuthJWT = Depends()):
+    authorize.fresh_jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if not user['password']:
+            raise HTTPException(status_code=400,detail="Please add your password first.")
+
+        if not UserLogic.password_is_same_as_hash(user_data.old_password,user['password']):
+            raise HTTPException(status_code=422,detail="Password does not match with our records.")
+
+        await UserCrud.update_password_user(user['id'],user_data.password)  # update password
+        return {"detail": "Success update your password."}
