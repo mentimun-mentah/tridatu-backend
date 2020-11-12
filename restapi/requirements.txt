@@ -7,17 +7,20 @@ databases[postgresql]
 alembic
 fastapi
 uvicorn
-requests
 bcrypt
 orjson
 jinja2
 redis
 aiofiles
 aiosmtplib
+requests
+Authlib
+httpx
+itsdangerous
+Pillow
 fastapi-jwt-auth[asymmetric]
 
 # testing
 pytest
 pytest-cov
 pytest-asyncio
-httpx

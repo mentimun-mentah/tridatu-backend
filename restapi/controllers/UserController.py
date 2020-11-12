@@ -1,7 +1,12 @@
-import bcrypt
+import os, bcrypt, httpx
+from PIL import Image
+from io import BytesIO
+from uuid import uuid4
 from config import database
 from sqlalchemy import select
 from models.UserModel import user
+
+dir_avatars = os.path.join(os.path.dirname(__file__),'../static/avatars/')
 
 class UserLogic:
     @staticmethod
@@ -13,6 +18,21 @@ class UserCrud:
     async def create_user(**kwargs) -> int:
         hashed_pass = bcrypt.hashpw(kwargs['password'].encode(), bcrypt.gensalt())
         kwargs.update({'password': hashed_pass.decode('utf-8')})
+        return await database.execute(query=user.insert(),values=kwargs)
+
+    @staticmethod
+    async def save_user_from_oauth(**kwargs) -> int:
+        # get image from url
+        async with httpx.AsyncClient() as client:
+            r = await client.get(kwargs['avatar'])
+            # save image to directory
+            with Image.open(BytesIO(r.content)) as im:
+                ext = im.format.lower()
+                filename = uuid4().hex + f'.{ext}'
+                im.save(os.path.join(dir_avatars,filename))
+
+        # save to db
+        kwargs.update({'avatar': filename})
         return await database.execute(query=user.insert(),values=kwargs)
 
     @staticmethod

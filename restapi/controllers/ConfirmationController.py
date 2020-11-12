@@ -22,6 +22,11 @@ class ConfirmationCrud:
         return data["id"]
 
     @staticmethod
+    async def create_confirmation_activated(user_id: int) -> None:
+        data = {"id": uuid4().hex, "user_id": user_id, "activated": True}
+        await database.execute(query=confirmation.insert(), values=data)
+
+    @staticmethod
     async def user_activated(token: str) -> None:
         query = confirmation.update().where(confirmation.c.id == token)
         return await database.execute(query=query, values={"activated": True})

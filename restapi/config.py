@@ -1,11 +1,13 @@
-from fastapi_jwt_auth import AuthJWT
-from fastapi.templating import Jinja2Templates
 from redis import Redis
 from sqlalchemy import MetaData
 from databases import Database
 from datetime import timedelta
-from typing import Optional
+from fastapi_jwt_auth import AuthJWT
+from fastapi.templating import Jinja2Templates
+from starlette.config import Config
+from authlib.integrations.starlette_client import OAuth
 from pydantic import BaseSettings, PostgresDsn, validator
+from typing import Optional
 
 with open("public_key.txt") as f:
     public_key = f.read().strip()
@@ -15,12 +17,12 @@ with open("private_key.txt") as f:
 
 class Settings(BaseSettings):
     authjwt_token_location: set = {"headers","cookies"}
-    authjwt_secret_key: str = "secret"  # change in production
+    authjwt_secret_key: str
     authjwt_algorithm: str = "RS512"
     authjwt_public_key: str = public_key
     authjwt_private_key: str = private_key
     authjwt_denylist_enabled: bool = True
-    authjwt_cookie_secure: bool = False  # change in production
+    authjwt_cookie_secure: bool
     authjwt_cookie_samesite: str = "lax"
 
     frontend_uri: str
@@ -34,6 +36,9 @@ class Settings(BaseSettings):
 
     access_expires: Optional[int] = None
     refresh_expires: Optional[int] = None
+
+    GOOGLE_REDIRECT_URI: str
+    FACEBOOK_REDIRECT_URI: str
 
     @validator('database_uri')
     def validator_database_ur(cls, v):
@@ -58,6 +63,22 @@ settings = Settings()
 database = Database(settings.database_uri)
 templates = Jinja2Templates(directory="templates")
 redis_conn = Redis(host=settings.redis_db_host, port=6379, db=0, decode_responses=True)
+config = Config('.env')
+oauth = OAuth(config)
+
+oauth.register(
+    name='google',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+oauth.register(
+    name='facebook',
+    api_base_url='https://graph.facebook.com/v7.0/',
+    access_token_url='https://graph.facebook.com/v7.0/oauth/access_token',
+    authorize_url='https://www.facebook.com/v7.0/dialog/oauth',
+    client_kwargs={'scope': 'email public_profile'},
+)
 
 @AuthJWT.load_config
 def get_config():

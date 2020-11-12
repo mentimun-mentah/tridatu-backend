@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_jwt_auth.exceptions import AuthJWTException
+from starlette.middleware.sessions import SessionMiddleware
 from config import database, redis_conn, settings
 from docs import (
     refresh_token_cookie,
@@ -13,12 +14,13 @@ from docs import (
     list_refresh_token,
     list_access_token
 )
-from routers import Users
+from routers import Users, OAuth2
 
 app = FastAPI(default_response_class=ORJSONResponse)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+app.add_middleware(SessionMiddleware, secret_key=settings.authjwt_secret_key)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_uri],
@@ -83,3 +85,4 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 app.include_router(Users.router,tags=['users'],prefix="/users")
+app.include_router(OAuth2.router,tags=['oauth'],prefix="/login")
