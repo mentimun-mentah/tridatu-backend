@@ -1,61 +1,10 @@
-import pytest, bcrypt
+import pytest
 from app import app
-from config import database
-from models.UserModel import user
-from models.ConfirmationModel import confirmation
-from models.PasswordResetModel import password_reset
-from sqlalchemy.sql import select
+from pathlib import Path
+from .operationtest import OperationTest
 
-class TestUser:
-    # ===================== CONFIGURATION =====================
-
+class TestUser(OperationTest):
     prefix = "/users"
-    account_1 = {'email':'testtesting@gmail.com','username':'testtesting','password':'testtesting'}
-    account_2 = {'email':'testtesting2@gmail.com','username':'testtesting2','password':'testtesting2'}
-
-    @pytest.mark.asyncio
-    async def delete_password_user(self,email: str):
-        query = user.update().where(user.c.email == email)
-        await database.execute(query=query,values={"password": None})
-
-    @pytest.mark.asyncio
-    async def add_password_user(self,email: str, password: str):
-        query = user.update().where(user.c.email == email)
-        hashed_pass = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-        await database.execute(query=query,values={"password": hashed_pass.decode('utf-8')})
-
-    @pytest.mark.asyncio
-    async def get_confirmation(self, email: str):
-        user_data = await database.fetch_one(query=select([user]).where(user.c.email == email))
-        confirm = await database.fetch_one(query=select([confirmation]).where(confirmation.c.user_id == user_data['id']))
-        return confirm['id']
-
-    @pytest.mark.asyncio
-    async def set_account_to_activated(self, id_: str):
-        query = confirmation.update().where(confirmation.c.id == id_)
-        await database.execute(query=query,values={"activated": True})
-
-    @pytest.mark.asyncio
-    async def set_account_to_unactivated(self, id_: str):
-        query = confirmation.update().where(confirmation.c.id == id_)
-        await database.execute(query=query,values={"activated": False})
-
-    @pytest.mark.asyncio
-    async def set_account_to_unexpired(self, id_: str):
-        confirm = await database.fetch_one(query=select([confirmation]).where(confirmation.c.id == id_))
-        query = confirmation.update().where(confirmation.c.id == id_)
-        await database.execute(query=query,values={"resend_expired": confirm['resend_expired'] - 300})  # decrease 5 minute
-
-    @pytest.mark.asyncio
-    async def decrease_password_reset(self, email: str):
-        reset = await database.fetch_one(query=select([password_reset]).where(password_reset.c.email == email))
-        query = password_reset.update().where(password_reset.c.email == email)
-        await database.execute(query=query,values={"resend_expired": reset['resend_expired'] - 300})  # decrease 5 minute
-
-    @pytest.mark.asyncio
-    async def get_password_reset(self, email: str):
-        reset = await database.fetch_one(query=select([password_reset]).where(password_reset.c.email == email))
-        return reset['id']
 
     @pytest.mark.asyncio
     async def test_add_another_user(self,async_client):
@@ -74,8 +23,6 @@ class TestUser:
         # activated the user
         confirm_id = await self.get_confirmation(self.account_2['email'])
         await self.set_account_to_activated(confirm_id)
-
-    # ===================== TESTING =====================
 
     def test_validation_register(self,client):
         url = self.prefix + '/register'
@@ -619,11 +566,61 @@ class TestUser:
         assert response.status_code == 200
         assert response.json() == {"detail": "Success update your password."}
 
+    def test_validation_update_avatar(self,client):
+        url = self.prefix + '/update-avatar'
+        # image required
+        response = client.put(url,files={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'file': assert x['msg'] == 'field required'
+        # danger file extension
+        with open(self.test_image_dir + 'test.txt','rb') as tmp:
+            response = client.put(url,files={'file': tmp})
+            assert response.status_code == 422
+            assert response.json() == {'detail': 'Cannot identify the image.'}
+        # not valid file extension
+        with open(self.test_image_dir + 'test.gif','rb') as tmp:
+            response = client.put(url,files={'file': tmp})
+            assert response.status_code == 422
+            assert response.json() == {'detail': 'Image must be between jpg, png, jpeg.'}
+        # file cannot grater than 4 Mb
+        with open(self.test_image_dir + 'size.png','rb') as tmp:
+            response = client.put(url,files={'file': tmp})
+            assert response.status_code == 413
+            assert response.json() == {'detail':'An image cannot greater than 4 Mb.'}
+
     @pytest.mark.asyncio
-    async def test_delete_user_from_db(self,client):
-        # delete user 1
-        query = user.delete().where(user.c.email == self.account_1['email'])
-        await database.execute(query=query)
-        # delete user 2
-        query = user.delete().where(user.c.email == self.account_2['email'])
-        await database.execute(query=query)
+    async def test_update_avatar(self,async_client):
+        await self.reset_password_user_to_default(self.account_1['email'])
+        # user login
+        response = await async_client.post(self.prefix + '/login', json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/update-avatar'
+        # update avatar
+        with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
+            response = await async_client.put(url,files={'file': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})
+            assert response.status_code == 200
+            assert response.json() == {"detail": "The image profile has updated."}
+        # check file avatar exists in directory
+        avatar = await self.get_user_avatar(self.account_1['email'])
+        assert Path(self.avatar_dir + avatar).is_file() is True
+        # update avatar again
+        with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
+            response = await async_client.put(url,files={'file': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})
+            assert response.status_code == 200
+            assert response.json() == {"detail": "The image profile has updated."}
+        # check the old one has been deleted
+        assert Path(self.avatar_dir + avatar).is_file() is False
+        # check file avatar exists in directory
+        avatar = await self.get_user_avatar(self.account_1['email'])
+        assert Path(self.avatar_dir + avatar).is_file() is True
+        # detele avatar in directory
+        Path(self.avatar_dir + avatar).unlink()
+
+    @pytest.mark.asyncio
+    async def test_delete_user_from_db(self,async_client):
+        await self.delete_user_from_db()

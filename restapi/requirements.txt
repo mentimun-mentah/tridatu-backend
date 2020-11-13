@@ -2,6 +2,7 @@ Cython
 email-validator
 pydantic --no-binary pydantic
 python-dotenv
+python-multipart
 SQLAlchemy
 databases[postgresql]
 alembic
