@@ -12,7 +12,7 @@ from controllers.UserController import UserCrud, UserFetch, UserLogic
 from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFetch, ConfirmationLogic
 from controllers.PasswordResetController import PasswordResetFetch, PasswordResetCrud, PasswordResetLogic
 from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword
-from schemas.users.UserPasswordSchema import UserAddPassword, UserUpdatePassword
+from schemas.users.UserPasswordSchema import UserAddPassword, UserUpdatePassword, UserConfirmPassword
 from schemas.users.UserAccountSchema import UserAccountSchema
 from libs.MagicImage import MagicImage, SingleImageRequired
 from libs.MailSmtp import send_email
@@ -71,7 +71,7 @@ async def user_confirm(token: str, authorize: AuthJWT = Depends()):
         if not confirmation['activated']:
             await ConfirmationCrud.user_activated(token)
 
-        access_token = authorize.create_access_token(subject=confirmation['user_id'])
+        access_token = authorize.create_access_token(subject=confirmation['user_id'],fresh=True)
         refresh_token = authorize.create_refresh_token(subject=confirmation['user_id'])
         # set jwt in cookies
         response = RedirectResponse(settings.frontend_uri)
@@ -149,6 +149,27 @@ async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
             raise HTTPException(status_code=400,detail="Please check your email to activate your account.")
         raise HTTPException(status_code=422,detail="Invalid credential.")
     raise HTTPException(status_code=422,detail="Invalid credential.")
+
+@router.post('/fresh-token',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json": {"example": {"detail":"Successfully make a fresh token."}}}
+        }
+    }
+)
+async def fresh_token(user_data: UserConfirmPassword, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if not UserLogic.password_is_same_as_hash(user_data.password,user['password']):
+            raise HTTPException(status_code=422,detail="Password does not match with our records.")
+
+        # set fresh access token in cookie
+        access_token = authorize.create_access_token(subject=user['id'],fresh=True)
+        authorize.set_access_cookies(access_token)
+        return {"detail": "Successfully make a fresh token."}
 
 @router.post('/refresh-token',
     responses={

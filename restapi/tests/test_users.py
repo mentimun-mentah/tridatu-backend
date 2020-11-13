@@ -253,6 +253,60 @@ class TestUser(OperationTest):
         assert response.cookies.get('refresh_token_cookie') is not None
         assert response.cookies.get('csrf_refresh_token') is not None
 
+    def test_validation_fresh_token(self,client):
+        url = self.prefix + '/fresh-token'
+        # field required
+        response = client.post(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.post(url,json={'password':''})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # test limit value
+        response = client.post(url,json={'password':'a' * 200})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at most 100 characters'
+        # check all type data
+        response = client.post(url,json={'password': 123})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'str type expected'
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # password not same as database
+        response = client.post(url,headers={'X-CSRF-TOKEN': csrf_access_token},json={'password': 'asdasd'})
+        assert response.status_code == 422
+        assert response.json() == {"detail":"Password does not match with our records."}
+
+    def test_fresh_token(self,client):
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        access_token_cookie = response.cookies.get('access_token_cookie')
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/fresh-token'
+
+        response = client.post(url,
+            headers={'X-CSRF-TOKEN': csrf_access_token},
+            json={'password': self.account_1['password']}
+        )
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully make a fresh token."}
+        # access token not same anymore
+        assert access_token_cookie != response.cookies.get('access_token_cookie')
+        assert csrf_access_token != response.cookies.get('csrf_access_token')
+
     def test_refresh_token(self,client):
         url = self.prefix + '/login'
         # login to get token from cookie
