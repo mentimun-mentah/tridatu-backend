@@ -1,0 +1,31 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Copy .env file
+        run: cp .env.example .env
+        working-directory: ./restapi
+      - name: Build the stack
+        run: docker-compose up -d
+        working-directory: ./restapi
+      - name: Migrate Database
+        run: bash scripts/migrate.sh
+        working-directory: ./restapi
+      - name: Test
+        run: bash scripts/test.sh
+        working-directory: ./restapi
+      - uses: actions/setup-python@master
+        with:
+          python-version: '3.8'
+      - name: Install Coveralls
+        run: pip install coveralls
+      - name: Coveralls
+        working-directory: ./restapi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls
+

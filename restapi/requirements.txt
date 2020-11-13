@@ -1,0 +1,28 @@
+Cython
+email-validator
+pydantic --no-binary pydantic
+python-dotenv
+python-multipart
+SQLAlchemy
+databases[postgresql]
+alembic
+fastapi
+uvicorn
+bcrypt
+orjson
+jinja2
+redis
+aiofiles
+aiosmtplib
+requests
+Authlib
+httpx
+itsdangerous
+Pillow
+phonenumbers
+fastapi-jwt-auth[asymmetric]
+
+# testing
+pytest
+pytest-cov
+pytest-asyncio
