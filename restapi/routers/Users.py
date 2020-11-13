@@ -13,6 +13,7 @@ from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFet
 from controllers.PasswordResetController import PasswordResetFetch, PasswordResetCrud, PasswordResetLogic
 from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword
 from schemas.users.UserPasswordSchema import UserAddPassword, UserUpdatePassword
+from schemas.users.UserAccountSchema import UserAccountSchema
 from libs.MagicImage import MagicImage, SingleImageRequired
 from libs.MailSmtp import send_email
 from config import settings
@@ -347,3 +348,19 @@ async def update_avatar(file: UploadFile = Depends(single_image_required), autho
 
         await UserCrud.update_avatar_user(user['id'],magic_image.file_name)
         return {"detail": "The image profile has updated."}
+
+@router.put('/update-account',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json": {"example": {"detail":"Success updated your account."}}}
+        }
+    }
+)
+async def update_account(user_data: UserAccountSchema, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        await UserCrud.update_account_user(user['id'],**user_data.dict())
+        return {"detail": "Success updated your account."}

@@ -42,6 +42,19 @@ class TestUser(OperationTest):
             if x['loc'][-1] == 'username': assert x['msg'] == 'ensure this value has at least 3 characters'
             if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
             if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # test limit value
+        response = client.post(url,json={
+            'username':'a' * 200,
+            'email':'a' * 200 + '@example.com',
+            'password':'a' * 200,
+            'confirm_password':'a' * 200
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+            if x['loc'][-1] == 'username': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
         response = client.post(url,json={'username':123,'email':123,'password':123,'confirm_password':123})
         assert response.status_code == 422
@@ -138,6 +151,11 @@ class TestUser(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+        # test limit value
+        response = client.post(url,json={'email': 'a' * 200 + '@example.com'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
         # invalid format
         response = client.post(url,json={'email':'dwq@ad'})
         assert response.status_code == 422
@@ -186,6 +204,12 @@ class TestUser(OperationTest):
         for x in response.json()['detail']:
             if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
             if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # test limit value
+        response = client.post(url,json={'email': 'a' * 200 + '@example.com', 'password': 'a' * 200})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
         response = client.post(url,json={'email':123,'password':123})
         assert response.status_code == 422
@@ -300,6 +324,11 @@ class TestUser(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+        # test limit value
+        response = client.post(url,json={'email': 'a' * 200 + '@example.com'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
         # invalid format email
         response = client.post(url,json={'email': 'asdd@gmasd'})
         assert response.status_code == 422
@@ -361,6 +390,17 @@ class TestUser(OperationTest):
             if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
             if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
             if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # test limit value
+        response = client.put(url,json={
+            'email': 'a' * 200 + '@example.com',
+            'password': 'a' * 200,
+            'confirm_password': 'a' * 200
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'email': assert x['msg'] == 'value is not a valid email address'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
         response = client.put(url,json={'email':123,'password':123,'confirm_password':123})
         assert response.status_code == 422
@@ -439,6 +479,12 @@ class TestUser(OperationTest):
         for x in response.json()['detail']:
             if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
             if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # test limit value
+        response = client.post(url,json={'password':'a' * 200,'confirm_password':'a' * 200})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
         response = client.post(url,json={'password':123,'confirm_password':123})
         assert response.status_code == 422
@@ -499,6 +545,17 @@ class TestUser(OperationTest):
             if x['loc'][-1] == 'old_password': assert x['msg'] == 'ensure this value has at least 6 characters'
             if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
             if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # test limit value
+        response = client.put(url,json={
+            'old_password': 'a' * 200,
+            'password': 'a' * 200,
+            'confirm_password': 'a' * 200
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'old_password': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'confirm_password': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
         response = client.put(url,json={'old_password':123,'password':123,'confirm_password':123})
         assert response.status_code == 422
@@ -620,6 +677,81 @@ class TestUser(OperationTest):
         assert Path(self.avatar_dir + avatar).is_file() is True
         # detele avatar in directory
         Path(self.avatar_dir + avatar).unlink()
+
+    def test_validation_update_account(self,client):
+        url = self.prefix + '/update-account'
+        # field required
+        response = client.put(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'username': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'gender': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'phone': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.put(url,json={'username':'','gender':'','phone':''})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'username':
+                assert x['msg'] == 'ensure this value has at least 3 characters'
+            if x['loc'][-1] == 'gender':
+                assert x['msg'] == "unexpected value; permitted: 'Laki-laki', 'Perempuan', 'Lainnya'"
+            if x['loc'][-1] == 'phone':
+                assert x['msg'] == 'ensure this value has at least 1 characters'
+        # test limit value
+        response = client.put(url,json={'username':'a' * 200,'gender':'a' * 200,'phone':'a' * 200})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'username':
+                assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'gender':
+                assert x['msg'] == "unexpected value; permitted: 'Laki-laki', 'Perempuan', 'Lainnya'"
+            if x['loc'][-1] == 'phone':
+                assert x['msg'] == 'ensure this value has at most 20 characters'
+        # check all field type data
+        response = client.put(url,json={'username':123,'gender':123,'phone':123})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'username':
+                assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'gender':
+                assert x['msg'] == "unexpected value; permitted: 'Laki-laki', 'Perempuan', 'Lainnya'"
+            if x['loc'][-1] == 'phone':
+                assert x['msg'] == 'str type expected'
+        # invalid option gender
+        response = client.put(url,json={'gender':'laki-laki'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'gender':
+                assert x['msg'] == "unexpected value; permitted: 'Laki-laki', 'Perempuan', 'Lainnya'"
+        # invalid phone number
+        response = client.put(url,json={'phone':'asdasd'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'phone':
+                assert x['msg'] == "Please provide a valid mobile phone number"
+        response = client.put(url,json={'phone':'8762732'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'phone':
+                assert x['msg'] == "Please provide a valid mobile phone number"
+
+    def test_update_account(self,client):
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/update-account'
+
+        response = client.put(url,headers={'X-CSRF-TOKEN': csrf_access_token},json={
+            'username':'asdasd',
+            'phone':'87862253096',
+            'gender':'Laki-laki'
+        })
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Success updated your account."}
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,async_client):

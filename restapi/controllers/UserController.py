@@ -52,6 +52,12 @@ class UserCrud:
             "updated_at": func.now()
         })
 
+    @staticmethod
+    async def update_account_user(id_: int, **kwargs) -> None:
+        kwargs.update({"updated_at": func.now()})
+        query = user.update().where(user.c.id == id_)
+        await database.execute(query=query,values=kwargs)
+
 class UserFetch:
     @staticmethod
     async def filter_by_email(email: str) -> user:
