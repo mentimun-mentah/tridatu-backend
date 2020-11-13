@@ -196,6 +196,19 @@ def refresh_revoke(request: Request, authorize: AuthJWT = Depends()):
     request.app.state.redis.set(jti,'true',settings.refresh_expires)
     return {"detail": "An refresh token has revoked."}
 
+@router.delete('/delete-cookies',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"All cookies have been deleted."}}}
+        }
+    }
+)
+def delete_cookies(authorize: AuthJWT = Depends()):
+    authorize.unset_jwt_cookies()
+
+    return {"detail": "All cookies have been deleted."}
+
 @router.post('/password-reset/send',
     responses={
         200: {

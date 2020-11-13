@@ -312,6 +312,31 @@ class TestUser(OperationTest):
         jti = authorize.get_raw_jwt(refresh_token_cookie)['jti']
         assert app.state.redis.get(jti) == "true"
 
+    def test_delete_all_cookies(self,client):
+        url = self.prefix + '/login'
+
+        response = client.post(url,json={'email': self.account_1['email'], 'password': self.account_1['password']})
+        assert response.status_code == 200
+        assert response.json() == {"detail":"Successfully login."}
+        # check cookies exists
+        assert response.cookies.get('access_token_cookie') is not None
+        assert response.cookies.get('csrf_access_token') is not None
+
+        assert response.cookies.get('refresh_token_cookie') is not None
+        assert response.cookies.get('csrf_refresh_token') is not None
+
+        url = self.prefix + '/delete-cookies'
+
+        response = client.delete(url)
+        assert response.status_code == 200
+        assert response.json() == {"detail":"All cookies have been deleted."}
+        # check cookies doesn't exists
+        assert response.cookies.get('access_token_cookie') is None
+        assert response.cookies.get('csrf_access_token') is None
+
+        assert response.cookies.get('refresh_token_cookie') is None
+        assert response.cookies.get('csrf_refresh_token') is None
+
     def test_validation_send_email_reset_password(self,client):
         url = self.prefix + '/password-reset/send'
         # field required
