@@ -832,6 +832,25 @@ class TestUser(OperationTest):
         assert response.status_code == 200
         assert response.json() == {"detail": "Success updated your account."}
 
+    def test_my_user(self,client):
+        url = self.prefix + '/my-user'
+
+        # user login
+        client.post(self.prefix + '/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+
+        response = client.get(url)
+        assert response.status_code == 200
+        assert 'email' in response.json()
+        assert 'username' in response.json()
+        assert 'password' in response.json()
+        assert 'phone' in response.json()
+        assert 'gender' in response.json()
+        assert 'role' in response.json()
+        assert 'avatar' in response.json()
+
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,async_client):
         await self.delete_user_from_db()

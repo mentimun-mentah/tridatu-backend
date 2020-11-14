@@ -33,6 +33,10 @@ list_access_token = [
     'update_account', 'fresh_token'
 ]
 
+list_access_token_without_csrf = [
+    'my_user'
+]
+
 list_refresh_token = [
     'refresh_token','refresh_revoke'
 ]

@@ -11,7 +11,7 @@ from fastapi_jwt_auth import AuthJWT
 from controllers.UserController import UserCrud, UserFetch, UserLogic
 from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFetch, ConfirmationLogic
 from controllers.PasswordResetController import PasswordResetFetch, PasswordResetCrud, PasswordResetLogic
-from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword
+from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword, UserData
 from schemas.users.UserPasswordSchema import UserAddPassword, UserUpdatePassword, UserConfirmPassword
 from schemas.users.UserAccountSchema import UserAccountSchema
 from libs.MagicImage import MagicImage, SingleImageRequired
@@ -398,3 +398,13 @@ async def update_account(user_data: UserAccountSchema, authorize: AuthJWT = Depe
     if user := await UserFetch.filter_by_id(user_id):
         await UserCrud.update_account_user(user['id'],**user_data.dict())
         return {"detail": "Success updated your account."}
+
+@router.get('/my-user', response_model=UserData)
+async def my_user(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        user_data = {index:value for index,value in user.items()}
+        user_data['password'] = True if user_data['password'] else False
+        return user_data
