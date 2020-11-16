@@ -27,7 +27,9 @@ from sqlalchemy import MetaData, exc
 from models import (
     UserModel,
     ConfirmationModel,
-    PasswordResetModel
+    PasswordResetModel,
+    ProvinceModel,
+    PostalCodeModel
 )
 
 with warnings.catch_warnings():
@@ -43,7 +45,9 @@ with warnings.catch_warnings():
     target_metadata = combine_metadata(
         UserModel.metadata,
         ConfirmationModel.metadata,
-        PasswordResetModel.metadata
+        PasswordResetModel.metadata,
+        ProvinceModel.metadata,
+        PostalCodeModel.metadata
     )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

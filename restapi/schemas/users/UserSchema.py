@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, constr, validator
-from typing import Literal
+from typing import Literal, Optional
 
 class UserSchema(BaseModel):
     email: EmailStr
@@ -38,8 +38,8 @@ class UserResetPassword(UserSchema):
 
 class UserData(UserSchema):
     username: str
-    password: bool
-    phone: str
-    gender: Literal['Laki-laki','Perempuan','Lainnya']
+    password: Optional[bool]
+    phone: Optional[str]
+    gender: Optional[Literal['Laki-laki','Perempuan','Lainnya']]
     role: str
     avatar: str

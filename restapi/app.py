@@ -15,7 +15,7 @@ from docs import (
     list_access_token,
     list_access_token_without_csrf
 )
-from routers import Users, OAuth2
+from routers import Users, OAuth2, Address
 
 app = FastAPI(default_response_class=ORJSONResponse)
 
@@ -91,3 +91,4 @@ app.openapi = custom_openapi
 
 app.include_router(Users.router,tags=['users'],prefix="/users")
 app.include_router(OAuth2.router,tags=['oauth'],prefix="/login")
+app.include_router(Address.router,tags=['address'],prefix="/address")
