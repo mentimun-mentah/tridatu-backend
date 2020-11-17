@@ -388,6 +388,10 @@ async def update_avatar(file: UploadFile = Depends(single_image_required), autho
         200: {
             "description": "Successful Response",
             "content": {"application/json": {"example": {"detail":"Success updated your account."}}}
+        },
+        400: {
+            "description": "Phone number already taken",
+            "content": {"application/json": {"example": {"detail":"The phone number has already been taken."}}}
         }
     }
 )
@@ -396,6 +400,11 @@ async def update_account(user_data: UserAccountSchema, authorize: AuthJWT = Depe
 
     user_id = authorize.get_jwt_subject()
     if user := await UserFetch.filter_by_id(user_id):
+        # check phone number exists
+        if user_phone := await UserFetch.filter_by_phone(user_data.phone):
+            if user_phone['id'] != user['id']:
+                raise HTTPException(status_code=400,detail="The phone number has already been taken.")
+
         await UserCrud.update_account_user(user['id'],**user_data.dict())
         return {"detail": "Success updated your account."}
 

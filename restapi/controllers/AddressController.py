@@ -1,8 +1,10 @@
 from config import database
+from sqlalchemy import func
 from sqlalchemy.sql import select, expression
 from models.AddressModel import address
 from models.PostalCodeModel import postal_code
 from models.ProvinceModel import province
+from libs.Pagination import Pagination
 
 class AddressLogic:
     pass
@@ -41,3 +43,23 @@ class AddressFetch:
                 data.append({"value": row[0],"postal_code": [row[1]]})
 
         return data
+
+    @staticmethod
+    async def get_address_by_user_id(user_id: int, page: int, per_page: int) -> dict:
+        query = select([func.count(address.c.id)]).where(address.c.user_id == user_id).as_scalar()
+        total = await database.execute(query=query)
+
+        query = select([address]) \
+            .where((address.c.id > (((page - 1) * per_page) + 1)) & (address.c.user_id == user_id)) \
+            .limit(per_page)
+        items = await database.fetch_all(query=query)
+
+        paginate = Pagination(page, per_page, total, items)
+        return {
+            "data": [{index:value for index,value in item.items()} for item in paginate.items],
+            "total": paginate.total,
+            "next_num": paginate.next_num,
+            "prev_num": paginate.prev_num,
+            "page": paginate.page,
+            "iter_pages": [x for x in paginate.iter_pages()]
+        }

@@ -68,3 +68,8 @@ class UserFetch:
     async def filter_by_id(id_: int) -> user:
         query = select([user]).where(user.c.id == id_)
         return await database.fetch_one(query=query)
+
+    @staticmethod
+    async def filter_by_phone(phone: str) -> user:
+        query = select([user]).where(user.c.phone == phone)
+        return await database.fetch_one(query=query)

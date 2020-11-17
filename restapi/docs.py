@@ -34,7 +34,7 @@ list_access_token = [
 ]
 
 list_access_token_without_csrf = [
-    'my_user'
+    'my_user', 'my_address'
 ]
 
 list_refresh_token = [

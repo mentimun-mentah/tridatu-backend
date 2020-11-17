@@ -8,14 +8,9 @@ from phonenumbers import (
     parse as parse_phone_number
 )
 from pydantic import BaseModel, validator, StrictBool, constr, conint
-from typing import List
+from typing import List, Optional
 
 class AddressSchema(BaseModel):
-    class Config:
-        min_anystr_length = 1
-        anystr_strip_whitespace = True
-
-class AddressCreate(AddressSchema):
     label: constr(strict=True, max_length=100)
     receiver: constr(strict=True, max_length=100)
     phone: constr(strict=True, max_length=20)
@@ -37,6 +32,24 @@ class AddressCreate(AddressSchema):
             raise ValueError('Please provide a valid mobile phone number')
 
         return format_number(n, PhoneNumberFormat.INTERNATIONAL)
+
+    class Config:
+        min_anystr_length = 1
+        anystr_strip_whitespace = True
+
+class AddressCreate(AddressSchema):
+    pass
+
+class AddressData(AddressSchema):
+    id: int
+
+class AddressPaginate(BaseModel):
+    data: List[AddressData]
+    total: int
+    next_num: Optional[int]
+    prev_num: Optional[int]
+    page: int
+    iter_pages: list
 
 class AddressSearchData(BaseModel):
     value: str

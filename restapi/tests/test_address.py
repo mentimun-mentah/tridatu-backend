@@ -147,6 +147,42 @@ class TestAddress(OperationTest):
         assert response.status_code == 201
         assert response.json() == {"detail": "Successfully add a new address."}
 
+    def test_my_address(self,client):
+        url = self.prefix + '/my-address'
+        # field required
+        response = client.get(url)
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.get(url + '?page=0&per_page=0')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'ensure this value is greater than 0'
+        # check all field type data
+        response = client.get(url + '?page=a&per_page=a')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'value is not a valid integer'
+        # user login
+        response = client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        response = client.get(url + '?page=1&per_page=1',headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 200
+        assert len(response.json()['data']) == 1
+        assert response.json()['total'] == 1
+        assert response.json()['next_num'] is None
+        assert response.json()['prev_num'] is None
+        assert response.json()['page'] == 1
+        assert response.json()['iter_pages'] == [1]
+
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,async_client):
         await self.delete_user_from_db()

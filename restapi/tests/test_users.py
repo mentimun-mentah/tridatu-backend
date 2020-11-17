@@ -728,6 +728,7 @@ class TestUser(OperationTest):
     @pytest.mark.asyncio
     async def test_update_avatar(self,async_client):
         await self.reset_password_user_to_default(self.account_1['email'])
+        await self.reset_password_user_to_default(self.account_2['email'])
         # user login
         response = await async_client.post(self.prefix + '/login', json={
             'email': self.account_1['email'],
@@ -831,6 +832,24 @@ class TestUser(OperationTest):
         })
         assert response.status_code == 200
         assert response.json() == {"detail": "Success updated your account."}
+
+    def test_update_account_phone_number_already_taken(self,client):
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # check phone number already taken
+        url = self.prefix + '/update-account'
+
+        response = client.put(url,headers={'X-CSRF-TOKEN': csrf_access_token},json={
+            'username':'asdasd',
+            'phone':'87862253096',
+            'gender':'Laki-laki'
+        })
+        assert response.status_code == 400
+        assert response.json() == {'detail': 'The phone number has already been taken.'}
 
     def test_my_user(self,client):
         url = self.prefix + '/my-user'
