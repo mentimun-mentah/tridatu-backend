@@ -63,3 +63,8 @@ class AddressFetch:
             "page": paginate.page,
             "iter_pages": [x for x in paginate.iter_pages()]
         }
+
+    @staticmethod
+    async def filter_by_id(id_: int) -> address:
+        query = select([address]).where(address.c.id == id_)
+        return await database.fetch_one(query=query)
