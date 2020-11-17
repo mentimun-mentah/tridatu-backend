@@ -29,7 +29,8 @@ from models import (
     ConfirmationModel,
     PasswordResetModel,
     ProvinceModel,
-    PostalCodeModel
+    PostalCodeModel,
+    AddressModel
 )
 
 with warnings.catch_warnings():
@@ -47,7 +48,8 @@ with warnings.catch_warnings():
         ConfirmationModel.metadata,
         PasswordResetModel.metadata,
         ProvinceModel.metadata,
-        PostalCodeModel.metadata
+        PostalCodeModel.metadata,
+        AddressModel.metadata
     )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
