@@ -99,3 +99,33 @@ async def update_address(
             return {"detail": "Successfully update the address."}
 
     raise HTTPException(status_code=404,detail="Address not found!")
+
+@router.put('/main-address-true/{address_id}',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"Successfully set the address to main address."}}}
+        },
+        400: {
+            "description": "Address not match with user",
+            "content": {"application/json":{"example": {"detail":"Address not match with the current user."}}}
+        },
+        404: {
+            "description": "Address not found",
+            "content": {"application/json":{"example": {"detail":"Address not found!"}}}
+        }
+    }
+)
+async def main_address_true(address_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    if address := await AddressFetch.filter_by_id(address_id):
+        user_id = authorize.get_jwt_subject()
+        if user := await UserFetch.filter_by_id(user_id):
+            if user['id'] != address['user_id']:
+                raise HTTPException(status_code=400,detail="Address not match with the current user.")
+            # change address to main address
+            await AddressCrud.change_all_main_address_to_false(user['id'])
+            await AddressCrud.change_address_to_main_address(address['id'])
+            return {"detail": "Successfully set the address to main address."}
+    raise HTTPException(status_code=404,detail="Address not found!")

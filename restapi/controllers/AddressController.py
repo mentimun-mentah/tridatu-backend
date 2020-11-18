@@ -19,6 +19,18 @@ class AddressCrud:
         kwargs.update({"updated_at": func.now()})
         await database.execute(query=address.update().where(address.c.id == id_),values=kwargs)
 
+    @staticmethod
+    async def change_address_to_main_address(id_: int) -> None:
+        await database.execute(query=address.update().where(address.c.id == id_),values={"main_address": True})
+
+    @staticmethod
+    async def change_all_main_address_to_false(user_id: int) -> None:
+        query = select([address]).where((address.c.main_address == expression.true()) & (address.c.user_id == user_id))
+        main_address_true = await database.fetch_all(query=query)
+        for item in main_address_true:
+            query = address.update().where(address.c.id == item['id'])
+            await database.execute(query=query,values={'main_address': False})
+
 class AddressFetch:
     @staticmethod
     async def search_city_or_district(q: str) -> list:
