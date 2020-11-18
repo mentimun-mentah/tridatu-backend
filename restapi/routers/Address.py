@@ -41,7 +41,7 @@ async def my_address(page: int = Query(...,gt=0), per_page: int = Query(...,gt=0
 
     user_id = authorize.get_jwt_subject()
     if user := await UserFetch.filter_by_id(user_id):
-        return await AddressFetch.get_all_address_by_user_id(user['id'],page=page,per_page=per_page)
+        return await AddressFetch.get_all_address_paginate(user['id'],page=page,per_page=per_page)
 
 @router.get('/my-address/{address_id}',response_model=AddressData,
     responses={
@@ -128,4 +128,36 @@ async def main_address_true(address_id: int = Path(...,gt=0), authorize: AuthJWT
             await AddressCrud.change_all_main_address_to_false(user['id'])
             await AddressCrud.change_address_to_main_address(address['id'])
             return {"detail": "Successfully set the address to main address."}
+    raise HTTPException(status_code=404,detail="Address not found!")
+
+@router.delete('/delete/{address_id}',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"Successfully delete the address."}}}
+        },
+        400: {
+            "description": "Address not match with user",
+            "content": {"application/json":{"example": {"detail":"Address not match with the current user."}}}
+        },
+        404: {
+            "description": "Address not found",
+            "content": {"application/json":{"example": {"detail":"Address not found!"}}}
+        }
+    }
+)
+async def delete_address(address_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    if address := await AddressFetch.filter_by_id(address_id):
+        user_id = authorize.get_jwt_subject()
+        if user := await UserFetch.filter_by_id(user_id):
+            if user['id'] != address['user_id']:
+                raise HTTPException(status_code=400,detail="Address not match with the current user.")
+            # delete address
+            await AddressCrud.delete_address(address['id'])
+            # check doesn't exists main address in db
+            if not await AddressFetch.check_main_address_true_in_db(user['id']):
+                await AddressCrud.change_whatever_address_to_true(user['id'])
+            return {"detail": "Successfully delete the address."}
     raise HTTPException(status_code=404,detail="Address not found!")

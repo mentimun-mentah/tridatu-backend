@@ -417,6 +417,55 @@ class TestAddress(OperationTest):
         assert response.status_code == 200
         assert response.json() == {'detail': 'Successfully set the address to main address.'}
 
+    def test_validation_delete_address(self,client):
+        url = self.prefix + '/delete/'
+        # all field blank
+        response = client.delete(url + '0')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'address_id': assert x['msg'] == 'ensure this value is greater than 0'
+        # check all field type data
+        response = client.delete(url + 'a')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'address_id': assert x['msg'] == 'value is not a valid integer'
+
+    @pytest.mark.asyncio
+    async def test_delete_address(self,async_client):
+        # user login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/delete/'
+        # address not found
+        response = await async_client.delete(url + '9' * 8,headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Address not found!"}
+        # address not match with current user
+        user_id = await self.get_user_id(self.account_1['email'])
+        address_id = await self.get_address_id(user_id)
+
+        response = await async_client.delete(url + str(address_id),headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 400
+        assert response.json() == {"detail": "Address not match with the current user."}
+        # change user login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        response = await async_client.delete(url + str(address_id),headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully delete the address."}
+        # check address has been deleted
+        response = await async_client.delete(url + str(address_id),headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Address not found!"}
+
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,async_client):
         await self.delete_user_from_db()

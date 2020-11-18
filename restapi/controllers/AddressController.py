@@ -1,5 +1,5 @@
 from config import database
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from sqlalchemy.sql import select, expression
 from models.AddressModel import address
 from models.PostalCodeModel import postal_code
@@ -24,12 +24,23 @@ class AddressCrud:
         await database.execute(query=address.update().where(address.c.id == id_),values={"main_address": True})
 
     @staticmethod
+    async def delete_address(id_: int) -> None:
+        await database.execute(query=address.delete().where(address.c.id == id_))
+
+    @staticmethod
     async def change_all_main_address_to_false(user_id: int) -> None:
         query = select([address]).where((address.c.main_address == expression.true()) & (address.c.user_id == user_id))
         main_address_true = await database.fetch_all(query=query)
         for item in main_address_true:
             query = address.update().where(address.c.id == item['id'])
             await database.execute(query=query,values={'main_address': False})
+
+    @staticmethod
+    async def change_whatever_address_to_true(user_id: int) -> None:
+        query = select([address]).where((address.c.main_address == expression.false()) & (address.c.user_id == user_id))
+        if main_address_false := await database.fetch_one(query=query):
+            query = address.update().where(address.c.id == main_address_false['id'])
+            await database.execute(query=query,values={'main_address': True})
 
 class AddressFetch:
     @staticmethod
@@ -54,11 +65,13 @@ class AddressFetch:
         return data
 
     @staticmethod
-    async def get_all_address_by_user_id(user_id: int, page: int, per_page: int) -> dict:
+    async def get_all_address_paginate(user_id: int, page: int, per_page: int) -> dict:
         query = select([func.count(address.c.id)]).where(address.c.user_id == user_id).as_scalar()
         total = await database.execute(query=query)
 
-        query = select([address]).where(address.c.user_id == user_id).limit(per_page).offset((page - 1) * per_page)
+        query = select([address]).where(address.c.user_id == user_id) \
+            .order_by(desc(address.c.main_address)).order_by(address.c.id) \
+            .limit(per_page).offset((page - 1) * per_page)
         items = await database.fetch_all(query=query)
 
         paginate = Pagination(page, per_page, total, items)
