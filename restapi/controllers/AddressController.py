@@ -52,7 +52,7 @@ class AddressFetch:
         # get data from database
         raw_data = await database.fetch_all(query=query)
         raw_data = [
-            (f"{row['name']}, Kota {row['city']}, {row['sub_district']}".title(),row['postal_code']) for row in raw_data
+            (f"{row['name']}, {row['city']}, {row['sub_district']}".title(),row['postal_code']) for row in raw_data
         ]
         # process data from the database for frontend
         data = []
