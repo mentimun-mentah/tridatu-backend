@@ -15,12 +15,9 @@ class AddressCrud:
         return await database.execute(query=address.insert(),values=kwargs)
 
     @staticmethod
-    async def check_and_change_main_address_to_false(user_id: int) -> None:
-        query = select([address]).where((address.c.main_address == expression.true()) & (address.c.user_id == user_id))
-        main_address_true = await database.fetch_all(query=query)
-        for item in main_address_true:
-            query = address.update().where(address.c.id == item['id'])
-            await database.execute(query=query,values={'main_address': False})
+    async def update_address(id_: int, **kwargs) -> None:
+        kwargs.update({"updated_at": func.now()})
+        await database.execute(query=address.update().where(address.c.id == id_),values=kwargs)
 
 class AddressFetch:
     @staticmethod
@@ -45,13 +42,11 @@ class AddressFetch:
         return data
 
     @staticmethod
-    async def get_address_by_user_id(user_id: int, page: int, per_page: int) -> dict:
+    async def get_all_address_by_user_id(user_id: int, page: int, per_page: int) -> dict:
         query = select([func.count(address.c.id)]).where(address.c.user_id == user_id).as_scalar()
         total = await database.execute(query=query)
 
-        query = select([address]) \
-            .where((address.c.id > (((page - 1) * per_page) + 1)) & (address.c.user_id == user_id)) \
-            .limit(per_page)
+        query = select([address]).where(address.c.user_id == user_id).limit(per_page).offset((page - 1) * per_page)
         items = await database.fetch_all(query=query)
 
         paginate = Pagination(page, per_page, total, items)
@@ -63,6 +58,12 @@ class AddressFetch:
             "page": paginate.page,
             "iter_pages": [x for x in paginate.iter_pages()]
         }
+
+    @staticmethod
+    async def check_main_address_true_in_db(user_id: int) -> int:
+        query = select([func.count(address.c.id)]) \
+            .where((address.c.main_address == expression.true()) & (address.c.user_id == user_id)).as_scalar()
+        return await database.execute(query=query)
 
     @staticmethod
     async def filter_by_id(id_: int) -> address:

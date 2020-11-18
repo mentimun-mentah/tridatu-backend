@@ -72,7 +72,6 @@ class TestAddress(OperationTest):
             if x['loc'][-1] == 'region': assert x['msg'] == 'field required'
             if x['loc'][-1] == 'postal_code': assert x['msg'] == 'field required'
             if x['loc'][-1] == 'recipient_address': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'main_address': assert x['msg'] == 'field required'
         # all field blank
         response = client.post(url,json={
             "label": "",
@@ -81,7 +80,6 @@ class TestAddress(OperationTest):
             "region": "",
             "postal_code": 0,
             "recipient_address": "",
-            "main_address": ""
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
@@ -91,7 +89,6 @@ class TestAddress(OperationTest):
             if x['loc'][-1] == 'region': assert x['msg'] == 'ensure this value has at least 1 characters'
             if x['loc'][-1] == 'postal_code': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'recipient_address': assert x['msg'] == 'ensure this value has at least 1 characters'
-            if x['loc'][-1] == 'main_address': assert x['msg'] == 'value is not a valid boolean'
         # test limit value
         response = client.post(url,json={
             "label": "a" * 200,
@@ -100,14 +97,12 @@ class TestAddress(OperationTest):
             "region": "a" * 200,
             "postal_code": 200,
             "recipient_address": "a" * 200,
-            "main_address": "true"
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'label': assert x['msg'] == 'ensure this value has at most 100 characters'
             if x['loc'][-1] == 'receiver': assert x['msg'] == 'ensure this value has at most 100 characters'
             if x['loc'][-1] == 'phone': assert x['msg'] == 'ensure this value has at most 20 characters'
-            if x['loc'][-1] == 'main_address': assert x['msg'] == 'value is not a valid boolean'
         # check all field type data
         response = client.post(url,json={
             "label": 123,
@@ -116,7 +111,6 @@ class TestAddress(OperationTest):
             "region": 123,
             "postal_code": "123",
             "recipient_address": 123,
-            "main_address": "false"
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
@@ -126,7 +120,6 @@ class TestAddress(OperationTest):
             if x['loc'][-1] == 'region': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'postal_code': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'recipient_address': assert x['msg'] == 'str type expected'
-            if x['loc'][-1] == 'main_address': assert x['msg'] == 'value is not a valid boolean'
         # invalid phone number
         response = client.post(url,json={'phone': 'asdasd'})
         assert response.status_code == 422
@@ -157,7 +150,6 @@ class TestAddress(OperationTest):
             "region": "string",
             "postal_code": 1,
             "recipient_address": "string",
-            "main_address": True
         })
         assert response.status_code == 201
         assert response.json() == {"detail": "Successfully add a new address."}
@@ -247,6 +239,138 @@ class TestAddress(OperationTest):
         assert 'recipient_address' in response.json()
         assert 'main_address' in response.json()
         assert 'id' in response.json()
+
+    @pytest.mark.asyncio
+    async def test_validation_update_address(self,async_client):
+        # validation path parameter
+        url = self.prefix + '/update/'
+        # all field blank
+        response = await async_client.put(url + '0')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'address_id': assert x['msg'] == 'ensure this value is greater than 0'
+        # check all field type data
+        response = await async_client.put(url + 'a')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'address_id': assert x['msg'] == 'value is not a valid integer'
+
+        user_id = await self.get_user_id(self.account_1['email'])
+        address_id = await self.get_address_id(user_id)
+        # validation request body
+        url = self.prefix + f'/update/{address_id}'
+        # field required
+        response = await async_client.put(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'label': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'receiver': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'phone': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'region': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'postal_code': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'recipient_address': assert x['msg'] == 'field required'
+        # all field blank
+        response = await async_client.put(url,json={
+            "label": "",
+            "receiver": "",
+            "phone": "",
+            "region": "",
+            "postal_code": 0,
+            "recipient_address": "",
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'label': assert x['msg'] == 'ensure this value has at least 1 characters'
+            if x['loc'][-1] == 'receiver': assert x['msg'] == 'ensure this value has at least 1 characters'
+            if x['loc'][-1] == 'phone': assert x['msg'] == 'ensure this value has at least 1 characters'
+            if x['loc'][-1] == 'region': assert x['msg'] == 'ensure this value has at least 1 characters'
+            if x['loc'][-1] == 'postal_code': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'recipient_address': assert x['msg'] == 'ensure this value has at least 1 characters'
+        # test limit value
+        response = await async_client.put(url,json={
+            "label": "a" * 200,
+            "receiver": "a" * 200,
+            "phone": "a" * 200,
+            "region": "a" * 200,
+            "postal_code": 200,
+            "recipient_address": "a" * 200,
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'label': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'receiver': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'phone': assert x['msg'] == 'ensure this value has at most 20 characters'
+        # check all field type data
+        response = await async_client.put(url,json={
+            "label": 123,
+            "receiver": 123,
+            "phone": 123,
+            "region": 123,
+            "postal_code": "123",
+            "recipient_address": 123,
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'label': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'receiver': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'phone': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'region': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'postal_code': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'recipient_address': assert x['msg'] == 'str type expected'
+        # invalid phone number
+        response = await async_client.put(url,json={'phone': 'asdasd'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'phone':
+                assert x['msg'] == "Please provide a valid mobile phone number"
+
+        response = await async_client.put(url,json={'phone': '8762732'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'phone':
+                assert x['msg'] == "Please provide a valid mobile phone number"
+
+    @pytest.mark.asyncio
+    async def test_update_address(self,async_client):
+        # user login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        data = {
+            "label": "string2",
+            "receiver": "string2",
+            "phone": "8787878787",
+            "region": "string2",
+            "postal_code": 2,
+            "recipient_address": "string2",
+        }
+
+        url = self.prefix + '/update/'
+        # address not found
+        response = await async_client.put(url + '9' * 8,json=data,headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Address not found!"}
+
+        # address not match with current user
+        user_id = await self.get_user_id(self.account_1['email'])
+        address_id = await self.get_address_id(user_id)
+
+        response = await async_client.put(url + str(address_id),json=data,headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 400
+        assert response.json() == {"detail": "Address not match with the current user."}
+        # change user login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        response = await async_client.put(url + str(address_id),json=data,headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {'detail': 'Successfully update the address.'}
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,async_client):

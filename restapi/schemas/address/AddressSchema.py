@@ -7,7 +7,7 @@ from phonenumbers import (
     is_valid_number,
     parse as parse_phone_number
 )
-from pydantic import BaseModel, validator, StrictBool, constr, conint
+from pydantic import BaseModel, validator, constr, conint
 from typing import List, Optional
 
 class AddressSchema(BaseModel):
@@ -17,7 +17,6 @@ class AddressSchema(BaseModel):
     region: constr(strict=True)
     postal_code: conint(strict=True, gt=0)
     recipient_address: constr(strict=True)
-    main_address: StrictBool
 
     @validator('phone')
     def validate_phone(cls, v):
@@ -37,10 +36,11 @@ class AddressSchema(BaseModel):
         min_anystr_length = 1
         anystr_strip_whitespace = True
 
-class AddressCreate(AddressSchema):
+class AddressCreateUpdate(AddressSchema):
     pass
 
 class AddressData(AddressSchema):
+    main_address: bool
     id: int
 
 class AddressPaginate(BaseModel):
