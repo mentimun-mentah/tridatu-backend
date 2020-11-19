@@ -31,7 +31,8 @@ csrf_token_header = {
 list_access_token = [
     'access_revoke', 'add_password', 'update_password', 'update_avatar',
     'update_account', 'fresh_token', 'create_address', 'update_address',
-    'main_address_true', 'delete_address', 'create_outlet', 'delete_outlet'
+    'main_address_true', 'delete_address', 'create_outlet', 'delete_outlet',
+    'create_brand'
 ]
 
 list_access_token_without_csrf = [

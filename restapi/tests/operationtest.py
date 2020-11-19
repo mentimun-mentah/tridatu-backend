@@ -7,14 +7,17 @@ from models.ConfirmationModel import confirmation
 from models.PasswordResetModel import password_reset
 from models.AddressModel import address
 from models.OutletModel import outlet
+from models.BrandModel import brand
 
 class OperationTest:
+    name = 'testtesttttttt'
     account_1 = {'email':'testtesting@gmail.com','username':'testtesting','password':'testtesting'}
     account_2 = {'email':'testtesting2@gmail.com','username':'testtesting2','password':'testtesting2'}
     base_dir = os.path.join(os.path.dirname(__file__),'../static/')
     test_image_dir = base_dir + 'test_image/'
     avatar_dir = base_dir + 'avatars/'
     outlet_dir = base_dir + 'outlets/'
+    brand_dir = base_dir + 'brands/'
 
     # ================ USER SECTION ================
 
@@ -101,6 +104,7 @@ class OperationTest:
         return add['id']
 
     # ================ OUTLET SECTION ================
+
     @pytest.mark.asyncio
     async def get_last_outlet_image(self):
         query = select([outlet]).order_by(desc(outlet.c.id)).limit(1)
@@ -112,3 +116,11 @@ class OperationTest:
         query = select([outlet]).order_by(desc(outlet.c.id)).limit(1)
         outlet_data = await database.fetch_one(query=query)
         return outlet_data['id']
+
+    # ================ BRAND SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_last_brand_image(self):
+        query = select([brand]).order_by(desc(brand.c.id_brand)).limit(1)
+        brand_data = await database.fetch_one(query=query)
+        return brand_data['image_brand']
