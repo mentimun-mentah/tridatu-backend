@@ -11,6 +11,7 @@ from models.BrandModel import brand
 
 class OperationTest:
     name = 'testtesttttttt'
+    name2 = 'testtesttttttt2'
     account_1 = {'email':'testtesting@gmail.com','username':'testtesting','password':'testtesting'}
     account_2 = {'email':'testtesting2@gmail.com','username':'testtesting2','password':'testtesting2'}
     base_dir = os.path.join(os.path.dirname(__file__),'../static/')
@@ -120,7 +121,13 @@ class OperationTest:
     # ================ BRAND SECTION ================
 
     @pytest.mark.asyncio
-    async def get_last_brand_image(self):
-        query = select([brand]).order_by(desc(brand.c.id_brand)).limit(1)
+    async def get_brand_image(self,name: str):
+        query = select([brand]).where(brand.c.name_brand == name)
         brand_data = await database.fetch_one(query=query)
         return brand_data['image_brand']
+
+    @pytest.mark.asyncio
+    async def get_brand_id(self,name: str):
+        query = select([brand]).where(brand.c.name_brand == name)
+        brand_data = await database.fetch_one(query=query)
+        return brand_data['id_brand']

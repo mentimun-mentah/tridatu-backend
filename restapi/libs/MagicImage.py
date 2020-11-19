@@ -31,6 +31,35 @@ class SingleImageRequired:
 
         return file
 
+class SingleImageOptional:
+    def __init__(self,max_file_size: int, allow_file_ext: List[str]):
+        self.allow_file_ext = allow_file_ext
+        self.max_file_size = max_file_size
+        self.max_file_size_mb = max_file_size * 1024 * 1024  # convert to Mb
+
+    def __call__(self,file: Optional[UploadFile] = File(None)):
+        if not file: return
+
+        # validation image
+        try:
+            with Image.open(file.file) as img:
+                if img.format.lower() not in self.allow_file_ext and img.mode != 'RGB':
+                    msg = "Image must be between {}.".format(', '.join(self.allow_file_ext))
+                    raise HTTPException(status_code=422,detail=msg)
+        except UnidentifiedImageError:
+            msg = "Cannot identify the image."
+            raise HTTPException(status_code=422,detail=msg)
+
+        # validation size image
+        size = file.file
+        size.seek(0,os.SEEK_END)
+        if size.tell() > self.max_file_size_mb:
+            msg_size = f"An image cannot greater than {self.max_file_size} Mb."
+            raise HTTPException(status_code=413,detail=msg_size)
+        size.seek(0)
+
+        return file
+
 class MagicImage:
     base_dir: str = os.path.join(os.path.dirname(__file__),'../static/')
     file_name: str = None
