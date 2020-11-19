@@ -30,7 +30,8 @@ from models import (
     PasswordResetModel,
     ProvinceModel,
     PostalCodeModel,
-    AddressModel
+    AddressModel,
+    OutletModel
 )
 
 with warnings.catch_warnings():
@@ -49,7 +50,8 @@ with warnings.catch_warnings():
         PasswordResetModel.metadata,
         ProvinceModel.metadata,
         PostalCodeModel.metadata,
-        AddressModel.metadata
+        AddressModel.metadata,
+        OutletModel.metadata
     )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

@@ -1,10 +1,12 @@
 import pytest, bcrypt, os
 from config import database
+from sqlalchemy import desc
 from sqlalchemy.sql import select
 from models.UserModel import user
 from models.ConfirmationModel import confirmation
 from models.PasswordResetModel import password_reset
 from models.AddressModel import address
+from models.OutletModel import outlet
 
 class OperationTest:
     account_1 = {'email':'testtesting@gmail.com','username':'testtesting','password':'testtesting'}
@@ -12,6 +14,7 @@ class OperationTest:
     base_dir = os.path.join(os.path.dirname(__file__),'../static/')
     test_image_dir = base_dir + 'test_image/'
     avatar_dir = base_dir + 'avatars/'
+    outlet_dir = base_dir + 'outlets/'
 
     # ================ USER SECTION ================
 
@@ -19,6 +22,11 @@ class OperationTest:
     async def get_user_avatar(self,email: str):
         user_data = await database.fetch_one(query=select([user]).where(user.c.email == email))
         return user_data['avatar']
+
+    @pytest.mark.asyncio
+    async def set_user_to_admin(self,email: str):
+        query = user.update().where(user.c.email == email)
+        await database.execute(query=query,values={'role': 'admin'})
 
     @pytest.mark.asyncio
     async def reset_password_user_to_default(self,email: str):
@@ -91,3 +99,17 @@ class OperationTest:
     async def get_address_id(self,user_id: int):
         add = await database.fetch_one(query=select([address]).where(address.c.user_id == user_id))
         return add['id']
+
+    # ================ OUTLET SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_last_outlet_image(self):
+        query = select([outlet]).order_by(desc(outlet.c.id)).limit(1)
+        data = await database.fetch_one(query=query)
+        return data['image']
+
+    @pytest.mark.asyncio
+    async def get_last_outlet_id(self):
+        query = select([outlet]).order_by(desc(outlet.c.id)).limit(1)
+        data = await database.fetch_one(query=query)
+        return data['id']
