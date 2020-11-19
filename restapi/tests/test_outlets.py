@@ -135,11 +135,12 @@ class TestOutlet(OperationTest):
         assert response.status_code == 404
         assert response.json() == {"detail": "Outlet not found!"}
         # check image already deleted
+        image = await self.get_last_outlet_image()
+
         response = await async_client.delete(url + str(outlet_id),headers={"X-CSRF-TOKEN": csrf_access_token})
         assert response.status_code == 200
         assert response.json() == {"detail": "Successfully delete the outlet."}
 
-        image = await self.get_last_outlet_image()
         assert Path(self.outlet_dir + image).is_file() is False
         # check outlet has been deleted
         response = await async_client.delete(url + str(outlet_id),headers={"X-CSRF-TOKEN": csrf_access_token})

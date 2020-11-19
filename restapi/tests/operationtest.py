@@ -101,15 +101,14 @@ class OperationTest:
         return add['id']
 
     # ================ OUTLET SECTION ================
-
     @pytest.mark.asyncio
     async def get_last_outlet_image(self):
         query = select([outlet]).order_by(desc(outlet.c.id)).limit(1)
-        data = await database.fetch_one(query=query)
-        return data['image']
+        outlet_data = await database.fetch_one(query=query)
+        return outlet_data['image']
 
     @pytest.mark.asyncio
     async def get_last_outlet_id(self):
         query = select([outlet]).order_by(desc(outlet.c.id)).limit(1)
-        data = await database.fetch_one(query=query)
-        return data['id']
+        outlet_data = await database.fetch_one(query=query)
+        return outlet_data['id']
