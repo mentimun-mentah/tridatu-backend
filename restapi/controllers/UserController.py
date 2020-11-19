@@ -5,6 +5,7 @@ from uuid import uuid4
 from config import database
 from sqlalchemy import select, func
 from models.UserModel import user
+from fastapi import HTTPException
 
 dir_avatars = os.path.join(os.path.dirname(__file__),'../static/avatars/')
 
@@ -60,6 +61,13 @@ class UserCrud:
 
 class UserFetch:
     @staticmethod
+    async def user_is_admin(id_: int) -> user:
+        if user_admin := await database.fetch_one(query=select([user]).where(user.c.id == id_)):
+            if user_admin['role'] == 'admin':
+                return user_admin
+            raise HTTPException(status_code=401,detail="Only users with admin privileges can do this action.")
+
+    @staticmethod
     async def filter_by_email(email: str) -> user:
         query = select([user]).where(user.c.email == email)
         return await database.fetch_one(query=query)
@@ -67,4 +75,9 @@ class UserFetch:
     @staticmethod
     async def filter_by_id(id_: int) -> user:
         query = select([user]).where(user.c.id == id_)
+        return await database.fetch_one(query=query)
+
+    @staticmethod
+    async def filter_by_phone(phone: str) -> user:
+        query = select([user]).where(user.c.phone == phone)
         return await database.fetch_one(query=query)

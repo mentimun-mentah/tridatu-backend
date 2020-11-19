@@ -253,6 +253,60 @@ class TestUser(OperationTest):
         assert response.cookies.get('refresh_token_cookie') is not None
         assert response.cookies.get('csrf_refresh_token') is not None
 
+    def test_validation_fresh_token(self,client):
+        url = self.prefix + '/fresh-token'
+        # field required
+        response = client.post(url,json={})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.post(url,json={'password':''})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at least 6 characters'
+        # test limit value
+        response = client.post(url,json={'password':'a' * 200})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'ensure this value has at most 100 characters'
+        # check all type data
+        response = client.post(url,json={'password': 123})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'password': assert x['msg'] == 'str type expected'
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # password not same as database
+        response = client.post(url,headers={'X-CSRF-TOKEN': csrf_access_token},json={'password': 'asdasd'})
+        assert response.status_code == 422
+        assert response.json() == {"detail":"Password does not match with our records."}
+
+    def test_fresh_token(self,client):
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        access_token_cookie = response.cookies.get('access_token_cookie')
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/fresh-token'
+
+        response = client.post(url,
+            headers={'X-CSRF-TOKEN': csrf_access_token},
+            json={'password': self.account_1['password']}
+        )
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully make a fresh token."}
+        # access token not same anymore
+        assert access_token_cookie != response.cookies.get('access_token_cookie')
+        assert csrf_access_token != response.cookies.get('csrf_access_token')
+
     def test_refresh_token(self,client):
         url = self.prefix + '/login'
         # login to get token from cookie
@@ -311,6 +365,31 @@ class TestUser(OperationTest):
         # check jti store in redis
         jti = authorize.get_raw_jwt(refresh_token_cookie)['jti']
         assert app.state.redis.get(jti) == "true"
+
+    def test_delete_all_cookies(self,client):
+        url = self.prefix + '/login'
+
+        response = client.post(url,json={'email': self.account_1['email'], 'password': self.account_1['password']})
+        assert response.status_code == 200
+        assert response.json() == {"detail":"Successfully login."}
+        # check cookies exists
+        assert response.cookies.get('access_token_cookie') is not None
+        assert response.cookies.get('csrf_access_token') is not None
+
+        assert response.cookies.get('refresh_token_cookie') is not None
+        assert response.cookies.get('csrf_refresh_token') is not None
+
+        url = self.prefix + '/delete-cookies'
+
+        response = client.delete(url)
+        assert response.status_code == 200
+        assert response.json() == {"detail":"All cookies have been deleted."}
+        # check cookies doesn't exists
+        assert response.cookies.get('access_token_cookie') is None
+        assert response.cookies.get('csrf_access_token') is None
+
+        assert response.cookies.get('refresh_token_cookie') is None
+        assert response.cookies.get('csrf_refresh_token') is None
 
     def test_validation_send_email_reset_password(self,client):
         url = self.prefix + '/password-reset/send'
@@ -649,6 +728,7 @@ class TestUser(OperationTest):
     @pytest.mark.asyncio
     async def test_update_avatar(self,async_client):
         await self.reset_password_user_to_default(self.account_1['email'])
+        await self.reset_password_user_to_default(self.account_2['email'])
         # user login
         response = await async_client.post(self.prefix + '/login', json={
             'email': self.account_1['email'],
@@ -752,6 +832,43 @@ class TestUser(OperationTest):
         })
         assert response.status_code == 200
         assert response.json() == {"detail": "Success updated your account."}
+
+    def test_update_account_phone_number_already_taken(self,client):
+        # user login
+        response = client.post(self.prefix + '/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # check phone number already taken
+        url = self.prefix + '/update-account'
+
+        response = client.put(url,headers={'X-CSRF-TOKEN': csrf_access_token},json={
+            'username':'asdasd',
+            'phone':'87862253096',
+            'gender':'Laki-laki'
+        })
+        assert response.status_code == 400
+        assert response.json() == {'detail': 'The phone number has already been taken.'}
+
+    def test_my_user(self,client):
+        url = self.prefix + '/my-user'
+
+        # user login
+        client.post(self.prefix + '/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+
+        response = client.get(url)
+        assert response.status_code == 200
+        assert 'email' in response.json()
+        assert 'username' in response.json()
+        assert 'password' in response.json()
+        assert 'phone' in response.json()
+        assert 'gender' in response.json()
+        assert 'role' in response.json()
+        assert 'avatar' in response.json()
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,async_client):

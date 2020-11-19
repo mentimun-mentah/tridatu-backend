@@ -16,6 +16,8 @@ services:
   postgres:
     image: "postgres"
     restart: always
+    volumes:
+      - "./migration_data:/home"
     environment: 
       - TZ=Asia/Kuala_Lumpur
       - POSTGRES_DB=${POSTGRES_DB}
@@ -32,3 +34,7 @@ services:
     image: "redis"
     sysctls:
       - net.core.somaxconn=511
+
+networks:
+  default:
+    name: restapi_networks

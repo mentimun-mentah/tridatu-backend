@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, constr, validator
+from typing import Literal, Optional
 
 class UserSchema(BaseModel):
     email: EmailStr
@@ -34,3 +35,11 @@ class UserResetPassword(UserSchema):
         if 'confirm_password' in values and values['confirm_password'] != v:
             raise ValueError("Password must match with confirmation.")
         return v
+
+class UserData(UserSchema):
+    username: str
+    password: Optional[bool]
+    phone: Optional[str]
+    gender: Optional[Literal['Laki-laki','Perempuan','Lainnya']]
+    role: str
+    avatar: str

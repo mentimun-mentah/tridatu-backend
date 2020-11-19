@@ -3,6 +3,7 @@ email-validator
 pydantic --no-binary pydantic
 python-dotenv
 python-multipart
+psycopg2-binary
 SQLAlchemy
 databases[postgresql]
 alembic

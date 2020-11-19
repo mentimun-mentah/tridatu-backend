@@ -11,8 +11,8 @@ from fastapi_jwt_auth import AuthJWT
 from controllers.UserController import UserCrud, UserFetch, UserLogic
 from controllers.ConfirmationController import ConfirmationCrud, ConfirmationFetch, ConfirmationLogic
 from controllers.PasswordResetController import PasswordResetFetch, PasswordResetCrud, PasswordResetLogic
-from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword
-from schemas.users.UserPasswordSchema import UserAddPassword, UserUpdatePassword
+from schemas.users.UserSchema import UserRegister, UserEmail, UserLogin, UserResetPassword, UserData
+from schemas.users.UserPasswordSchema import UserAddPassword, UserUpdatePassword, UserConfirmPassword
 from schemas.users.UserAccountSchema import UserAccountSchema
 from libs.MagicImage import MagicImage, SingleImageRequired
 from libs.MailSmtp import send_email
@@ -71,7 +71,7 @@ async def user_confirm(token: str, authorize: AuthJWT = Depends()):
         if not confirmation['activated']:
             await ConfirmationCrud.user_activated(token)
 
-        access_token = authorize.create_access_token(subject=confirmation['user_id'])
+        access_token = authorize.create_access_token(subject=confirmation['user_id'],fresh=True)
         refresh_token = authorize.create_refresh_token(subject=confirmation['user_id'])
         # set jwt in cookies
         response = RedirectResponse(settings.frontend_uri)
@@ -150,6 +150,27 @@ async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
         raise HTTPException(status_code=422,detail="Invalid credential.")
     raise HTTPException(status_code=422,detail="Invalid credential.")
 
+@router.post('/fresh-token',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json": {"example": {"detail":"Successfully make a fresh token."}}}
+        }
+    }
+)
+async def fresh_token(user_data: UserConfirmPassword, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if not UserLogic.password_is_same_as_hash(user_data.password,user['password']):
+            raise HTTPException(status_code=422,detail="Password does not match with our records.")
+
+        # set fresh access token in cookie
+        access_token = authorize.create_access_token(subject=user['id'],fresh=True)
+        authorize.set_access_cookies(access_token)
+        return {"detail": "Successfully make a fresh token."}
+
 @router.post('/refresh-token',
     responses={
         200: {
@@ -195,6 +216,19 @@ def refresh_revoke(request: Request, authorize: AuthJWT = Depends()):
     jti = authorize.get_raw_jwt()['jti']
     request.app.state.redis.set(jti,'true',settings.refresh_expires)
     return {"detail": "An refresh token has revoked."}
+
+@router.delete('/delete-cookies',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"All cookies have been deleted."}}}
+        }
+    }
+)
+def delete_cookies(authorize: AuthJWT = Depends()):
+    authorize.unset_jwt_cookies()
+
+    return {"detail": "All cookies have been deleted."}
 
 @router.post('/password-reset/send',
     responses={
@@ -354,6 +388,10 @@ async def update_avatar(file: UploadFile = Depends(single_image_required), autho
         200: {
             "description": "Successful Response",
             "content": {"application/json": {"example": {"detail":"Success updated your account."}}}
+        },
+        400: {
+            "description": "Phone number already taken",
+            "content": {"application/json": {"example": {"detail":"The phone number has already been taken."}}}
         }
     }
 )
@@ -362,5 +400,20 @@ async def update_account(user_data: UserAccountSchema, authorize: AuthJWT = Depe
 
     user_id = authorize.get_jwt_subject()
     if user := await UserFetch.filter_by_id(user_id):
+        # check phone number exists
+        if user_phone := await UserFetch.filter_by_phone(user_data.phone):
+            if user_phone['id'] != user['id']:
+                raise HTTPException(status_code=400,detail="The phone number has already been taken.")
+
         await UserCrud.update_account_user(user['id'],**user_data.dict())
         return {"detail": "Success updated your account."}
+
+@router.get('/my-user', response_model=UserData)
+async def my_user(authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        user_data = {index:value for index,value in user.items()}
+        user_data['password'] = True if user_data['password'] else False
+        return user_data

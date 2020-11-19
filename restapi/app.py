@@ -12,9 +12,16 @@ from docs import (
     access_token_cookie,
     csrf_token_header,
     list_refresh_token,
-    list_access_token
+    list_access_token,
+    list_access_token_without_csrf
 )
-from routers import Users, OAuth2
+from routers import (
+    Users,
+    OAuth2,
+    Address,
+    Outlets,
+    Brands
+)
 
 app = FastAPI(default_response_class=ORJSONResponse)
 
@@ -70,6 +77,8 @@ def custom_openapi():
             if route.name in list_access_token:
                 openapi_schema["paths"][route.path][method]['parameters'].append(access_token_cookie)
                 openapi_schema["paths"][route.path][method]['parameters'].append(csrf_token_header)
+            if route.name in list_access_token_without_csrf:
+                openapi_schema["paths"][route.path][method]['parameters'].append(access_token_cookie)
         except Exception:
             if route.name in list_refresh_token:
                 openapi_schema["paths"][route.path][method].update({"parameters":[refresh_token_cookie]})
@@ -77,6 +86,8 @@ def custom_openapi():
             if route.name in list_access_token:
                 openapi_schema["paths"][route.path][method].update({"parameters":[access_token_cookie]})
                 openapi_schema["paths"][route.path][method]['parameters'].append(csrf_token_header)
+            if route.name in list_access_token_without_csrf:
+                openapi_schema["paths"][route.path][method].update({"parameters":[access_token_cookie]})
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -86,3 +97,6 @@ app.openapi = custom_openapi
 
 app.include_router(Users.router,tags=['users'],prefix="/users")
 app.include_router(OAuth2.router,tags=['oauth'],prefix="/login")
+app.include_router(Address.router,tags=['address'],prefix="/address")
+app.include_router(Outlets.router,tags=['outlets'],prefix="/outlets")
+app.include_router(Brands.router,tags=['brands'],prefix="/brands")
