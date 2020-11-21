@@ -8,6 +8,7 @@ from models.PasswordResetModel import password_reset
 from models.AddressModel import address
 from models.OutletModel import outlet
 from models.BrandModel import brand
+from models.CategoryModel import category
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -131,3 +132,11 @@ class OperationTest:
         query = select([brand]).where(brand.c.name_brand == name)
         brand_data = await database.fetch_one(query=query)
         return brand_data['id_brand']
+
+    # ================ CATEGORY SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_category_id(self,name: str):
+        query = select([category]).where(category.c.name_category == name)
+        category_data = await database.fetch_one(query=query)
+        return category_data['id_category']

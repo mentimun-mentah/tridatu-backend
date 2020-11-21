@@ -32,7 +32,8 @@ from models import (
     PostalCodeModel,
     AddressModel,
     OutletModel,
-    BrandModel
+    BrandModel,
+    CategoryModel
 )
 
 with warnings.catch_warnings():
@@ -53,7 +54,8 @@ with warnings.catch_warnings():
         PostalCodeModel.metadata,
         AddressModel.metadata,
         OutletModel.metadata,
-        BrandModel.metadata
+        BrandModel.metadata,
+        CategoryModel.metadata
     )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
