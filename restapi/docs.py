@@ -33,7 +33,7 @@ list_access_token = [
     'update_account', 'fresh_token', 'create_address', 'update_address',
     'main_address_true', 'delete_address', 'create_outlet', 'delete_outlet',
     'create_brand', 'update_brand', 'delete_brand', 'create_category',
-    'update_category', 'delete_category'
+    'update_category', 'delete_category', 'create_sub_category'
 ]
 
 list_access_token_without_csrf = [
