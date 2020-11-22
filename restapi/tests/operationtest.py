@@ -9,6 +9,7 @@ from models.AddressModel import address
 from models.OutletModel import outlet
 from models.BrandModel import brand
 from models.CategoryModel import category
+from models.SubCategoryModel import sub_category
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -140,3 +141,11 @@ class OperationTest:
         query = select([category]).where(category.c.name_category == name)
         category_data = await database.fetch_one(query=query)
         return category_data['id_category']
+
+    # ================ SUB-CATEGORY SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_sub_category_id(self,name: str):
+        query = select([sub_category]).where(sub_category.c.name_sub_category == name)
+        sub_category_data = await database.fetch_one(query=query)
+        return sub_category_data['id_sub_category']

@@ -11,3 +11,6 @@ class SubCategorySchema(BaseModel):
 
 class SubCategoryCreateUpdate(SubCategorySchema):
     pass
+
+class SubCategoryData(SubCategorySchema):
+    id_sub_category: int
