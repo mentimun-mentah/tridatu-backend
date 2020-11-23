@@ -17,10 +17,11 @@ class SubCategoryCrud:
 
 class SubCategoryFetch:
     async def get_all_sub_categories() -> sub_category:
-        return await database.fetch_all(query=select([sub_category]))
+        return await database.fetch_all(query=select([sub_category]).order_by(sub_category.c.category_id))
 
-    async def filter_by_name(name: str) -> sub_category:
-        query = select([sub_category]).where(sub_category.c.name_sub_category == name)
+    async def check_duplicate_name(category_id: int, name: str) -> sub_category:
+        query = select([sub_category]) \
+            .where((sub_category.c.name_sub_category == name) & (sub_category.c.category_id == category_id))
         return await database.fetch_one(query=query)
 
     async def filter_by_id(id_: int) -> sub_category:

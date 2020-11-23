@@ -134,7 +134,7 @@ class TestSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 400
-        assert response.json() == {"detail": "The name has already been taken."}
+        assert response.json() == {"detail": "The name has already been taken in sub category."}
 
     def test_get_all_sub_categories(self,client):
         url = self.prefix + '/all-sub-categories'
@@ -253,7 +253,7 @@ class TestSubCategory(OperationTest):
         assert response.json() == {"detail": "Category not found!"}
 
         response = await async_client.put(url + str(sub_category_id),
-            json={'name_sub_category': self.name,'category_id': category_id},
+            json={'name_sub_category': self.name2,'category_id': category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 200
@@ -272,7 +272,7 @@ class TestSubCategory(OperationTest):
         category_id = await self.get_category_id(self.name)
         # create another sub-category
         response = await async_client.post(url,
-            json={'name_sub_category': self.name2,'category_id': category_id},
+            json={'name_sub_category': self.name,'category_id': category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -286,7 +286,7 @@ class TestSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 400
-        assert response.json() == {"detail": "The name has already been taken."}
+        assert response.json() == {"detail": "The name has already been taken in sub category."}
 
     def test_validation_delete_sub_category(self,client):
         url = self.prefix + '/delete/'

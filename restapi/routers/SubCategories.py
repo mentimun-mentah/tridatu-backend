@@ -16,7 +16,7 @@ router = APIRouter()
         },
         400: {
             "description": "Name already taken",
-            "content": {"application/json":{"example": {"detail":"The name has already been taken."}}}
+            "content": {"application/json":{"example": {"detail":"The name has already been taken in sub category."}}}
         },
         401: {
             "description": "User without role admin",
@@ -37,8 +37,8 @@ async def create_sub_category(sub_category: SubCategoryCreateUpdate, authorize: 
     if not await CategoryFetch.filter_by_id(sub_category.category_id):
         raise HTTPException(status_code=404,detail="Category not found!")
 
-    if await SubCategoryFetch.filter_by_name(sub_category.name_sub_category):
-        raise HTTPException(status_code=400,detail="The name has already been taken.")
+    if await SubCategoryFetch.check_duplicate_name(sub_category.category_id,sub_category.name_sub_category):
+        raise HTTPException(status_code=400,detail="The name has already been taken in sub category.")
 
     await SubCategoryCrud.create_sub_category(**sub_category.dict())
     return {"detail": "Successfully add a new sub-category."}
@@ -77,7 +77,7 @@ async def get_sub_category_by_id(sub_category_id: int = Path(...,gt=0), authoriz
         },
         400: {
             "description": "Name already taken",
-            "content": {"application/json":{"example": {"detail":"The name has already been taken."}}}
+            "content": {"application/json":{"example": {"detail":"The name has already been taken in sub category."}}}
         },
         401: {
             "description": "User without role admin",
@@ -103,11 +103,8 @@ async def update_sub_category(
         if not await CategoryFetch.filter_by_id(sub_category_data.category_id):
             raise HTTPException(status_code=404,detail="Category not found!")
 
-        if (
-            sub_category['name_sub_category'] != sub_category_data.name_sub_category and
-            await SubCategoryFetch.filter_by_name(sub_category_data.name_sub_category)
-        ):
-            raise HTTPException(status_code=400,detail="The name has already been taken.")
+        if await SubCategoryFetch.check_duplicate_name(sub_category_data.category_id,sub_category_data.name_sub_category):
+            raise HTTPException(status_code=400,detail="The name has already been taken in sub category.")
 
         data = {
             "name_sub_category": sub_category_data.name_sub_category,
