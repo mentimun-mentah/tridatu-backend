@@ -17,7 +17,7 @@ from docs import (
 )
 from routers import (
     Users, OAuth2, Address, Outlets,
-    Brands, Categories, SubCategories
+    Brands, Categories, SubCategories, ItemSubCategories
 )
 
 app = FastAPI(default_response_class=ORJSONResponse)
@@ -99,3 +99,4 @@ app.include_router(Outlets.router,tags=['outlets'],prefix="/outlets")
 app.include_router(Brands.router,tags=['brands'],prefix="/brands")
 app.include_router(Categories.router,tags=['categories'],prefix="/categories")
 app.include_router(SubCategories.router,tags=['sub-categories'],prefix="/sub-categories")
+app.include_router(ItemSubCategories.router,tags=['item-sub-categories'],prefix="/item-sub-categories")

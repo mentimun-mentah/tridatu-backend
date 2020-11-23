@@ -27,7 +27,7 @@ from sqlalchemy import MetaData, exc
 from models import (
     UserModel, ConfirmationModel, PasswordResetModel, ProvinceModel,
     PostalCodeModel, AddressModel, OutletModel, BrandModel, CategoryModel,
-    SubCategoryModel
+    SubCategoryModel, ItemSubCategoryModel
 )
 
 with warnings.catch_warnings():
@@ -45,7 +45,8 @@ with warnings.catch_warnings():
         PasswordResetModel.metadata, ProvinceModel.metadata,
         PostalCodeModel.metadata, AddressModel.metadata,
         OutletModel.metadata, BrandModel.metadata,
-        CategoryModel.metadata, SubCategoryModel.metadata
+        CategoryModel.metadata, SubCategoryModel.metadata,
+        ItemSubCategoryModel.metadata
     )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
