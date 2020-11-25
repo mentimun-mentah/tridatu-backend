@@ -96,8 +96,27 @@ class TestCategory(OperationTest):
         assert response.status_code == 400
         assert response.json() == {"detail": "The name has already been taken."}
 
-    def test_get_all_categories(self,client):
+    def test_get_categories_with_children(self,client):
+        url = self.prefix + '/'
+        response = client.get(url)
+        assert response.status_code == 200
+        assert response.json() != []
+
+    def test_validation_get_all_categories(self,client):
         url = self.prefix + '/all-categories'
+        # field required
+        response = client.get(url)
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'with_sub': assert x['msg'] == 'field required'
+        # check all field type data
+        response = client.get(url + '?with_sub=asd')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'with_sub': assert x['msg'] == 'value could not be parsed to a boolean'
+
+    def test_get_all_categories(self,client):
+        url = self.prefix + '/all-categories?with_sub=false'
         response = client.get(url)
         assert response.status_code == 200
         assert response.json() != []
