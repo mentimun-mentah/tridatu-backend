@@ -1,5 +1,4 @@
 import aiosmtplib
-from fastapi import HTTPException
 from config import templates, settings
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -26,4 +25,4 @@ async def send_email(email: list, subject: str, sender: str, html: str, **param)
             password=settings.smtp_password
         )
     except aiosmtplib.SMTPException as err:
-        raise HTTPException(status_code=500,detail=str(err))
+        raise RuntimeError(err)
