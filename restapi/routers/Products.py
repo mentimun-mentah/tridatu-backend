@@ -27,7 +27,7 @@ router = APIRouter()
             "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
         },
         404: {
-            "description": "Item sub-category or Brand not found",
+            "description": "Item sub-category, Brand, Ticket variant not found",
             "content": {"application/json": {"example": {"detail":"string"}}}
         },
         413: {

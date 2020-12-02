@@ -48,18 +48,17 @@ def create_form_product(
 
     if variant_data := redis_conn.get(ticket_variant):
         variant_data = json.loads(variant_data)
-
         # match variant_data with image without, single and double variant
         if 'va1_name' not in variant_data and image_variant:
             raise HTTPException(status_code=422,detail="The image must not be filled.")
-        else:
-            # without image or all image must be filled if single or double variant
-            len_va1_items = len(variant_data['va1_items'])
-            len_image_variant = len(image_variant or [])
-            if len_image_variant != 0 and len_image_variant != len_va1_items:
-                raise HTTPException(status_code=422,detail="You must fill all image or even without image.")
+
+        # without image or all image must be filled if single or double variant
+        len_va1_items = len(variant_data['va1_items'])
+        len_image_variant = len(image_variant or [])
+        if len_image_variant != 0 and len_image_variant != len_va1_items:
+            raise HTTPException(status_code=422,detail="You must fill all image or even without image.")
     else:
-        raise HTTPException(status_code=422,detail="Ticket variant not found!")
+        raise HTTPException(status_code=404,detail="Ticket variant not found!")
 
     return {
         "name_product": name_product,

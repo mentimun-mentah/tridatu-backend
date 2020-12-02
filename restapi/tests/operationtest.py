@@ -22,6 +22,7 @@ class OperationTest:
     avatar_dir = base_dir + 'avatars/'
     outlet_dir = base_dir + 'outlets/'
     brand_dir = base_dir + 'brands/'
+    product_dir = base_dir + 'products/'
 
     # ================ USER SECTION ================
 
