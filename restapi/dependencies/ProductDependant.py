@@ -85,7 +85,7 @@ def get_all_query_product(
     page: int = Query(...,gt=0),
     per_page: int = Query(...,gt=0),
     q: str = Query(None,min_length=1),
-    live: bool = Query(True),
+    live: bool = Query(None),
     order_by: Literal['high_price','low_price'] = Query(None, description="Example 'high_price', 'low_price'"),
     p_min: int = Query(None,gt=0),
     p_max: int = Query(None,gt=0),

@@ -11,6 +11,7 @@ from models.BrandModel import brand
 from models.CategoryModel import category
 from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
+from models.ProductModel import product
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -159,3 +160,11 @@ class OperationTest:
         query = select([item_sub_category]).where(item_sub_category.c.name_item_sub_category == name)
         item_sub_category_data = await database.fetch_one(query=query)
         return item_sub_category_data['id_item_sub_category']
+
+    # ================ PRODUCT SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_product_id(self,name: str):
+        query = select([product]).where(product.c.name_product == name)
+        product_data = await database.fetch_one(query=query)
+        return product_data['id_product']

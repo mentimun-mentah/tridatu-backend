@@ -12,13 +12,20 @@ class ProductCrud:
     async def create_product(**kwargs) -> int:
         return await database.execute(product.insert(),values=kwargs)
 
+    @staticmethod
+    async def change_product_alive_archive(id_: int, live_product: bool) -> None:
+        query = product.update().where(product.c.id_product == id_)
+        await database.execute(query=query,values={'live_product': not live_product})
+
 class ProductFetch:
     @staticmethod
     async def get_all_products_paginate(**kwargs) -> dict:
         product_alias = select([product.join(variant)]).distinct(product.c.id_product).alias()
 
-        query = select([product_alias]).where(product_alias.c.live_product == kwargs['live'])
+        query = select([product_alias])
 
+        if kwargs['live'] is not None:
+            query = query.where(product_alias.c.live_product == kwargs['live'])
         if q := kwargs['q']:
             query = query.where(product_alias.c.name_product.ilike(f"%{q}%"))
         if kwargs['order_by'] == 'high_price':
@@ -60,4 +67,9 @@ class ProductFetch:
     @staticmethod
     async def filter_by_slug(slug: str) -> product:
         query = select([product]).where(product.c.slug_product == slug)
+        return await database.fetch_one(query=query)
+
+    @staticmethod
+    async def filter_by_id(id_: int) -> product:
+        query = select([product]).where(product.c.id_product == id_)
         return await database.fetch_one(query=query)

@@ -13,7 +13,7 @@ class ProductSchema(BaseModel):
     # image_size_guide_product: Optional[str]
     # video_product: Optional[str]
     # preorder_product: Optional[int]
-    # live_product: bool
+    live_product: bool
     # item_sub_category_id: int
     # brand_id: Optional[int]
     created_at: str

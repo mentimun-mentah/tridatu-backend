@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Path, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
 from controllers.ProductController import ProductFetch, ProductCrud
 from controllers.VariantController import VariantLogic, VariantCrud
@@ -110,3 +110,31 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
 @router.get('/all-products',response_model=ProductPaginate)
 async def get_all_products(query_string: get_all_query_product = Depends()):
     return await ProductFetch.get_all_products_paginate(**query_string)
+
+@router.put('/alive-archive/{product_id}',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"Successfully change the product to 'alive'/'archive'."}}}
+        },
+        401: {
+            "description": "User without role admin",
+            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+        },
+        404: {
+            "description": "Product not found",
+            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+        }
+    }
+)
+async def change_product_alive_archive(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    await UserFetch.user_is_admin(user_id)
+
+    if product := await ProductFetch.filter_by_id(product_id):
+        await ProductCrud.change_product_alive_archive(product['id_product'],product['live_product'])
+        msg = 'alive' if not product['live_product'] else 'archive'
+        return {"detail": f"Successfully change the product to {msg}."}
+    raise HTTPException(status_code=404,detail="Product not found!")

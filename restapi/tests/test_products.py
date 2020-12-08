@@ -454,6 +454,52 @@ class TestProduct(OperationTest):
         assert 'page' in response.json()
         assert 'iter_pages' in response.json()
 
+    def test_validation_change_product_alive_archive(self,client):
+        url = self.prefix + '/alive-archive/'
+        # all field blank
+        response = client.put(url + '0')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'ensure this value is greater than 0'
+        # check all field type data
+        response = client.put(url + 'a')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'value is not a valid integer'
+
+    @pytest.mark.asyncio
+    async def test_change_product_alive_archive(self,async_client):
+        response = await async_client.post('/users/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/alive-archive/'
+        product_id = await self.get_product_id(self.name)
+        # check user is admin
+        response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 401
+        assert response.json() == {"detail": "Only users with admin privileges can do this action."}
+        # user admin login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # product not found
+        response = await async_client.put(url + '999999',headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Product not found!"}
+
+        response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully change the product to alive."}
+        # change product again
+        response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully change the product to archive."}
+
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):
         # user admin login
