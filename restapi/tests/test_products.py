@@ -406,6 +406,54 @@ class TestProduct(OperationTest):
             assert response.status_code == 400
             assert response.json() == {"detail":"The name has already been taken."}
 
+    def test_validation_get_all_products(self,client):
+        url = self.prefix + '/all-products'
+        # field required
+        response = client.get(url)
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.get(url + '?page=0&per_page=0&q=&p_min=0&p_max=0&item_sub_cat=&brand=')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'q': assert x['msg'] == 'ensure this value has at least 1 characters'
+            if x['loc'][-1] == 'p_min': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'p_max': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'item_sub_cat': assert x['msg'] == 'ensure this value has at least 1 characters'
+            if x['loc'][-1] == 'brand': assert x['msg'] == 'ensure this value has at least 1 characters'
+        # check all field type data
+        response = client.get(
+            url +
+            '?page=a&per_page=a&q=123&live=a&order_by=a&p_min=a' +
+            '&p_max=a&item_sub_cat=a&brand=a&pre_order=a&condition=a'
+        )
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'live': assert x['msg'] == 'value could not be parsed to a boolean'
+            if x['loc'][-1] == 'order_by': assert x['msg'] == "unexpected value; permitted: 'high_price', 'low_price'"
+            if x['loc'][-1] == 'p_min': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'p_max': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'pre_order': assert x['msg'] == 'value could not be parsed to a boolean'
+            if x['loc'][-1] == 'condition': assert x['msg'] == 'value could not be parsed to a boolean'
+
+    def test_get_all_products(self,client):
+        url = self.prefix + '/all-products'
+
+        response = client.get(url + '?page=1&per_page=1')
+        assert response.status_code == 200
+        assert 'data' in response.json()
+        assert 'total' in response.json()
+        assert 'next_num' in response.json()
+        assert 'prev_num' in response.json()
+        assert 'page' in response.json()
+        assert 'iter_pages' in response.json()
+
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):
         # user admin login

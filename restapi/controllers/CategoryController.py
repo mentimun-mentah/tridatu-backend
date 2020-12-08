@@ -8,21 +8,26 @@ class CategoryLogic:
     pass
 
 class CategoryCrud:
+    @staticmethod
     async def create_category(name: str) -> int:
         return await database.execute(query=category.insert(),values={'name_category': name})
 
+    @staticmethod
     async def update_category(id_: int, **kwargs) -> None:
         await database.execute(query=category.update().where(category.c.id_category == id_),values=kwargs)
 
+    @staticmethod
     async def delete_category(id_: int) -> None:
         await database.execute(query=category.delete().where(category.c.id_category == id_))
 
 class CategoryFetch:
+    @staticmethod
     async def get_all_categories(with_sub: bool) -> category:
         if with_sub is False:
             return await database.fetch_all(query=select([category]))
         return await database.fetch_all(select([sub_category.join(category)]))
 
+    @staticmethod
     async def get_categories_with_children() -> list:
         category_db = await database.fetch_all(query=select([category]))
         category_data = [{index:value for index,value in x.items()} for x in category_db]
@@ -42,10 +47,12 @@ class CategoryFetch:
 
         return category_data
 
+    @staticmethod
     async def filter_by_name(name: str) -> category:
         query = select([category]).where(category.c.name_category == name)
         return await database.fetch_one(query=query)
 
+    @staticmethod
     async def filter_by_id(id_: int) -> category:
         query = select([category]).where(category.c.id_category == id_)
         return await database.fetch_one(query=query)

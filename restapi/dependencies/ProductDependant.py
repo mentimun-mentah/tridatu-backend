@@ -1,8 +1,14 @@
 import json
-from fastapi import UploadFile, File, Form, Depends, HTTPException
+from fastapi import UploadFile, File, Form, Query, Depends, HTTPException
 from libs.MagicImage import validate_multiple_upload_images, validate_single_upload_image
-from typing import Optional, List
+from typing import Optional, List, Literal
 from config import redis_conn
+
+def parse_int_list(items: List[str], seperator: str) -> List[int]:
+    try:
+        return [int(float(item)) for item in items.split(seperator)]
+    except Exception:
+        return None
 
 def upload_image_product(image_product: List[UploadFile] = File(...)):
     return validate_multiple_upload_images(
@@ -73,4 +79,31 @@ def create_form_product(
         "image_size_guide_product": image_size_guide_product,
         "variant_data": variant_data,
         "image_variant": image_variant
+    }
+
+def get_all_query_product(
+    page: int = Query(...,gt=0),
+    per_page: int = Query(...,gt=0),
+    q: str = Query(None,min_length=1),
+    live: bool = Query(True),
+    order_by: Literal['high_price','low_price'] = Query(None, description="Example 'high_price', 'low_price'"),
+    p_min: int = Query(None,gt=0),
+    p_max: int = Query(None,gt=0),
+    item_sub_cat: str = Query(None,min_length=1,description="Example 1,2,3"),
+    brand: str = Query(None,min_length=1,description="Example 1,2,3"),
+    pre_order: bool = Query(None),
+    condition: bool = Query(None)
+):
+    return {
+        "page": page,
+        "per_page": per_page,
+        "q": q,
+        "live": live,
+        "order_by": order_by,
+        "p_min": p_min,
+        "p_max": p_max,
+        "item_sub_cat": parse_int_list(item_sub_cat,','),
+        "brand": parse_int_list(brand,','),
+        "pre_order": pre_order,
+        "condition": condition
     }

@@ -6,7 +6,8 @@ from controllers.VariantController import VariantLogic, VariantCrud
 from controllers.ItemSubCategoryController import ItemSubCategoryFetch
 from controllers.BrandController import BrandFetch
 from controllers.UserController import UserFetch
-from dependencies.ProductDependant import create_form_product
+from dependencies.ProductDependant import create_form_product, get_all_query_product
+from schemas.products.ProductSchema import ProductPaginate
 from libs.MagicImage import MagicImage
 from slugify import slugify
 
@@ -36,10 +37,7 @@ router = APIRouter()
         }
     }
 )
-async def create_product(
-    form_data: create_form_product = Depends(),
-    authorize: AuthJWT = Depends()
-):
+async def create_product(form_data: create_form_product = Depends(), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
     user_id = authorize.get_jwt_subject()
@@ -108,3 +106,7 @@ async def create_product(
     await VariantCrud.create_variant(variant_db)
 
     return {"detail": "Successfully add a new product."}
+
+@router.get('/all-products',response_model=ProductPaginate)
+async def get_all_products(query_string: get_all_query_product = Depends()):
+    return await ProductFetch.get_all_products_paginate(**query_string)
