@@ -4,61 +4,97 @@ from fastapi import File, UploadFile, HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
 from typing import Optional, List, IO
 
+def validate_multiple_upload_images(
+    images: List[UploadFile],
+    allow_file_ext: List[str],
+    max_file_size: int,
+    max_file_in_list: Optional[int] = None,
+    min_file_in_list: Optional[int] = None
+) -> List[UploadFile]:
+    max_file_size_mb = max_file_size * 1024 * 1024  # convert to Mb
+
+    for index, image in enumerate(images, 1):
+        # validation image
+        try:
+            with Image.open(image.file) as img:
+                if img.format.lower() not in allow_file_ext and img.mode != 'RGB':
+                    msg = "The image at index {} must be between {}.".format(index,', '.join(allow_file_ext))
+                    raise HTTPException(status_code=422,detail=msg)
+        except UnidentifiedImageError:
+            msg = f"Cannot identify the image at index {index}."
+            raise HTTPException(status_code=422,detail=msg)
+
+        # validation size image
+        size = image.file
+        size.seek(0,os.SEEK_END)
+        if size.tell() > max_file_size_mb:
+            msg_size = f"An image at index {index} cannot greater than {max_file_size} Mb."
+            raise HTTPException(status_code=413,detail=msg_size)
+        size.seek(0)
+
+    # check minimum or maximum image in list
+    if min_file_in_list and len(images) < min_file_in_list:
+        msg_min_file = f"At least {min_file_in_list} image must be upload."
+        raise HTTPException(status_code=422,detail=msg_min_file)
+
+    if max_file_in_list and len(images) > max_file_in_list:
+        msg_max_file = f"Maximal {max_file_in_list} images to be upload."
+        raise HTTPException(status_code=422,detail=msg_max_file)
+
+    return images
+
+def validate_single_upload_image(
+    image: UploadFile,
+    allow_file_ext: List[str],
+    max_file_size: int
+) -> UploadFile:
+    max_file_size_mb = max_file_size * 1024 * 1024  # convert to Mb
+
+    # validation image
+    try:
+        with Image.open(image.file) as img:
+            if img.format.lower() not in allow_file_ext and img.mode != 'RGB':
+                msg = "Image must be between {}.".format(', '.join(allow_file_ext))
+                raise HTTPException(status_code=422,detail=msg)
+    except UnidentifiedImageError:
+        msg = "Cannot identify the image."
+        raise HTTPException(status_code=422,detail=msg)
+
+    # validation size image
+    size = image.file
+    size.seek(0,os.SEEK_END)
+    if size.tell() > max_file_size_mb:
+        msg_size = f"An image cannot greater than {max_file_size} Mb."
+        raise HTTPException(status_code=413,detail=msg_size)
+    size.seek(0)
+
+    return image
+
 class SingleImageRequired:
     def __init__(self,max_file_size: int, allow_file_ext: List[str]):
         self.allow_file_ext = allow_file_ext
         self.max_file_size = max_file_size
-        self.max_file_size_mb = max_file_size * 1024 * 1024  # convert to Mb
 
     def __call__(self,file: UploadFile = File(...)):
-        # validation image
-        try:
-            with Image.open(file.file) as img:
-                if img.format.lower() not in self.allow_file_ext and img.mode != 'RGB':
-                    msg = "Image must be between {}.".format(', '.join(self.allow_file_ext))
-                    raise HTTPException(status_code=422,detail=msg)
-        except UnidentifiedImageError:
-            msg = "Cannot identify the image."
-            raise HTTPException(status_code=422,detail=msg)
-
-        # validation size image
-        size = file.file
-        size.seek(0,os.SEEK_END)
-        if size.tell() > self.max_file_size_mb:
-            msg_size = f"An image cannot greater than {self.max_file_size} Mb."
-            raise HTTPException(status_code=413,detail=msg_size)
-        size.seek(0)
-
-        return file
+        return validate_single_upload_image(
+            image=file,
+            allow_file_ext=self.allow_file_ext,
+            max_file_size=self.max_file_size
+        )
 
 class SingleImageOptional:
     def __init__(self,max_file_size: int, allow_file_ext: List[str]):
         self.allow_file_ext = allow_file_ext
         self.max_file_size = max_file_size
-        self.max_file_size_mb = max_file_size * 1024 * 1024  # convert to Mb
 
     def __call__(self,file: Optional[UploadFile] = File(None)):
         if not file: return
 
-        # validation image
-        try:
-            with Image.open(file.file) as img:
-                if img.format.lower() not in self.allow_file_ext and img.mode != 'RGB':
-                    msg = "Image must be between {}.".format(', '.join(self.allow_file_ext))
-                    raise HTTPException(status_code=422,detail=msg)
-        except UnidentifiedImageError:
-            msg = "Cannot identify the image."
-            raise HTTPException(status_code=422,detail=msg)
-
-        # validation size image
-        size = file.file
-        size.seek(0,os.SEEK_END)
-        if size.tell() > self.max_file_size_mb:
-            msg_size = f"An image cannot greater than {self.max_file_size} Mb."
-            raise HTTPException(status_code=413,detail=msg_size)
-        size.seek(0)
-
-        return file
+        return validate_single_upload_image(
+            image=file,
+            allow_file_ext=self.allow_file_ext,
+            max_file_size=self.max_file_size
+        )
 
 class MagicImage:
     base_dir: str = os.path.join(os.path.dirname(__file__),'../static/')
@@ -70,9 +106,18 @@ class MagicImage:
         self.width = kwargs['width']
         self.height = kwargs['height']
         self.path_upload = kwargs['path_upload']
+        if 'dir_name' in kwargs:
+            self.dir_name = kwargs['dir_name']
 
     def save_image(self) -> 'MagicImage':
-        self.file_name = self._save_image_to_storage(self.file)
+        if isinstance(self.file,list):
+            files_name = dict()
+            for index, image in enumerate(self.file):
+                filename = self._save_image_to_storage(image.file)
+                files_name[index] = filename
+            self.file_name = files_name
+        else:
+            self.file_name = self._save_image_to_storage(self.file)
 
     def _save_image_to_storage(self,file: IO) -> str:
         """
@@ -92,7 +137,14 @@ class MagicImage:
 
                 img = ImageOps.exif_transpose(img)
                 # save image to directory path
-                img.save(os.path.join(self.base_dir,self.path_upload,filename))
+                if hasattr(self,'dir_name'):
+                    # create directory if file isn't exists
+                    path = os.path.join(self.base_dir,self.path_upload,self.dir_name)
+                    if not os.path.exists(path):
+                        os.mkdir(path)
+                    img.save(os.path.join(path,filename))
+                else:
+                    img.save(os.path.join(self.base_dir,self.path_upload,filename))
 
             return filename
         except AttributeError:

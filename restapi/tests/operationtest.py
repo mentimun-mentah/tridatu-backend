@@ -8,6 +8,10 @@ from models.PasswordResetModel import password_reset
 from models.AddressModel import address
 from models.OutletModel import outlet
 from models.BrandModel import brand
+from models.CategoryModel import category
+from models.SubCategoryModel import sub_category
+from models.ItemSubCategoryModel import item_sub_category
+from models.ProductModel import product
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -19,6 +23,7 @@ class OperationTest:
     avatar_dir = base_dir + 'avatars/'
     outlet_dir = base_dir + 'outlets/'
     brand_dir = base_dir + 'brands/'
+    product_dir = base_dir + 'products/'
 
     # ================ USER SECTION ================
 
@@ -131,3 +136,35 @@ class OperationTest:
         query = select([brand]).where(brand.c.name_brand == name)
         brand_data = await database.fetch_one(query=query)
         return brand_data['id_brand']
+
+    # ================ CATEGORY SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_category_id(self,name: str):
+        query = select([category]).where(category.c.name_category == name)
+        category_data = await database.fetch_one(query=query)
+        return category_data['id_category']
+
+    # ================ SUB-CATEGORY SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_sub_category_id(self,name: str):
+        query = select([sub_category]).where(sub_category.c.name_sub_category == name)
+        sub_category_data = await database.fetch_one(query=query)
+        return sub_category_data['id_sub_category']
+
+    # ================ ITEM-SUB-CATEGORY SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_item_sub_category_id(self,name: str):
+        query = select([item_sub_category]).where(item_sub_category.c.name_item_sub_category == name)
+        item_sub_category_data = await database.fetch_one(query=query)
+        return item_sub_category_data['id_item_sub_category']
+
+    # ================ PRODUCT SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_product_id(self,name: str):
+        query = select([product]).where(product.c.name_product == name)
+        product_data = await database.fetch_one(query=query)
+        return product_data['id_product']

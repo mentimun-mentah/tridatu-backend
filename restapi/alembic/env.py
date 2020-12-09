@@ -25,14 +25,9 @@ fileConfig(config.config_file_name)
 # target_metadata = mymodel.Base.metadata
 from sqlalchemy import MetaData, exc
 from models import (
-    UserModel,
-    ConfirmationModel,
-    PasswordResetModel,
-    ProvinceModel,
-    PostalCodeModel,
-    AddressModel,
-    OutletModel,
-    BrandModel
+    UserModel, ConfirmationModel, PasswordResetModel, ProvinceModel,
+    PostalCodeModel, AddressModel, OutletModel, BrandModel, CategoryModel,
+    SubCategoryModel, ItemSubCategoryModel, ProductModel, VariantModel
 )
 
 with warnings.catch_warnings():
@@ -46,14 +41,13 @@ with warnings.catch_warnings():
         return m
 
     target_metadata = combine_metadata(
-        UserModel.metadata,
-        ConfirmationModel.metadata,
-        PasswordResetModel.metadata,
-        ProvinceModel.metadata,
-        PostalCodeModel.metadata,
-        AddressModel.metadata,
-        OutletModel.metadata,
-        BrandModel.metadata
+        UserModel.metadata, ConfirmationModel.metadata,
+        PasswordResetModel.metadata, ProvinceModel.metadata,
+        PostalCodeModel.metadata, AddressModel.metadata,
+        OutletModel.metadata, BrandModel.metadata,
+        CategoryModel.metadata, SubCategoryModel.metadata,
+        ItemSubCategoryModel.metadata, ProductModel.metadata,
+        VariantModel.metadata
     )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
