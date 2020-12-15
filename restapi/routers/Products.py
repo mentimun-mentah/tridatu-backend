@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, Path, Depends, HTTPException
+from fastapi import APIRouter, Query, Path, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
 from controllers.ProductController import ProductFetch, ProductCrud
 from controllers.VariantController import VariantLogic, VariantCrud
@@ -7,9 +7,10 @@ from controllers.ItemSubCategoryController import ItemSubCategoryFetch
 from controllers.BrandController import BrandFetch
 from controllers.UserController import UserFetch
 from dependencies.ProductDependant import create_form_product, get_all_query_product
-from schemas.products.ProductSchema import ProductPaginate
+from schemas.products.ProductSchema import ProductPaginate, ProductSearchByName
 from libs.MagicImage import MagicImage
 from slugify import slugify
+from typing import List
 
 router = APIRouter()
 
@@ -138,3 +139,7 @@ async def change_product_alive_archive(product_id: int = Path(...,gt=0), authori
         msg = 'alive' if not product['live_product'] else 'archive'
         return {"detail": f"Successfully change the product to {msg}."}
     raise HTTPException(status_code=404,detail="Product not found!")
+
+@router.get('/search-by-name',response_model=List[ProductSearchByName])
+async def search_products_by_name(q: str = Query(...,min_length=1), limit: int = Query(...,gt=0)):
+    return await ProductFetch.search_products_by_name(q=q,limit=limit)

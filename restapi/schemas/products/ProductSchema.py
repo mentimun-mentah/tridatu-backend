@@ -27,6 +27,10 @@ class ProductSchema(BaseModel):
     def convert_datetime_to_str(cls, v):
         return v.isoformat()
 
+    class Config:
+        # min_anystr_length = 1
+        anystr_strip_whitespace = True
+
 class ProductData(ProductSchema):
     price_variant: int
 
@@ -37,3 +41,13 @@ class ProductPaginate(BaseModel):
     prev_num: Optional[int]
     page: int
     iter_pages: list
+
+class ProductSearchByName(BaseModel):
+    value: str
+
+    @validator('value',pre=True)
+    def convert_to_lowercase(cls, v):
+        return v.lower()
+
+    class Config:
+        anystr_strip_whitespace = True

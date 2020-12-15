@@ -19,6 +19,14 @@ class ProductCrud:
 
 class ProductFetch:
     @staticmethod
+    async def search_products_by_name(q: str, limit: int) -> list:
+        query = select([product]).where(product.c.name_product.ilike(f"%{q}%")).limit(limit)
+        product_db = await database.fetch_all(query=query)
+        return [
+            {'value':value for index,value in item.items() if index == 'name_product'} for item in product_db
+        ]
+
+    @staticmethod
     async def get_all_products_paginate(**kwargs) -> dict:
         product_alias = select([product.join(variant)]).distinct(product.c.id_product).alias()
 
