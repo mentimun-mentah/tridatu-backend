@@ -40,6 +40,8 @@ class ProductFetch:
             query = query.order_by(product_alias.c.price_variant.desc())
         if kwargs['order_by'] == 'low_price':
             query = query.order_by(product_alias.c.price_variant.asc())
+        if kwargs['order_by'] == 'newest':
+            query = query.order_by(product_alias.c.id_product.desc())
         if (p_min := kwargs['p_min']) and (p_max := kwargs['p_max']):
             query = query.where((product_alias.c.price_variant >= p_min) & (product_alias.c.price_variant <= p_max))
         if (p_min := kwargs['p_min']) and not kwargs['p_max']:
