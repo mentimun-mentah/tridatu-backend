@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, Path, Response, HTTPException
 from fastapi_jwt_auth import AuthJWT
+from controllers.UserController import UserFetch
 from controllers.ProductController import ProductFetch
-from controllers.WishlistController import WishlistLogic, WishlistCrud
+from controllers.WishlistController import WishlistLogic, WishlistCrud, WishlistFetch
+from dependencies.WishlistDependant import get_user_query_wishlist
+from schemas.products.ProductSchema import ProductPaginate
 
 router = APIRouter()
 
@@ -55,3 +58,11 @@ async def unlove_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = 
             return {"detail": "Product has been removed from the wishlist."}
         return {"detail": "Product not on the wishlist."}
     raise HTTPException(status_code=404,detail="Product not found!")
+
+@router.get('/user',response_model=ProductPaginate)
+async def user_wishlist(query_string: get_user_query_wishlist = Depends(), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        return await WishlistFetch.get_user_wishlist_paginate(user['id'],**query_string)

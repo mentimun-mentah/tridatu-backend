@@ -197,6 +197,44 @@ class TestWishlist(OperationTest):
         assert response.status_code == 201
         assert response.json() == {"detail": "Product successfully added to wishlist."}
 
+    def test_user_wishlist(self,client):
+        url = self.prefix + '/user'
+        # field required
+        response = client.get(url)
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.get(url + '?page=0&per_page=0&q=')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'q': assert x['msg'] == 'ensure this value has at least 1 characters'
+        # check all field type data
+        response = client.get(url + '?page=a&per_page=a&q=123&order_by=123')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'page': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'per_page': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'order_by': assert x['msg'] == \
+                "unexpected value; permitted: 'high_price', 'low_price', 'longest'"
+        # user login
+        response = client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+
+        response = client.get(url + '?page=1&per_page=1')
+        assert response.status_code == 200
+        assert 'data' in response.json()
+        assert 'total' in response.json()
+        assert 'next_num' in response.json()
+        assert 'prev_num' in response.json()
+        assert 'page' in response.json()
+        assert 'iter_pages' in response.json()
+
     def test_validation_unlove_product(self,client):
         url = self.prefix + '/unlove/'
         # all field blank
