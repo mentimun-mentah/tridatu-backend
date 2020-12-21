@@ -2,7 +2,7 @@ from sqlalchemy import Table, Column, Integer, String, BigInteger, ForeignKey
 from config import metadata
 
 variant = Table('variants', metadata,
-    Column('id_variant', Integer, primary_key=True),
+    Column('id_variant', BigInteger, primary_key=True),
     Column('name_variant', String(50), nullable=True),
     Column('option_variant', String(50), nullable=True),
     Column('price_variant', BigInteger, nullable=False),
