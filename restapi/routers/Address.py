@@ -58,13 +58,13 @@ async def my_address(page: int = Query(...,gt=0), per_page: int = Query(...,gt=0
 async def my_address_by_id(address_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    if address := await AddressFetch.filter_by_id(address_id):
-        user_id = authorize.get_jwt_subject()
-        if user := await UserFetch.filter_by_id(user_id):
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if address := await AddressFetch.filter_by_id(address_id):
             if user['id'] != address['user_id']:
                 raise HTTPException(status_code=400,detail="Address not match with the current user.")
             return {index:value for index,value in address.items()}
-    raise HTTPException(status_code=404,detail="Address not found!")
+        raise HTTPException(status_code=404,detail="Address not found!")
 
 @router.put('/update/{address_id}',
     responses={
@@ -89,16 +89,15 @@ async def update_address(
 ):
     authorize.jwt_required()
 
-    if address := await AddressFetch.filter_by_id(address_id):
-        user_id = authorize.get_jwt_subject()
-        if user := await UserFetch.filter_by_id(user_id):
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if address := await AddressFetch.filter_by_id(address_id):
             if user['id'] != address['user_id']:
                 raise HTTPException(status_code=400,detail="Address not match with the current user.")
             # update address
             await AddressCrud.update_address(address['id'],**address_data.dict())
             return {"detail": "Successfully update the address."}
-
-    raise HTTPException(status_code=404,detail="Address not found!")
+        raise HTTPException(status_code=404,detail="Address not found!")
 
 @router.put('/main-address-true/{address_id}',
     responses={
@@ -119,16 +118,16 @@ async def update_address(
 async def main_address_true(address_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    if address := await AddressFetch.filter_by_id(address_id):
-        user_id = authorize.get_jwt_subject()
-        if user := await UserFetch.filter_by_id(user_id):
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if address := await AddressFetch.filter_by_id(address_id):
             if user['id'] != address['user_id']:
                 raise HTTPException(status_code=400,detail="Address not match with the current user.")
             # change address to main address
             await AddressCrud.change_all_main_address_to_false(user['id'])
             await AddressCrud.change_address_to_main_address(address['id'])
             return {"detail": "Successfully set the address to main address."}
-    raise HTTPException(status_code=404,detail="Address not found!")
+        raise HTTPException(status_code=404,detail="Address not found!")
 
 @router.delete('/delete/{address_id}',
     responses={
@@ -149,15 +148,14 @@ async def main_address_true(address_id: int = Path(...,gt=0), authorize: AuthJWT
 async def delete_address(address_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    if address := await AddressFetch.filter_by_id(address_id):
-        user_id = authorize.get_jwt_subject()
-        if user := await UserFetch.filter_by_id(user_id):
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if address := await AddressFetch.filter_by_id(address_id):
             if user['id'] != address['user_id']:
                 raise HTTPException(status_code=400,detail="Address not match with the current user.")
-            # delete address
-            await AddressCrud.delete_address(address['id'])
+            await AddressCrud.delete_address(address['id'])  # delete address
             # check doesn't exists main address in db
             if not await AddressFetch.check_main_address_true_in_db(user['id']):
                 await AddressCrud.change_whatever_address_to_true(user['id'])
             return {"detail": "Successfully delete the address."}
-    raise HTTPException(status_code=404,detail="Address not found!")
+        raise HTTPException(status_code=404,detail="Address not found!")

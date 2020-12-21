@@ -28,13 +28,14 @@ async def love_product(res: Response, product_id: int = Path(...,gt=0), authoriz
     authorize.jwt_required()
 
     user_id = authorize.get_jwt_subject()
-    if product := await ProductFetch.filter_by_id(product_id):
-        if not await WishlistLogic.check_wishlist(product['id_product'],user_id):
-            await WishlistCrud.create_wishlist(product['id_product'],user_id)
-            return {"detail": "Product successfully added to wishlist."}
-        res.status_code = 200
-        return {"detail":"Product already on the wishlist."}
-    raise HTTPException(status_code=404,detail="Product not found!")
+    if user := await UserFetch.filter_by_id(user_id):
+        if product := await ProductFetch.filter_by_id(product_id):
+            if not await WishlistLogic.check_wishlist(product['id_product'],user['id']):
+                await WishlistCrud.create_wishlist(product['id_product'],user['id'])
+                return {"detail": "Product successfully added to wishlist."}
+            res.status_code = 200
+            return {"detail":"Product already on the wishlist."}
+        raise HTTPException(status_code=404,detail="Product not found!")
 
 @router.delete('/unlove/{product_id}',
     responses={
@@ -52,12 +53,13 @@ async def unlove_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = 
     authorize.jwt_required()
 
     user_id = authorize.get_jwt_subject()
-    if product := await ProductFetch.filter_by_id(product_id):
-        if await WishlistLogic.check_wishlist(product['id_product'],user_id):
-            await WishlistCrud.delete_wishlist(product['id_product'],user_id)
-            return {"detail": "Product has been removed from the wishlist."}
-        return {"detail": "Product not on the wishlist."}
-    raise HTTPException(status_code=404,detail="Product not found!")
+    if user := await UserFetch.filter_by_id(user_id):
+        if product := await ProductFetch.filter_by_id(product_id):
+            if await WishlistLogic.check_wishlist(product['id_product'],user['id']):
+                await WishlistCrud.delete_wishlist(product['id_product'],user['id'])
+                return {"detail": "Product has been removed from the wishlist."}
+            return {"detail": "Product not on the wishlist."}
+        raise HTTPException(status_code=404,detail="Product not found!")
 
 @router.get('/user',response_model=ProductPaginate)
 async def user_wishlist(query_string: get_user_query_wishlist = Depends(), authorize: AuthJWT = Depends()):
