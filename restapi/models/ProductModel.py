@@ -24,7 +24,7 @@ product = Table('products', metadata,
         ForeignKey('item_sub_categories.id_item_sub_category',onupdate='cascade',ondelete='cascade'),
         nullable=False
     ),
-    Column('brand_id', Integer, ForeignKey('brands.id_brand',onupdate='cascade',ondelete='cascade'), nullable=True),
+    Column('brand_id', Integer, ForeignKey('brands.id',onupdate='cascade',ondelete='cascade'), nullable=True),
     Column('created_at', DateTime, default=func.now()),
     Column('updated_at', DateTime, default=func.now()),
 )

@@ -120,18 +120,18 @@ async def update_brand(
     await UserFetch.user_is_admin(user_id)
 
     if brand := await BrandFetch.filter_by_id(brand_id):
-        if brand['name_brand'] != name and await BrandFetch.filter_by_name(name):
+        if brand['name'] != name and await BrandFetch.filter_by_name(name):
             raise HTTPException(status_code=400,detail="The name has already been taken.")
 
-        data = {"name_brand": name}
-        # delete the image from db if file not none
+        data = {"name": name}
+        # delete the image from db if file exists
         if file:
-            MagicImage.delete_image(file=brand['image_brand'],path_delete='brands/')
+            MagicImage.delete_image(file=brand['image'],path_delete='brands/')
             magic_image = MagicImage(file=file.file,width=200,height=200,path_upload='brands/',square=True)
             magic_image.save_image()
-            data.update({"image_brand": magic_image.file_name})
+            data.update({"image": magic_image.file_name})
 
-        await BrandCrud.update_brand(brand['id_brand'],**data)
+        await BrandCrud.update_brand(brand['id'],**data)
         return {"detail": "Successfully update the brand."}
     raise HTTPException(status_code=404,detail="Brand not found!")
 
@@ -158,7 +158,7 @@ async def delete_brand(brand_id: int = Path(...,gt=0), authorize: AuthJWT = Depe
     await UserFetch.user_is_admin(user_id)
 
     if brand := await BrandFetch.filter_by_id(brand_id):
-        MagicImage.delete_image(file=brand['image_brand'],path_delete='brands/')
-        await BrandCrud.delete_brand(brand['id_brand'])
+        MagicImage.delete_image(file=brand['image'],path_delete='brands/')
+        await BrandCrud.delete_brand(brand['id'])
         return {"detail": "Successfully delete the brand."}
     raise HTTPException(status_code=404,detail="Brand not found!")

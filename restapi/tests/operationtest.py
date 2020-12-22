@@ -127,15 +127,15 @@ class OperationTest:
 
     @pytest.mark.asyncio
     async def get_brand_image(self,name: str):
-        query = select([brand]).where(brand.c.name_brand == name)
+        query = select([brand]).where(brand.c.name == name)
         brand_data = await database.fetch_one(query=query)
-        return brand_data['image_brand']
+        return brand_data['image']
 
     @pytest.mark.asyncio
     async def get_brand_id(self,name: str):
-        query = select([brand]).where(brand.c.name_brand == name)
+        query = select([brand]).where(brand.c.name == name)
         brand_data = await database.fetch_one(query=query)
-        return brand_data['id_brand']
+        return brand_data['id']
 
     # ================ CATEGORY SECTION ================
 
