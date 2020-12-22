@@ -48,7 +48,7 @@ class TestItemSubCategory(OperationTest):
         csrf_access_token = response.cookies.get('csrf_access_token')
         # create category
         response = await async_client.post('/categories/create',
-            json={'name_category': self.name},
+            json={'name': self.name},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -56,7 +56,7 @@ class TestItemSubCategory(OperationTest):
         # create sub category
         category_id = await self.get_category_id(self.name)
         response = await async_client.post('/sub-categories/create',
-            json={'name_sub_category': self.name,'category_id': category_id},
+            json={'name': self.name,'category_id': category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -68,24 +68,24 @@ class TestItemSubCategory(OperationTest):
         response = client.post(url,json={})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_item_sub_category': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'field required'
             if x['loc'][-1] == 'sub_category_id': assert x['msg'] == 'field required'
         # all field blank
-        response = client.post(url,json={'name_item_sub_category': '','sub_category_id': 0})
+        response = client.post(url,json={'name': '','sub_category_id': 0})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_item_sub_category': assert x['msg'] == 'ensure this value has at least 3 characters'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'ensure this value has at least 3 characters'
             if x['loc'][-1] == 'sub_category_id': assert x['msg'] == 'ensure this value is greater than 0'
         # test limit value
-        response = client.post(url,json={'name_item_sub_category': 'a' * 200,'sub_category_id': 200})
+        response = client.post(url,json={'name': 'a' * 200,'sub_category_id': 200})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_item_sub_category': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
-        response = client.post(url,json={'name_item_sub_category': 123, 'sub_category_id': '123'})
+        response = client.post(url,json={'name': 123, 'sub_category_id': '123'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_item_sub_category': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'sub_category_id': assert x['msg'] == 'value is not a valid integer'
 
     @pytest.mark.asyncio
@@ -100,7 +100,7 @@ class TestItemSubCategory(OperationTest):
         sub_category_id = await self.get_sub_category_id(self.name)
         # check user is admin
         response = await async_client.post(url,
-            json={'name_item_sub_category': self.name, 'sub_category_id': sub_category_id},
+            json={'name': self.name, 'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 401
@@ -113,14 +113,14 @@ class TestItemSubCategory(OperationTest):
         csrf_access_token = response.cookies.get('csrf_access_token')
         # sub_category_id not found
         response = await async_client.post(url,
-            json={'name_item_sub_category': self.name, 'sub_category_id': 99999},
+            json={'name': self.name, 'sub_category_id': 99999},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 404
         assert response.json() == {"detail": "Sub-category not found!"}
 
         response = await async_client.post(url,
-            json={'name_item_sub_category': self.name, 'sub_category_id': sub_category_id},
+            json={'name': self.name, 'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -139,7 +139,7 @@ class TestItemSubCategory(OperationTest):
         sub_category_id = await self.get_sub_category_id(self.name)
 
         response = await async_client.post(url,
-            json={'name_item_sub_category': self.name, 'sub_category_id': sub_category_id},
+            json={'name': self.name, 'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 400
@@ -189,9 +189,9 @@ class TestItemSubCategory(OperationTest):
 
         response = await async_client.get(url + str(item_sub_category_id))
         assert response.status_code == 200
-        assert 'name_item_sub_category' in response.json()
+        assert 'id' in response.json()
+        assert 'name' in response.json()
         assert 'sub_category_id' in response.json()
-        assert 'id_item_sub_category' in response.json()
 
     def test_validation_update_item_sub_category(self,client):
         url = self.prefix + '/update/'
@@ -199,27 +199,27 @@ class TestItemSubCategory(OperationTest):
         response = client.put(url + '0',json={})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_item_sub_category': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'field required'
             if x['loc'][-1] == 'sub_category_id': assert x['msg'] == 'field required'
         # all field blank
-        response = client.put(url + '0',json={'name_item_sub_category': '', 'sub_category_id': 0})
+        response = client.put(url + '0',json={'name': '', 'sub_category_id': 0})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'item_sub_category_id': assert x['msg'] == 'ensure this value is greater than 0'
-            if x['loc'][-1] == 'name_item_sub_category': assert x['msg'] == 'ensure this value has at least 3 characters'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'ensure this value has at least 3 characters'
             if x['loc'][-1] == 'sub_category_id': assert x['msg'] == 'ensure this value is greater than 0'
         # check all field type data
-        response = client.put(url + 'a',json={'name_item_sub_category': 123,'sub_category_id': '123'})
+        response = client.put(url + 'a',json={'name': 123,'sub_category_id': '123'})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'item_sub_category_id': assert x['msg'] == 'value is not a valid integer'
-            if x['loc'][-1] == 'name_item_sub_category': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'sub_category_id': assert x['msg'] == 'value is not a valid integer'
         # test limit value
-        response = client.put(url + '1',json={'name_item_sub_category': 'a' * 200, 'sub_category_id': 200})
+        response = client.put(url + '1',json={'name': 'a' * 200, 'sub_category_id': 200})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_item_sub_category': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'ensure this value has at most 100 characters'
 
     @pytest.mark.asyncio
     async def test_update_item_sub_category(self,async_client):
@@ -235,7 +235,7 @@ class TestItemSubCategory(OperationTest):
         item_sub_category_id = await self.get_item_sub_category_id(self.name)
         # check user is admin
         response = await async_client.put(url + str(item_sub_category_id),
-            json={'name_item_sub_category': self.name,'sub_category_id': sub_category_id},
+            json={'name': self.name,'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 401
@@ -248,21 +248,21 @@ class TestItemSubCategory(OperationTest):
         csrf_access_token = response.cookies.get('csrf_access_token')
         # item sub-category not found
         response = await async_client.put(url + '9' * 8,
-            json={'name_item_sub_category': self.name,'sub_category_id': sub_category_id},
+            json={'name': self.name,'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 404
         assert response.json() == {"detail": "Item sub-category not found!"}
         # sub_category_id not found
         response = await async_client.put(url + str(item_sub_category_id),
-            json={'name_item_sub_category': self.name,'sub_category_id': 99999},
+            json={'name': self.name,'sub_category_id': 99999},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 404
         assert response.json() == {"detail": "Sub-category not found!"}
 
         response = await async_client.put(url + str(item_sub_category_id),
-            json={'name_item_sub_category': self.name2,'sub_category_id': sub_category_id},
+            json={'name': self.name2,'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 200
@@ -281,7 +281,7 @@ class TestItemSubCategory(OperationTest):
         sub_category_id = await self.get_sub_category_id(self.name)
         # create another item sub-category
         response = await async_client.post(url,
-            json={'name_item_sub_category': self.name, 'sub_category_id': sub_category_id},
+            json={'name': self.name, 'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -291,7 +291,7 @@ class TestItemSubCategory(OperationTest):
         item_sub_category_id = await self.get_item_sub_category_id(self.name2)
         # name already taken
         response = await async_client.put(url + str(item_sub_category_id),
-            json={'name_item_sub_category': self.name,'sub_category_id': sub_category_id},
+            json={'name': self.name,'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 400
