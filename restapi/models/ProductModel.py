@@ -21,7 +21,7 @@ product = Table('products', metadata,
 
     Column(
         'item_sub_category_id', Integer,
-        ForeignKey('item_sub_categories.id_item_sub_category',onupdate='cascade',ondelete='cascade'),
+        ForeignKey('item_sub_categories.id',onupdate='cascade',ondelete='cascade'),
         nullable=False
     ),
     Column('brand_id', Integer, ForeignKey('brands.id',onupdate='cascade',ondelete='cascade'), nullable=True),
