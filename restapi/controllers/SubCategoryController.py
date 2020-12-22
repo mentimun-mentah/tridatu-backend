@@ -12,11 +12,11 @@ class SubCategoryCrud:
 
     @staticmethod
     async def update_sub_category(id_: int, **kwargs) -> None:
-        await database.execute(query=sub_category.update().where(sub_category.c.id_sub_category == id_),values=kwargs)
+        await database.execute(query=sub_category.update().where(sub_category.c.id == id_),values=kwargs)
 
     @staticmethod
     async def delete_sub_category(id_: int) -> None:
-        await database.execute(query=sub_category.delete().where(sub_category.c.id_sub_category == id_))
+        await database.execute(query=sub_category.delete().where(sub_category.c.id == id_))
 
 class SubCategoryFetch:
     @staticmethod
@@ -26,10 +26,10 @@ class SubCategoryFetch:
     @staticmethod
     async def check_duplicate_name(category_id: int, name: str) -> sub_category:
         query = select([sub_category]) \
-            .where((sub_category.c.name_sub_category == name) & (sub_category.c.category_id == category_id))
+            .where((sub_category.c.name == name) & (sub_category.c.category_id == category_id))
         return await database.fetch_one(query=query)
 
     @staticmethod
     async def filter_by_id(id_: int) -> sub_category:
-        query = select([sub_category]).where(sub_category.c.id_sub_category == id_)
+        query = select([sub_category]).where(sub_category.c.id == id_)
         return await database.fetch_one(query=query)

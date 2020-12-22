@@ -37,7 +37,7 @@ async def create_sub_category(sub_category: SubCategoryCreateUpdate, authorize: 
     if not await CategoryFetch.filter_by_id(sub_category.category_id):
         raise HTTPException(status_code=404,detail="Category not found!")
 
-    if await SubCategoryFetch.check_duplicate_name(sub_category.category_id,sub_category.name_sub_category):
+    if await SubCategoryFetch.check_duplicate_name(sub_category.category_id,sub_category.name):
         raise HTTPException(status_code=400,detail="The name has already been taken in sub category.")
 
     await SubCategoryCrud.create_sub_category(**sub_category.dict())
@@ -103,15 +103,15 @@ async def update_sub_category(
         if not await CategoryFetch.filter_by_id(sub_category_data.category_id):
             raise HTTPException(status_code=404,detail="Category not found!")
 
-        if await SubCategoryFetch.check_duplicate_name(sub_category_data.category_id,sub_category_data.name_sub_category):
+        if await SubCategoryFetch.check_duplicate_name(sub_category_data.category_id,sub_category_data.name):
             raise HTTPException(status_code=400,detail="The name has already been taken in sub category.")
 
         data = {
-            "name_sub_category": sub_category_data.name_sub_category,
+            "name": sub_category_data.name,
             "category_id": sub_category_data.category_id
         }
 
-        await SubCategoryCrud.update_sub_category(sub_category['id_sub_category'],**data)
+        await SubCategoryCrud.update_sub_category(sub_category['id'],**data)
         return {"detail": "Successfully update the sub-category."}
     raise HTTPException(status_code=404,detail="Sub-category not found!")
 
@@ -138,6 +138,6 @@ async def delete_sub_category(sub_category_id: int = Path(...,gt=0), authorize: 
     await UserFetch.user_is_admin(user_id)
 
     if sub_category := await SubCategoryFetch.filter_by_id(sub_category_id):
-        await SubCategoryCrud.delete_sub_category(sub_category['id_sub_category'])
+        await SubCategoryCrud.delete_sub_category(sub_category['id'])
         return {"detail": "Successfully delete the sub-category."}
     raise HTTPException(status_code=404,detail="Sub-category not found!")

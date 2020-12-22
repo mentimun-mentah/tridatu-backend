@@ -149,9 +149,9 @@ class OperationTest:
 
     @pytest.mark.asyncio
     async def get_sub_category_id(self,name: str):
-        query = select([sub_category]).where(sub_category.c.name_sub_category == name)
+        query = select([sub_category]).where(sub_category.c.name == name)
         sub_category_data = await database.fetch_one(query=query)
-        return sub_category_data['id_sub_category']
+        return sub_category_data['id']
 
     # ================ ITEM-SUB-CATEGORY SECTION ================
 
