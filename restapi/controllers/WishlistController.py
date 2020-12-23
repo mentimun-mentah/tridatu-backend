@@ -26,19 +26,19 @@ class WishlistFetch:
     @staticmethod
     async def get_user_wishlist_paginate(user_id: int, **kwargs) -> dict:
         wishlist_alias = select([wishlist.join(product.join(variant))]) \
-            .where(wishlist.c.user_id == user_id).distinct(wishlist.c.id_wishlist).alias()
+            .where(wishlist.c.user_id == user_id).distinct(wishlist.c.id).apply_labels().alias()
 
-        query = select([column for column in wishlist_alias.columns if column.name != 'product_id'])
-        query = query.where(wishlist_alias.c.live_product == expression.true())
+        query = select([wishlist_alias])
+        query = query.where(wishlist_alias.c.products_live == expression.true())
 
         if q := kwargs['q']:
-            query = query.where(wishlist_alias.c.name_product.ilike(f"%{q}%"))
+            query = query.where(wishlist_alias.c.products_name.ilike(f"%{q}%"))
         if kwargs['order_by'] is None:
-            query = query.order_by(wishlist_alias.c.id_wishlist.desc())
+            query = query.order_by(wishlist_alias.c.wishlists_id.desc())
         if kwargs['order_by'] == 'high_price':
-            query = query.order_by(wishlist_alias.c.price_variant.desc())
+            query = query.order_by(wishlist_alias.c.variants_price.desc())
         if kwargs['order_by'] == 'low_price':
-            query = query.order_by(wishlist_alias.c.price_variant.asc())
+            query = query.order_by(wishlist_alias.c.variants_price.asc())
 
         total = await database.execute(query=select([func.count()]).select_from(query.alias()).as_scalar())
         query = query.limit(kwargs['per_page']).offset((kwargs['page'] - 1) * kwargs['per_page'])
