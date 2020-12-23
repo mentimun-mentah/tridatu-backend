@@ -165,6 +165,6 @@ class OperationTest:
 
     @pytest.mark.asyncio
     async def get_product_id(self,name: str):
-        query = select([product]).where(product.c.name_product == name)
+        query = select([product]).where(product.c.name == name)
         product_data = await database.fetch_one(query=query)
-        return product_data['id_product']
+        return product_data['id']

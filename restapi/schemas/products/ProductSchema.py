@@ -3,36 +3,27 @@ from pydantic import BaseModel, validator
 from typing import Optional, List
 
 class ProductSchema(BaseModel):
-    id_product: int
-    name_product: str
-    slug_product: str
-    # desc_product: str
-    # condition_product: bool
-    image_product: dict
-    # weight_product: int
-    # image_size_guide_product: Optional[str]
-    # video_product: Optional[str]
-    # preorder_product: Optional[int]
-    live_product: bool
-    # item_sub_category_id: int
-    # brand_id: Optional[int]
-    created_at: str
-    updated_at: str
+    products_id: int
+    products_name: str
+    products_slug: str
+    products_image_product: dict
+    products_live: bool
+    products_created_at: str
+    products_updated_at: str
 
-    @validator('image_product',pre=True)
+    @validator('products_image_product',pre=True)
     def convert_image_product(cls, v):
         return json.loads(v)
 
-    @validator('created_at','updated_at',pre=True)
+    @validator('products_created_at','products_updated_at',pre=True)
     def convert_datetime_to_str(cls, v):
         return v.isoformat()
 
     class Config:
-        # min_anystr_length = 1
         anystr_strip_whitespace = True
 
 class ProductData(ProductSchema):
-    price_variant: int
+    variants_price: int
 
 class ProductPaginate(BaseModel):
     data: List[ProductData]

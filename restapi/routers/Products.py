@@ -44,10 +44,10 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
     user_id = authorize.get_jwt_subject()
     await UserFetch.user_is_admin(user_id)
 
-    form_data['slug_product'] = slugify(form_data['name_product'])
+    form_data['slug'] = slugify(form_data['name'])
 
     # check name duplicate
-    if await ProductFetch.filter_by_slug(form_data['slug_product']):
+    if await ProductFetch.filter_by_slug(form_data['slug']):
         raise HTTPException(status_code=400,detail="The name has already been taken.")
     # check item_sub_category_id exists in db
     if not await ItemSubCategoryFetch.filter_by_id(form_data['item_sub_category_id']):
@@ -63,7 +63,7 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
         width=550,
         height=550,
         path_upload='products/',
-        dir_name=form_data['slug_product']
+        dir_name=form_data['slug']
     )
     image_magic_products.save_image()
     form_data['image_product'] = json.dumps(image_magic_products.file_name)
@@ -76,7 +76,7 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
             width=550,
             height=550,
             path_upload='products/',
-            dir_name=form_data['slug_product']
+            dir_name=form_data['slug']
         )
         image_magic_variants.save_image()
         form_data['image_variant'] = image_magic_variants.file_name
@@ -85,16 +85,16 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
             form_data['variant_data']['va1_items'][index]['va1_image'] = value
 
     # save image size guide to product folder if supplied
-    if image_size_guide_product := form_data['image_size_guide_product']:
+    if image_size_guide := form_data['image_size_guide']:
         image_magic_guide = MagicImage(
-            file=image_size_guide_product.file,
+            file=image_size_guide.file,
             width=1200,
             height=778,
             path_upload='products/',
-            dir_name=form_data['slug_product']
+            dir_name=form_data['slug']
         )
         image_magic_guide.save_image()
-        form_data['image_size_guide_product'] = image_magic_guide.file_name
+        form_data['image_size_guide'] = image_magic_guide.file_name
 
     # save product to db
     product_data = {
@@ -135,8 +135,8 @@ async def change_product_alive_archive(product_id: int = Path(...,gt=0), authori
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
-        await ProductCrud.change_product_alive_archive(product['id_product'],product['live_product'])
-        msg = 'alive' if not product['live_product'] else 'archive'
+        await ProductCrud.change_product_alive_archive(product['id'],product['live'])
+        msg = 'alive' if not product['live'] else 'archive'
         return {"detail": f"Successfully change the product to {msg}."}
     raise HTTPException(status_code=404,detail="Product not found!")
 

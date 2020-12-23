@@ -13,52 +13,52 @@ class ProductCrud:
         return await database.execute(product.insert(),values=kwargs)
 
     @staticmethod
-    async def change_product_alive_archive(id_: int, live_product: bool) -> None:
-        query = product.update().where(product.c.id_product == id_)
-        await database.execute(query=query,values={'live_product': not live_product})
+    async def change_product_alive_archive(id_: int, live: bool) -> None:
+        query = product.update().where(product.c.id == id_)
+        await database.execute(query=query,values={'live': not live})
 
 class ProductFetch:
     @staticmethod
     async def search_products_by_name(q: str, limit: int) -> list:
-        query = select([product]).where(product.c.name_product.ilike(f"%{q}%")).limit(limit)
+        query = select([product]).where(product.c.name.ilike(f"%{q}%")).limit(limit)
         product_db = await database.fetch_all(query=query)
         return [
-            {'value':value for index,value in item.items() if index == 'name_product'} for item in product_db
+            {'value':value for index,value in item.items() if index == 'name'} for item in product_db
         ]
 
     @staticmethod
     async def get_all_products_paginate(**kwargs) -> dict:
-        product_alias = select([product.join(variant)]).distinct(product.c.id_product).alias()
+        product_alias = select([product.join(variant)]).distinct(product.c.id).apply_labels().alias()
 
         query = select([product_alias])
 
         if kwargs['live'] is not None:
-            query = query.where(product_alias.c.live_product == kwargs['live'])
+            query = query.where(product_alias.c.products_live == kwargs['live'])
         if q := kwargs['q']:
-            query = query.where(product_alias.c.name_product.ilike(f"%{q}%"))
+            query = query.where(product_alias.c.products_name.ilike(f"%{q}%"))
         if kwargs['order_by'] == 'high_price':
-            query = query.order_by(product_alias.c.price_variant.desc())
+            query = query.order_by(product_alias.c.variants_price.desc())
         if kwargs['order_by'] == 'low_price':
-            query = query.order_by(product_alias.c.price_variant.asc())
+            query = query.order_by(product_alias.c.variants_price.asc())
         if kwargs['order_by'] == 'newest':
-            query = query.order_by(product_alias.c.id_product.desc())
+            query = query.order_by(product_alias.c.products_id.desc())
         if (p_min := kwargs['p_min']) and (p_max := kwargs['p_max']):
-            query = query.where((product_alias.c.price_variant >= p_min) & (product_alias.c.price_variant <= p_max))
+            query = query.where((product_alias.c.variants_price >= p_min) & (product_alias.c.variants_price <= p_max))
         if (p_min := kwargs['p_min']) and not kwargs['p_max']:
-            query = query.where(product_alias.c.price_variant >= p_min)
+            query = query.where(product_alias.c.variants_price >= p_min)
         if (p_max := kwargs['p_max']) and not kwargs['p_min']:
-            query = query.where(product_alias.c.price_variant <= p_max)
+            query = query.where(product_alias.c.variants_price <= p_max)
         if item_sub_cat := kwargs['item_sub_cat']:
-            query = query.where(product_alias.c.item_sub_category_id.in_(item_sub_cat))
+            query = query.where(product_alias.c.products_item_sub_category_id.in_(item_sub_cat))
         if brand := kwargs['brand']:
-            query = query.where(product_alias.c.brand_id.in_(brand))
+            query = query.where(product_alias.c.products_brand_id.in_(brand))
         if kwargs['pre_order'] is not None:
             if kwargs['pre_order'] is True:
-                query = query.where(product_alias.c.preorder_product.isnot(None))
+                query = query.where(product_alias.c.products_preorder.isnot(None))
             if kwargs['pre_order'] is False:
-                query = query.where(product_alias.c.preorder_product.is_(None))
+                query = query.where(product_alias.c.products_preorder.is_(None))
         if kwargs['condition'] is not None:
-            query = query.where(product_alias.c.condition_product == kwargs['condition'])
+            query = query.where(product_alias.c.products_condition == kwargs['condition'])
 
         total = await database.execute(query=select([func.count()]).select_from(query.alias()).as_scalar())
         query = query.limit(kwargs['per_page']).offset((kwargs['page'] - 1) * kwargs['per_page'])
@@ -76,10 +76,10 @@ class ProductFetch:
 
     @staticmethod
     async def filter_by_slug(slug: str) -> product:
-        query = select([product]).where(product.c.slug_product == slug)
+        query = select([product]).where(product.c.slug == slug)
         return await database.fetch_one(query=query)
 
     @staticmethod
     async def filter_by_id(id_: int) -> product:
-        query = select([product]).where(product.c.id_product == id_)
+        query = select([product]).where(product.c.id == id_)
         return await database.fetch_one(query=query)
