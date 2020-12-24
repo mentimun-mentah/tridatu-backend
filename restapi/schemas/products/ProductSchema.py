@@ -23,6 +23,7 @@ class ProductSchema(BaseModel):
         anystr_strip_whitespace = True
 
 class ProductData(ProductSchema):
+    products_love: bool
     variants_price: int
 
 class ProductPaginate(BaseModel):

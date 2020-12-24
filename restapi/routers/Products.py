@@ -4,6 +4,7 @@ from fastapi_jwt_auth import AuthJWT
 from controllers.ProductController import ProductFetch, ProductCrud
 from controllers.VariantController import VariantLogic, VariantCrud
 from controllers.ItemSubCategoryController import ItemSubCategoryFetch
+from controllers.WishlistController import WishlistLogic
 from controllers.BrandController import BrandFetch
 from controllers.UserController import UserFetch
 from dependencies.ProductDependant import create_form_product, get_all_query_product
@@ -109,8 +110,19 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
     return {"detail": "Successfully add a new product."}
 
 @router.get('/all-products',response_model=ProductPaginate)
-async def get_all_products(query_string: get_all_query_product = Depends()):
-    return await ProductFetch.get_all_products_paginate(**query_string)
+async def get_all_products(query_string: get_all_query_product = Depends(), authorize: AuthJWT = Depends()):
+    authorize.jwt_optional()
+
+    results = await ProductFetch.get_all_products_paginate(**query_string)
+    if user_id := authorize.get_jwt_subject():
+        [
+            data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
+            for data in results['data']
+        ]
+    else:
+        [data.__setitem__('products_love',False) for data in results['data']]
+
+    return results
 
 @router.put('/alive-archive/{product_id}',
     responses={

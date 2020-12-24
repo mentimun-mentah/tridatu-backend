@@ -41,7 +41,8 @@ list_access_token = [
 
 list_access_token_without_csrf = [
     'my_user', 'my_address', 'my_address_by_id', 'get_brand_by_id',
-    'get_category_by_id', 'get_sub_category_by_id', 'get_item_sub_category_by_id', 'user_wishlist'
+    'get_category_by_id', 'get_sub_category_by_id', 'get_item_sub_category_by_id', 'user_wishlist',
+    'get_all_products'
 ]
 
 list_refresh_token = [

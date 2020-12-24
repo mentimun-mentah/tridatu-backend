@@ -67,4 +67,6 @@ async def user_wishlist(query_string: get_user_query_wishlist = Depends(), autho
 
     user_id = authorize.get_jwt_subject()
     if user := await UserFetch.filter_by_id(user_id):
-        return await WishlistFetch.get_user_wishlist_paginate(user['id'],**query_string)
+        results = await WishlistFetch.get_user_wishlist_paginate(user['id'],**query_string)
+        [data.__setitem__('products_love',True) for data in results['data']]
+        return results
