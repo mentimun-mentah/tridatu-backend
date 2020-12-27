@@ -155,3 +155,19 @@ async def change_product_alive_archive(product_id: int = Path(...,gt=0), authori
 @router.get('/search-by-name',response_model=List[ProductSearchByName])
 async def search_products_by_name(q: str = Query(...,min_length=1), limit: int = Query(...,gt=0)):
     return await ProductFetch.search_products_by_name(q=q,limit=limit)
+
+@router.get('/{slug}',
+    responses={
+        404: {
+            "description": "Product not found",
+            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+        }
+    }
+)
+async def get_product_by_slug(slug: str = Path(...,min_length=1), authorize: AuthJWT = Depends()):
+    authorize.jwt_optional()
+
+    if product := await ProductFetch.get_product_by_slug(slug):
+        print(product)
+        return
+    raise HTTPException(status_code=404,detail="Product not found!")

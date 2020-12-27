@@ -2,6 +2,10 @@ from config import database
 from sqlalchemy.sql import select, func
 from models.ProductModel import product
 from models.VariantModel import variant
+from models.CategoryModel import category
+from models.SubCategoryModel import sub_category
+from models.ItemSubCategoryModel import item_sub_category
+from controllers.VariantController import VariantLogic
 from libs.Pagination import Pagination
 
 class ProductLogic:
@@ -73,6 +77,29 @@ class ProductFetch:
             "page": paginate.page,
             "iter_pages": [x for x in paginate.iter_pages()]
         }
+
+    @staticmethod
+    async def get_product_by_slug(slug: str) -> dict:
+        query = select([product]).where(product.c.slug == slug).apply_labels()
+        product_db = await database.fetch_one(query=query)
+        product_data = {index:value for index,value in product_db.items()}
+
+        # get item sub category with parent
+        query = select([item_sub_category.join(sub_category.join(category))]) \
+            .where(item_sub_category.c.id == product_data['products_item_sub_category_id']).apply_labels()
+        category_db = await database.fetch_one(query=query)
+        product_data['products_category'] = {index:value for index,value in category_db.items()}
+
+        # get variant
+        query = select([variant]).where(variant.c.product_id == product_data['products_id'])
+        variant_db = await database.fetch_all(query=query)
+        variant_data = [{index:value for index,value in item.items()} for item in variant_db]
+        product_data['products_variant'] = VariantLogic.convert_db_to_data(variant_data)[0]
+
+        import json
+        print(json.dumps(product_data,indent=2,default=str))
+        # print(json.dumps(variant_data,indent=2,default=str))
+        # return product_data
 
     @staticmethod
     async def filter_by_slug(slug: str) -> product:
