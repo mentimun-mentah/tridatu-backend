@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     authjwt_cookie_secure: bool
     authjwt_cookie_samesite: str = "lax"
 
+    rajaongkir_key: str
     frontend_uri: str
     database_uri: PostgresDsn
     redis_db_host: str

@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_jwt_auth.exceptions import AuthJWTException
+from fastapi.openapi.docs import get_swagger_ui_html
 from starlette.middleware.sessions import SessionMiddleware
 from config import database, redis_conn, settings
 from docs import (
@@ -21,7 +22,7 @@ from routers import (
     Products, Variants, Wishlists, Shipping
 )
 
-app = FastAPI(default_response_class=ORJSONResponse)
+app = FastAPI(default_response_class=ORJSONResponse,docs_url=None,redoc_url=None)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -48,6 +49,14 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     return ORJSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.message}
+    )
+
+@app.get("/docs",include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title="Tridatu Bali ID",
+        swagger_css_url="/static/swagger-ui.css",
     )
 
 def custom_openapi():
