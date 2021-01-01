@@ -96,8 +96,8 @@ class ProductFetch:
         variant_data = [{index:value for index,value in item.items()} for item in variant_db]
         product_data['products_variant'] = VariantLogic.convert_db_to_data(variant_data)[0]
 
-        import json
-        print(json.dumps(product_data,indent=2,default=str))
+        # import json
+        # print(json.dumps(product_data,indent=2,default=str))
         # print(json.dumps(variant_data,indent=2,default=str))
         # return product_data
 

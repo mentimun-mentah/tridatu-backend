@@ -10,6 +10,7 @@ from controllers.UserController import UserFetch
 from dependencies.ProductDependant import create_form_product, get_all_query_product
 from schemas.products.ProductSchema import ProductPaginate, ProductSearchByName
 from libs.MagicImage import MagicImage
+from libs.Visitor import Visitor
 from slugify import slugify
 from typing import List
 
@@ -164,9 +165,15 @@ async def search_products_by_name(q: str = Query(...,min_length=1), limit: int =
         }
     }
 )
-async def get_product_by_slug(slug: str = Path(...,min_length=1), authorize: AuthJWT = Depends()):
+async def get_product_by_slug(
+    slug: str = Path(...,min_length=1),
+    authorize: AuthJWT = Depends(),
+    visitor: Visitor = Depends()
+):
     authorize.jwt_optional()
 
+    # from models.ProductModel import product
+    # await visitor.increment_visitor(table=product,id_=3)
     if product := await ProductFetch.get_product_by_slug(slug):
         print(product)
         return

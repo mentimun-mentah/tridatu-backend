@@ -3,7 +3,7 @@ from sqlalchemy import (
     Text, Boolean, BigInteger, DateTime,
     ForeignKey, func
 )
-from sqlalchemy.sql import expression
+from sqlalchemy.sql import expression, text
 from config import metadata
 
 product = Table('products', metadata,
@@ -18,6 +18,7 @@ product = Table('products', metadata,
     Column('video', String(100), nullable=True),
     Column('preorder', Integer, nullable=True),
     Column('live', Boolean, server_default=expression.false()),
+    Column('visitor', BigInteger, server_default=text("0")),
 
     Column(
         'item_sub_category_id', Integer,

@@ -23,6 +23,7 @@ itsdangerous
 Pillow
 phonenumbers
 fastapi-jwt-auth[asymmetric]
+user-agents
 
 # testing
 pytest
