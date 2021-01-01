@@ -8,7 +8,8 @@ from controllers.WishlistController import WishlistLogic
 from controllers.BrandController import BrandFetch
 from controllers.UserController import UserFetch
 from dependencies.ProductDependant import create_form_product, get_all_query_product
-from schemas.products.ProductSchema import ProductPaginate, ProductSearchByName
+from schemas.products.ProductSchema import ProductPaginate, ProductSearchByName, ProductDataSlug
+from models.ProductModel import product
 from libs.MagicImage import MagicImage
 from libs.Visitor import Visitor
 from slugify import slugify
@@ -158,6 +159,8 @@ async def search_products_by_name(q: str = Query(...,min_length=1), limit: int =
     return await ProductFetch.search_products_by_name(q=q,limit=limit)
 
 @router.get('/{slug}',
+    response_model=ProductDataSlug,
+    response_model_exclude_none=True,
     responses={
         404: {
             "description": "Product not found",
@@ -172,9 +175,13 @@ async def get_product_by_slug(
 ):
     authorize.jwt_optional()
 
-    # from models.ProductModel import product
-    # await visitor.increment_visitor(table=product,id_=3)
-    if product := await ProductFetch.get_product_by_slug(slug):
-        print(product)
-        return
+    if product_data := await ProductFetch.filter_by_slug(slug):
+        await visitor.increment_visitor(table=product,id_=product_data['id'])  # set visitor
+        results = await ProductFetch.get_product_by_slug(product_data['slug'])
+        # check wishlist product
+        if user_id := authorize.get_jwt_subject():
+            results.__setitem__('products_love', await WishlistLogic.check_wishlist(product_data['id'],user_id))
+        else:
+            results.__setitem__('products_love', False)
+        return results
     raise HTTPException(status_code=404,detail="Product not found!")

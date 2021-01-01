@@ -437,7 +437,7 @@ class TestProduct(OperationTest):
             if x['loc'][-1] == 'per_page': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'live': assert x['msg'] == 'value could not be parsed to a boolean'
             if x['loc'][-1] == 'order_by': assert x['msg'] == \
-                "unexpected value; permitted: 'high_price', 'low_price', 'newest'"
+                "unexpected value; permitted: 'high_price', 'low_price', 'newest', 'visitor'"
             if x['loc'][-1] == 'p_min': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'p_max': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'pre_order': assert x['msg'] == 'value could not be parsed to a boolean'

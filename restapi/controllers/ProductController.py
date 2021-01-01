@@ -1,5 +1,6 @@
 from config import database
 from sqlalchemy.sql import select, func
+from models.BrandModel import brand
 from models.ProductModel import product
 from models.VariantModel import variant
 from models.CategoryModel import category
@@ -46,6 +47,8 @@ class ProductFetch:
             query = query.order_by(product_alias.c.variants_price.asc())
         if kwargs['order_by'] == 'newest':
             query = query.order_by(product_alias.c.products_id.desc())
+        if kwargs['order_by'] == 'visitor':
+            query = query.order_by(product_alias.c.products_visitor.desc())
         if (p_min := kwargs['p_min']) and (p_max := kwargs['p_max']):
             query = query.where((product_alias.c.variants_price >= p_min) & (product_alias.c.variants_price <= p_max))
         if (p_min := kwargs['p_min']) and not kwargs['p_max']:
@@ -90,16 +93,20 @@ class ProductFetch:
         category_db = await database.fetch_one(query=query)
         product_data['products_category'] = {index:value for index,value in category_db.items()}
 
+        # get brand
+        query = select([brand]).where(brand.c.id == product_data['products_brand_id']).apply_labels()
+        brand_db = await database.fetch_one(query=query)
+        product_data['products_brand'] = {index:value for index,value in brand_db.items()} if brand_db else {}
+
         # get variant
         query = select([variant]).where(variant.c.product_id == product_data['products_id'])
         variant_db = await database.fetch_all(query=query)
-        variant_data = [{index:value for index,value in item.items()} for item in variant_db]
+        variant_data = sorted(
+            [{index:value for index,value in item.items()} for item in variant_db], key=lambda v: v['id']
+        )
         product_data['products_variant'] = VariantLogic.convert_db_to_data(variant_data)[0]
 
-        # import json
-        # print(json.dumps(product_data,indent=2,default=str))
-        # print(json.dumps(variant_data,indent=2,default=str))
-        # return product_data
+        return product_data
 
     @staticmethod
     async def filter_by_slug(slug: str) -> product:
