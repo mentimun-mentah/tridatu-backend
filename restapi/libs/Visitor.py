@@ -6,7 +6,7 @@ from sqlalchemy import Table
 class Visitor:
     def __init__(self,request: Request):
         self.request = request
-        self.seconds = 30
+        self.seconds = 15
 
     async def increment_visitor(self,table: Table, id_: int) -> None:
         ip = self.request.client.host
