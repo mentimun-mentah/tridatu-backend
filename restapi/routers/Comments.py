@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
-from controllers.CommentController import CommentCrud
 from controllers.UserController import UserFetch
 from controllers.ProductController import ProductFetch
-from schemas.comments.CommentSchema import CommentCreate
+from controllers.CommentController import CommentCrud, CommentFetch
+from dependencies.CommentDependant import get_all_query_comment
+from schemas.comments.CommentSchema import CommentCreate, CommentPaginate
 from libs.MessageCooldown import MessageCooldown
 
 router = APIRouter()
@@ -47,3 +48,7 @@ async def create_comment(
 
     await CommentCrud.create_comment(**comment.dict(),user_id=user['id'])
     return {"detail": "Comment successfully added."}
+
+@router.get('/all-comments',response_model=CommentPaginate)
+async def get_all_comments(query_string: get_all_query_comment = Depends()):
+    return await CommentFetch.get_all_comments_paginate(**query_string)

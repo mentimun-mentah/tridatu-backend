@@ -1,5 +1,5 @@
-from pydantic import BaseModel, constr, conint
-from typing import Literal
+from pydantic import BaseModel, constr, conint, validator
+from typing import Literal, List, Optional
 
 class CommentSchema(BaseModel):
     class Config:
@@ -10,3 +10,22 @@ class CommentCreate(CommentSchema):
     subject: constr(strict=True)
     comment_id: conint(strict=True, gt=0)
     comment_type: Literal['product']
+
+class CommentData(CommentSchema):
+    comments_id: int
+    comments_subject: str
+    comments_created_at: str
+    users_username: str
+    users_avatar: str
+
+    @validator('comments_created_at',pre=True)
+    def convert_datetime_to_str(cls, v):
+        return v.isoformat()
+
+class CommentPaginate(BaseModel):
+    data: List[CommentData]
+    total: int
+    next_num: Optional[int]
+    prev_num: Optional[int]
+    page: int
+    iter_pages: list
