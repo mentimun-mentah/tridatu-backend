@@ -229,7 +229,7 @@ class TestComment(OperationTest):
         assert response.json() == {"detail": "You've already added comment a moment ago. Please try again later."}
         # add comment again in another product
         response = await async_client.post(url,json={
-            'subject': self.name,
+            'subject': self.name2,
             'comment_id': product_id_two,
             'comment_type': 'product'
         },headers={'X-CSRF-TOKEN': csrf_access_token})
@@ -276,8 +276,71 @@ class TestComment(OperationTest):
         assert 'page' in response.json()
         assert 'iter_pages' in response.json()
 
+    def test_validation_delete_comment(self,client):
+        url = self.prefix + '/delete/'
+        # all field blank
+        response = client.delete(url + '0')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'comment_id': assert x['msg'] == 'ensure this value is greater than 0'
+        # check all field type data
+        response = client.delete(url + 'a')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'comment_id': assert x['msg'] == 'value is not a valid integer'
+
+    @pytest.mark.asyncio
+    async def test_delete_comment(self,async_client):
+        # user two login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/delete/'
+        # set user one to guest
+        await self.set_user_to_guest(self.account_1['email'])
+        # comment not found
+        response = await async_client.delete(url + '9' * 8,headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Comment not found!"}
+        # user one login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # comment not match with current user
+        product_id_one = await self.get_product_id(self.name)
+        product_id_two = await self.get_product_id(self.name2)
+        comment_id_one = await self.get_comment_id(self.name,product_id_one,'product')
+        comment_id_two = await self.get_comment_id(self.name2,product_id_two,'product')
+
+        response = await async_client.delete(url + str(comment_id_one),headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 400
+        assert response.json() == {"detail": "Comment not match with the current user."}
+        # user two login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        # delete comment one
+        response = await async_client.delete(url + str(comment_id_one),headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Comment successfully deleted."}
+        # delete comment two
+        response = await async_client.delete(url + str(comment_id_two),headers={"X-CSRF-TOKEN": csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Comment successfully deleted."}
+
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):
+        # set user one to admin again
+        await self.set_user_to_admin(self.account_1['email'])
+
         # user admin login
         response = await async_client.post('/users/login',json={
             'email': self.account_1['email'],

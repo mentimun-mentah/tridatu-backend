@@ -12,6 +12,7 @@ from models.CategoryModel import category
 from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
 from models.ProductModel import product
+from models.CommentModel import comment
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -36,6 +37,11 @@ class OperationTest:
     async def set_user_to_admin(self,email: str):
         query = user.update().where(user.c.email == email)
         await database.execute(query=query,values={'role': 'admin'})
+
+    @pytest.mark.asyncio
+    async def set_user_to_guest(self,email: str):
+        query = user.update().where(user.c.email == email)
+        await database.execute(query=query,values={'role':'guest'})
 
     @pytest.mark.asyncio
     async def reset_password_user_to_default(self,email: str):
@@ -168,3 +174,15 @@ class OperationTest:
         query = select([product]).where(product.c.name == name)
         product_data = await database.fetch_one(query=query)
         return product_data['id']
+
+    # ================ PRODUCT SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_comment_id(self, subject: str, comment_id: int, comment_type: str):
+        query = select([comment]).where(
+            (comment.c.subject == subject) &
+            (comment.c.comment_id == comment_id) &
+            (comment.c.comment_type == comment_type)
+        )
+        comment_data = await database.fetch_one(query=query)
+        return comment_data['id']

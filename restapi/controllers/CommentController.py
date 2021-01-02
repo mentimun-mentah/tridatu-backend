@@ -9,6 +9,10 @@ class CommentCrud:
     async def create_comment(**kwargs) -> int:
         return await database.execute(comment.insert(),values=kwargs)
 
+    @staticmethod
+    async def delete_comment(id_: int) -> None:
+        await database.execute(query=comment.delete().where(comment.c.id == id_))
+
 class CommentFetch:
     @staticmethod
     async def get_all_comments_paginate(**kwargs) -> dict:
@@ -29,3 +33,8 @@ class CommentFetch:
             "page": paginate.page,
             "iter_pages": [x for x in paginate.iter_pages()]
         }
+
+    @staticmethod
+    async def filter_by_id(id_: int) -> comment:
+        query = select([comment]).where(comment.c.id == id_)
+        return await database.fetch_one(query=query)
