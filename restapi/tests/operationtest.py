@@ -175,7 +175,7 @@ class OperationTest:
         product_data = await database.fetch_one(query=query)
         return product_data['id']
 
-    # ================ PRODUCT SECTION ================
+    # ================ COMMENT SECTION ================
 
     @pytest.mark.asyncio
     async def get_comment_id(self, subject: str, comment_id: int, comment_type: str):
