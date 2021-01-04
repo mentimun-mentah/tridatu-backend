@@ -20,7 +20,7 @@ from routers import (
     Users, OAuth2, Address, Outlets,
     Brands, Categories, SubCategories, ItemSubCategories,
     Products, Variants, Wishlists, Shipping,
-    Comments
+    Comments, Replies
 )
 
 app = FastAPI(default_response_class=ORJSONResponse,docs_url=None,redoc_url=None)
@@ -116,3 +116,4 @@ app.include_router(Variants.router,tags=['variants'],prefix="/variants")
 app.include_router(Wishlists.router,tags=['wishlists'],prefix="/wishlists")
 app.include_router(Shipping.router,tags=['shipping'],prefix="/shipping")
 app.include_router(Comments.router,tags=['comments'],prefix="/comments")
+app.include_router(Replies.router,tags=['replies'],prefix="/replies")

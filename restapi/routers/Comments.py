@@ -37,10 +37,14 @@ async def create_comment(
         if user['role'] == 'admin':
             raise HTTPException(status_code=403,detail="Admin cannot create comments in their own product.")
 
-        if comment.comment_type == 'product' and not await ProductFetch.filter_by_id(comment.comment_id):
+        if comment.commentable_type == 'product' and not await ProductFetch.filter_by_id(comment.commentable_id):
             raise HTTPException(status_code=404,detail="Product not found!")
 
-        if message_cooldown.cooldown_message_sending(comment.comment_type, comment.comment_id, user['id']) is True:
+        if message_cooldown.cooldown_message_sending(
+            message_type=comment.commentable_type,
+            message_id=comment.commentable_id,
+            user_id=user['id']
+        ) is True:
             raise HTTPException(
                 status_code=403,
                 detail="You've already added comment a moment ago. Please try again later."
@@ -70,9 +74,6 @@ async def get_all_comments(query_string: get_all_query_comment = Depends()):
     }
 )
 async def delete_comment(comment_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
-    """
-    Remember: comment_id on path param its mean id of comment not comment_id
-    """
     authorize.jwt_required()
 
     user_id = authorize.get_jwt_subject()

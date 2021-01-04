@@ -7,13 +7,13 @@ class CommentSchema(BaseModel):
         anystr_strip_whitespace = True
 
 class CommentCreate(CommentSchema):
-    subject: constr(strict=True)
-    comment_id: conint(strict=True, gt=0)
-    comment_type: Literal['product']
+    message: constr(strict=True)
+    commentable_id: conint(strict=True, gt=0)
+    commentable_type: Literal['product']
 
 class CommentData(CommentSchema):
     comments_id: int
-    comments_subject: str
+    comments_message: str
     comments_created_at: str
     users_username: str
     users_avatar: str

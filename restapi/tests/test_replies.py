@@ -1,8 +1,8 @@
 import pytest
 from .operationtest import OperationTest
 
-class TestComment(OperationTest):
-    prefix = "/comments"
+class TestReply(OperationTest):
+    prefix = "/replies"
     without_variant = None
     single_variant = None
 
@@ -155,62 +155,21 @@ class TestComment(OperationTest):
             assert response.status_code == 201
             assert response.json() == {"detail":"Successfully add a new product."}
 
-    def test_validation_create_comment(self,client):
-        url = self.prefix + '/create'
-        # field required
-        response = client.post(url,json={})
-        assert response.status_code == 422
-        for x in response.json()['detail']:
-            if x['loc'][-1] == 'message': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'commentable_id': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'commentable_type': assert x['msg'] == 'field required'
-        # all field blank
-        response = client.post(url,json={'message': '', 'commentable_id': 0})
-        assert response.status_code == 422
-        for x in response.json()['detail']:
-            if x['loc'][-1] == 'message': assert x['msg'] == 'ensure this value has at least 5 characters'
-            if x['loc'][-1] == 'commentable_id': assert x['msg'] == 'ensure this value is greater than 0'
-        # check all field type data
-        response = client.post(url,json={'message': 123, 'commentable_id': '123', 'commentable_type': 123})
-        assert response.status_code == 422
-        for x in response.json()['detail']:
-            if x['loc'][-1] == 'message': assert x['msg'] == 'str type expected'
-            if x['loc'][-1] == 'commentable_id': assert x['msg'] == 'value is not a valid integer'
-            if x['loc'][-1] == 'commentable_type': assert x['msg'] == "unexpected value; permitted: 'product'"
-
     @pytest.mark.asyncio
     async def test_create_comment(self,async_client):
+        # set user one to guest
+        await self.set_user_to_guest(self.account_1['email'])
+
+        url = '/comments/create'
+        product_id_one = await self.get_product_id(self.name)
+        product_id_two = await self.get_product_id(self.name2)
+
+        # create comment using account 1
         response = await async_client.post('/users/login',json={
             'email': self.account_1['email'],
             'password': self.account_1['password']
         })
         csrf_access_token = response.cookies.get('csrf_access_token')
-
-        url = self.prefix + '/create'
-        product_id_one = await self.get_product_id(self.name)
-        product_id_two = await self.get_product_id(self.name2)
-        # check user is not admin
-        response = await async_client.post(url,json={
-            'message': self.name,
-            'commentable_id': product_id_one,
-            'commentable_type': 'product'
-        },headers={'X-CSRF-TOKEN': csrf_access_token})
-        assert response.status_code == 403
-        assert response.json() == {"detail": "Admin cannot create comments in their own product."}
-        # user not admin login
-        response = await async_client.post('/users/login',json={
-            'email': self.account_2['email'],
-            'password': self.account_2['password']
-        })
-        csrf_access_token = response.cookies.get('csrf_access_token')
-        # product not found
-        response = await async_client.post(url,json={
-            'message': self.name,
-            'commentable_id': 99999999,
-            'commentable_type': 'product'
-        },headers={'X-CSRF-TOKEN': csrf_access_token})
-        assert response.status_code == 404
-        assert response.json() == {"detail": "Product not found!"}
 
         response = await async_client.post(url,json={
             'message': self.name,
@@ -219,15 +178,13 @@ class TestComment(OperationTest):
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 201
         assert response.json() == {"detail": "Comment successfully added."}
-        # cooldown 15 second
-        response = await async_client.post(url,json={
-            'message': self.name,
-            'commentable_id': product_id_one,
-            'commentable_type': 'product'
-        },headers={'X-CSRF-TOKEN': csrf_access_token})
-        assert response.status_code == 403
-        assert response.json() == {"detail": "You've already added comment a moment ago. Please try again later."}
-        # add comment again in another product
+        # create comment using account 2
+        response = await async_client.post('/users/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
         response = await async_client.post(url,json={
             'message': self.name2,
             'commentable_id': product_id_two,
@@ -236,111 +193,73 @@ class TestComment(OperationTest):
         assert response.status_code == 201
         assert response.json() == {"detail": "Comment successfully added."}
 
-    def test_validation_get_all_comments(self,client):
-        url = self.prefix + '/all-comments'
+    def test_validation_create_reply(self,client):
+        url = self.prefix + '/create'
         # field required
-        response = client.get(url)
+        response = client.post(url,json={})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'page': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'per_page': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'commentable_id': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'commentable_type': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'message': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'comment_id': assert x['msg'] == 'field required'
         # all field blank
-        response = client.get(url + '?page=0&per_page=0&commentable_id=0')
+        response = client.post(url,json={'message': '', 'comment_id': 0})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'page': assert x['msg'] == 'ensure this value is greater than 0'
-            if x['loc'][-1] == 'per_page': assert x['msg'] == 'ensure this value is greater than 0'
-            if x['loc'][-1] == 'commentable_id': assert x['msg'] == 'ensure this value is greater than 0'
-        # check all field type data
-        response = client.get(url + '?page=a&per_page=a&commentable_id=a&commentable_type=123')
-        assert response.status_code == 422
-        for x in response.json()['detail']:
-            if x['loc'][-1] == 'page': assert x['msg'] == 'value is not a valid integer'
-            if x['loc'][-1] == 'per_page': assert x['msg'] == 'value is not a valid integer'
-            if x['loc'][-1] == 'commentable_id': assert x['msg'] == 'value is not a valid integer'
-            if x['loc'][-1] == 'commentable_type': assert x['msg'] == "unexpected value; permitted: 'product'"
-
-    @pytest.mark.asyncio
-    async def test_get_all_comments(self,async_client):
-        url = self.prefix + '/all-comments'
-
-        product_id_one = await self.get_product_id(self.name)
-        response = await async_client.get(
-            url + f'?page=1&per_page=1&commentable_id={product_id_one}&commentable_type=product'
-        )
-        assert response.status_code == 200
-        assert 'data' in response.json()
-        assert 'total' in response.json()
-        assert 'next_num' in response.json()
-        assert 'prev_num' in response.json()
-        assert 'page' in response.json()
-        assert 'iter_pages' in response.json()
-
-    def test_validation_delete_comment(self,client):
-        url = self.prefix + '/delete/'
-        # all field blank
-        response = client.delete(url + '0')
-        assert response.status_code == 422
-        for x in response.json()['detail']:
+            if x['loc'][-1] == 'message': assert x['msg'] == 'ensure this value has at least 5 characters'
             if x['loc'][-1] == 'comment_id': assert x['msg'] == 'ensure this value is greater than 0'
         # check all field type data
-        response = client.delete(url + 'a')
+        response = client.post(url,json={'message': 123, 'comment_id': '123'})
         assert response.status_code == 422
         for x in response.json()['detail']:
+            if x['loc'][-1] == 'message': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'comment_id': assert x['msg'] == 'value is not a valid integer'
 
     @pytest.mark.asyncio
-    async def test_delete_comment(self,async_client):
-        # user two login
-        response = await async_client.post('/users/login',json={
-            'email': self.account_2['email'],
-            'password': self.account_2['password']
-        })
-        csrf_access_token = response.cookies.get('csrf_access_token')
-
-        url = self.prefix + '/delete/'
-        # set user one to guest
-        await self.set_user_to_guest(self.account_1['email'])
-        # comment not found
-        response = await async_client.delete(url + '9' * 8,headers={"X-CSRF-TOKEN": csrf_access_token})
-        assert response.status_code == 404
-        assert response.json() == {"detail": "Comment not found!"}
-        # user one login
+    async def test_create_reply(self,async_client):
         response = await async_client.post('/users/login',json={
             'email': self.account_1['email'],
             'password': self.account_1['password']
         })
         csrf_access_token = response.cookies.get('csrf_access_token')
-        # comment not match with current user
+
+        url = self.prefix + '/create'
         product_id_one = await self.get_product_id(self.name)
         product_id_two = await self.get_product_id(self.name2)
         comment_id_one = await self.get_comment_id(self.name,product_id_one,'product')
         comment_id_two = await self.get_comment_id(self.name2,product_id_two,'product')
 
-        response = await async_client.delete(url + str(comment_id_one),headers={"X-CSRF-TOKEN": csrf_access_token})
-        assert response.status_code == 400
-        assert response.json() == {"detail": "Comment not match with the current user."}
-        # user two login
-        response = await async_client.post('/users/login',json={
-            'email': self.account_2['email'],
-            'password': self.account_2['password']
-        })
-        csrf_access_token = response.cookies.get('csrf_access_token')
+        # comment not found
+        response = await async_client.post(url,json={
+            'message': self.name,
+            'comment_id': 99999999
+        },headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Comment not found!"}
 
-        # delete comment one
-        response = await async_client.delete(url + str(comment_id_one),headers={"X-CSRF-TOKEN": csrf_access_token})
-        assert response.status_code == 200
-        assert response.json() == {"detail": "Comment successfully deleted."}
-        # delete comment two
-        response = await async_client.delete(url + str(comment_id_two),headers={"X-CSRF-TOKEN": csrf_access_token})
-        assert response.status_code == 200
-        assert response.json() == {"detail": "Comment successfully deleted."}
+        response = await async_client.post(url,json={
+            'message': self.name,
+            'comment_id': comment_id_one
+        },headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 201
+        assert response.json() == {"detail": "Successfully reply to this comment."}
+        # cooldown 15 second
+        response = await async_client.post(url,json={
+            'message': self.name,
+            'comment_id': comment_id_one
+        },headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 403
+        assert response.json() == {"detail": "You've already added comment a moment ago. Please try again later."}
+        # add reply again in another comment
+        response = await async_client.post(url,json={
+            'message': self.name2,
+            'comment_id': comment_id_two
+        },headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 201
+        assert response.json() == {"detail": "Successfully reply to this comment."}
 
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):
-        # set user one to admin again
+        # set user one to admin
         await self.set_user_to_admin(self.account_1['email'])
 
         # user admin login

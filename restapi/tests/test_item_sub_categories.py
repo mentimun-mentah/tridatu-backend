@@ -145,12 +145,6 @@ class TestItemSubCategory(OperationTest):
         assert response.status_code == 400
         assert response.json() == {"detail": "The name has already been taken in the item sub-category."}
 
-    def test_get_all_item_sub_categories(self,client):
-        url = self.prefix + '/all-item-sub-categories'
-        response = client.get(url)
-        assert response.status_code == 200
-        assert response.json() != []
-
     def test_validation_get_item_sub_category_by_id(self,client):
         url = self.prefix + '/get-item-sub-category/'
         # all field blank

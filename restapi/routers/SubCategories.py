@@ -4,7 +4,6 @@ from controllers.SubCategoryController import SubCategoryFetch, SubCategoryCrud
 from controllers.CategoryController import CategoryFetch
 from controllers.UserController import UserFetch
 from schemas.sub_categories.SubCategorySchema import SubCategoryCreateUpdate, SubCategoryData
-from typing import List
 
 router = APIRouter()
 
@@ -42,10 +41,6 @@ async def create_sub_category(sub_category: SubCategoryCreateUpdate, authorize: 
 
     await SubCategoryCrud.create_sub_category(**sub_category.dict())
     return {"detail": "Successfully add a new sub-category."}
-
-@router.get('/all-sub-categories',response_model=List[SubCategoryData])
-async def get_all_sub_categories():
-    return await SubCategoryFetch.get_all_sub_categories()
 
 @router.get('/get-sub-category/{sub_category_id}',response_model=SubCategoryData,
     responses={

@@ -22,10 +22,6 @@ class ItemSubCategoryCrud:
 
 class ItemSubCategoryFetch:
     @staticmethod
-    async def get_all_item_sub_categories() -> item_sub_category:
-        return await database.fetch_all(query=select([item_sub_category]).order_by(item_sub_category.c.sub_category_id))
-
-    @staticmethod
     async def check_duplicate_name(sub_category_id: int, name: str) -> item_sub_category:
         query = select([item_sub_category]) \
             .where((item_sub_category.c.name == name) & (item_sub_category.c.sub_category_id == sub_category_id))

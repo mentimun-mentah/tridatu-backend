@@ -178,11 +178,11 @@ class OperationTest:
     # ================ COMMENT SECTION ================
 
     @pytest.mark.asyncio
-    async def get_comment_id(self, subject: str, comment_id: int, comment_type: str):
+    async def get_comment_id(self, message: str, commentable_id: int, commentable_type: str):
         query = select([comment]).where(
-            (comment.c.subject == subject) &
-            (comment.c.comment_id == comment_id) &
-            (comment.c.comment_type == comment_type)
+            (comment.c.message == message) &
+            (comment.c.commentable_id == commentable_id) &
+            (comment.c.commentable_type == commentable_type)
         )
         comment_data = await database.fetch_one(query=query)
         return comment_data['id']

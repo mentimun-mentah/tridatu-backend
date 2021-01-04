@@ -17,7 +17,9 @@ class CommentFetch:
     @staticmethod
     async def get_all_comments_paginate(**kwargs) -> dict:
         query = select([comment.join(user)]) \
-            .where((comment.c.comment_id == kwargs['comment_id']) & (comment.c.comment_type == kwargs['comment_type'])) \
+            .where(
+                (comment.c.commentable_id == kwargs['commentable_id']) &
+                (comment.c.commentable_type == kwargs['commentable_type'])) \
             .order_by(comment.c.id.desc()).apply_labels()
 
         total = await database.execute(query=select([func.count()]).select_from(query.alias()).as_scalar())
