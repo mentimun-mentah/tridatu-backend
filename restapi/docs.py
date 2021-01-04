@@ -36,12 +36,13 @@ list_access_token = [
     'update_category', 'delete_category', 'create_sub_category', 'update_sub_category',
     'delete_sub_category', 'create_item_sub_category', 'update_item_sub_category', 'delete_item_sub_category',
     'create_product', 'add_variant_to_temp_storage', 'change_product_alive_archive', 'love_product',
-    'unlove_product'
+    'unlove_product', 'create_comment', 'delete_comment', 'create_reply'
 ]
 
 list_access_token_without_csrf = [
     'my_user', 'my_address', 'my_address_by_id', 'get_brand_by_id',
-    'get_category_by_id', 'get_sub_category_by_id', 'get_item_sub_category_by_id', 'user_wishlist'
+    'get_category_by_id', 'get_sub_category_by_id', 'get_item_sub_category_by_id', 'user_wishlist',
+    'get_all_products', 'get_product_by_slug'
 ]
 
 list_refresh_token = [

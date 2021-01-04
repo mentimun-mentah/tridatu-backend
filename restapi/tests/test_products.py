@@ -99,7 +99,7 @@ class TestProduct(OperationTest):
         csrf_access_token = response.cookies.get('csrf_access_token')
         # create category
         response = await async_client.post('/categories/create',
-            json={'name_category': self.name},
+            json={'name': self.name},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -107,7 +107,7 @@ class TestProduct(OperationTest):
         # create sub category
         category_id = await self.get_category_id(self.name)
         response = await async_client.post('/sub-categories/create',
-            json={'name_sub_category': self.name,'category_id': category_id},
+            json={'name': self.name,'category_id': category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -115,7 +115,7 @@ class TestProduct(OperationTest):
         # create item sub category
         sub_category_id = await self.get_sub_category_id(self.name)
         response = await async_client.post('/item-sub-categories/create',
-            json={'name_item_sub_category': self.name, 'sub_category_id': sub_category_id},
+            json={'name': self.name, 'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -128,83 +128,83 @@ class TestProduct(OperationTest):
         response = client.post(url,data={})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_product': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'desc_product': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'condition_product': assert x['msg'] == 'field required'
-            if x['loc'][-1] == 'weight_product': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'desc': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'condition': assert x['msg'] == 'field required'
+            if x['loc'][-1] == 'weight': assert x['msg'] == 'field required'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'field required'
             if x['loc'][-1] == 'item_sub_category_id': assert x['msg'] == 'field required'
             if x['loc'][-1] == 'image_product': assert x['msg'] == 'field required'
 
         # all field blank
         response = client.post(url,data={
-            'name_product': ' ',
-            'desc_product': ' ',
-            'weight_product': 0,
-            'video_product': ' ',
-            'preorder_product': 0,
+            'name': ' ',
+            'desc': ' ',
+            'weight': 0,
+            'video': ' ',
+            'preorder': 0,
             'ticket_variant': ' ',
             'item_sub_category_id': 0,
             'brand_id': 0
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_product': assert x['msg'] == 'ensure this value has at least 5 characters'
-            if x['loc'][-1] == 'desc_product': assert x['msg'] == 'ensure this value has at least 20 characters'
-            if x['loc'][-1] == 'weight_product': assert x['msg'] == 'ensure this value is greater than 0'
-            if x['loc'][-1] == 'video_product': assert x['msg'] == 'ensure this value has at least 2 characters'
-            if x['loc'][-1] == 'preorder_product': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'name': assert x['msg'] == 'ensure this value has at least 5 characters'
+            if x['loc'][-1] == 'desc': assert x['msg'] == 'ensure this value has at least 20 characters'
+            if x['loc'][-1] == 'weight': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'video': assert x['msg'] == 'ensure this value has at least 2 characters'
+            if x['loc'][-1] == 'preorder': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at least 5 characters'
             if x['loc'][-1] == 'item_sub_category_id': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'brand_id': assert x['msg'] == 'ensure this value is greater than 0'
 
         # test limit value
         response = client.post(url,data={
-            'name_product': 'a' * 200,
-            'desc_product': 'a' * 200,
-            'weight_product': 200,
-            'video_product': 'a' * 200,
-            'preorder_product': 1000,
+            'name': 'a' * 200,
+            'desc': 'a' * 200,
+            'weight': 200,
+            'video': 'a' * 200,
+            'preorder': 1000,
             'ticket_variant': 'a' * 200,
             'item_sub_category_id': 200,
             'brand_id': 200
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'name_product': assert x['msg'] == 'ensure this value has at most 100 characters'
-            if x['loc'][-1] == 'video_product':
+            if x['loc'][-1] == 'name': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'video':
                 assert x['msg'] == \
                     'string does not match regex \"^(http(s)?:\\/\\/)?((w){3}.)?youtu(be|.be)?(\\.com)?\\/.+\"'
-            if x['loc'][-1] == 'preorder_product': assert x['msg'] == 'ensure this value is less than or equal to 500'
+            if x['loc'][-1] == 'preorder': assert x['msg'] == 'ensure this value is less than or equal to 500'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at most 100 characters'
 
         # check all field type data
         response = client.post(url,data={
-            'condition_product': 123,
-            'weight_product': 'asd',
-            'video_product': 123,
-            'preorder_product': 'asd',
+            'condition': 123,
+            'weight': 'asd',
+            'video': 123,
+            'preorder': 'asd',
             'item_sub_category_id': 'asd',
             'brand_id': 'asd'
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'condition_product': assert x['msg'] == 'value could not be parsed to a boolean'
-            if x['loc'][-1] == 'weight_product': assert x['msg'] == 'value is not a valid integer'
-            if x['loc'][-1] == 'video_product':
+            if x['loc'][-1] == 'condition': assert x['msg'] == 'value could not be parsed to a boolean'
+            if x['loc'][-1] == 'weight': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'video':
                 assert x['msg'] == \
                     'string does not match regex \"^(http(s)?:\\/\\/)?((w){3}.)?youtu(be|.be)?(\\.com)?\\/.+\"'
-            if x['loc'][-1] == 'preorder_product': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'preorder': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'item_sub_category_id': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'brand_id': assert x['msg'] == 'value is not a valid integer'
 
         # check valid url youtube
         response = client.post(url,data={
-            'video_product': 'https://www.facebook.com'
+            'video': 'https://www.facebook.com'
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'video_product':
+            if x['loc'][-1] == 'video':
                 assert x['msg'] == \
                     'string does not match regex \"^(http(s)?:\\/\\/)?((w){3}.)?youtu(be|.be)?(\\.com)?\\/.+\"'
 
@@ -233,7 +233,7 @@ class TestProduct(OperationTest):
             assert response.json() == {'detail': 'Cannot identify the image at index 1.'}
 
         with open(self.test_image_dir + 'test.txt','rb') as tmp:
-            response = client.post(url,files={'image_size_guide_product': tmp})
+            response = client.post(url,files={'image_size_guide': tmp})
             assert response.status_code == 422
             assert response.json() == {'detail': 'Cannot identify the image.'}
 
@@ -249,7 +249,7 @@ class TestProduct(OperationTest):
             assert response.json() == {'detail': 'The image at index 1 must be between jpg, png, jpeg.'}
 
         with open(self.test_image_dir + 'test.gif','rb') as tmp:
-            response = client.post(url,files={'image_size_guide_product': tmp})
+            response = client.post(url,files={'image_size_guide': tmp})
             assert response.status_code == 422
             assert response.json() == {'detail': 'Image must be between jpg, png, jpeg.'}
 
@@ -265,17 +265,17 @@ class TestProduct(OperationTest):
             assert response.json() == {'detail': 'An image at index 1 cannot greater than 4 Mb.'}
 
         with open(self.test_image_dir + 'size.png','rb') as tmp:
-            response = client.post(url,files={'image_size_guide_product': tmp})
+            response = client.post(url,files={'image_size_guide': tmp})
             assert response.status_code == 413
             assert response.json() == {'detail': 'An image cannot greater than 4 Mb.'}
 
         # ticket variant not found
         with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
             response = client.post(url,data={
-                'name_product': 'a' * 20,
-                'desc_product': 'a' * 20,
-                'condition_product': False,
-                'weight_product': 1,
+                'name': 'a' * 20,
+                'desc': 'a' * 20,
+                'condition': False,
+                'weight': 1,
                 'ticket_variant': 'a' * 5,
                 'item_sub_category_id': 1
             },files={'image_product': tmp})
@@ -284,10 +284,10 @@ class TestProduct(OperationTest):
             assert response.json() == {'detail': 'Ticket variant not found!'}
         # ticket without variant image filled
         response = client.post(url,data={
-            'name_product': 'a' * 20,
-            'desc_product': 'a' * 20,
-            'condition_product': False,
-            'weight_product': 1,
+            'name': 'a' * 20,
+            'desc': 'a' * 20,
+            'condition': False,
+            'weight': 1,
             'ticket_variant': self.without_variant,
             'item_sub_category_id': 1
         },files={
@@ -295,13 +295,13 @@ class TestProduct(OperationTest):
             'image_variant': ('image.jpeg', open(self.test_image_dir + 'image.jpeg','rb'), 'image/jpg')
         })
         assert response.status_code == 422
-        assert response.json() == {'detail': 'The image must not be filled.'}
+        assert response.json() == {'detail': 'The image variant must not be filled.'}
         # ticket single or double variant not same length image with item in va1_items
         response = client.post(url,data={
-            'name_product': 'a' * 20,
-            'desc_product': 'a' * 20,
-            'condition_product': False,
-            'weight_product': 1,
+            'name': 'a' * 20,
+            'desc': 'a' * 20,
+            'condition': False,
+            'weight': 1,
             'ticket_variant': self.single_variant,
             'item_sub_category_id': 1
         },files={
@@ -309,7 +309,7 @@ class TestProduct(OperationTest):
             'image_variant': ('image.jpeg', open(self.test_image_dir + 'image.jpeg','rb'), 'image/jpg')
         })
         assert response.status_code == 422
-        assert response.json() == {'detail': 'You must fill all image or even without image.'}
+        assert response.json() == {'detail': 'You must fill all variant images or even without images.'}
 
     @pytest.mark.asyncio
     async def test_create_product(self,async_client):
@@ -323,10 +323,10 @@ class TestProduct(OperationTest):
         # check user is admin
         with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
             response = await async_client.post(url,data={
-                'name_product': self.name,
-                'desc_product': 'a' * 20,
-                'condition_product': 'true',
-                'weight_product': '1',
+                'name': self.name,
+                'desc': 'a' * 20,
+                'condition': 'true',
+                'weight': '1',
                 'ticket_variant': self.without_variant,
                 'item_sub_category_id': '1'
             },files={'image_product': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})
@@ -343,10 +343,10 @@ class TestProduct(OperationTest):
         # item_sub_category_id not found
         with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
             response = await async_client.post(url,data={
-                'name_product': self.name,
-                'desc_product': 'a' * 20,
-                'condition_product': 'false',
-                'weight_product': '1',
+                'name': self.name,
+                'desc': 'a' * 20,
+                'condition': 'false',
+                'weight': '1',
                 'ticket_variant': self.without_variant,
                 'item_sub_category_id': '99999'
             },files={'image_product': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})
@@ -356,10 +356,10 @@ class TestProduct(OperationTest):
         item_sub_category_id = await self.get_item_sub_category_id(self.name)
         with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
             response = await async_client.post(url,data={
-                'name_product': self.name,
-                'desc_product': 'a' * 20,
-                'condition_product': 'false',
-                'weight_product': '1',
+                'name': self.name,
+                'desc': 'a' * 20,
+                'condition': 'false',
+                'weight': '1',
                 'ticket_variant': self.without_variant,
                 'item_sub_category_id': str(item_sub_category_id),
                 'brand_id': '99999'
@@ -369,10 +369,10 @@ class TestProduct(OperationTest):
 
         with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
             response = await async_client.post(url,data={
-                'name_product': self.name,
-                'desc_product': 'a' * 20,
-                'condition_product': 'false',
-                'weight_product': '1',
+                'name': self.name,
+                'desc': 'a' * 20,
+                'condition': 'false',
+                'weight': '1',
                 'ticket_variant': self.without_variant,
                 'item_sub_category_id': str(item_sub_category_id)
             },files={'image_product': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})
@@ -396,10 +396,10 @@ class TestProduct(OperationTest):
         item_sub_category_id = await self.get_item_sub_category_id(self.name)
         with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
             response = await async_client.post(url,data={
-                'name_product': self.name,
-                'desc_product': 'a' * 20,
-                'condition_product': 'false',
-                'weight_product': '1',
+                'name': self.name,
+                'desc': 'a' * 20,
+                'condition': 'false',
+                'weight': '1',
                 'ticket_variant': self.without_variant,
                 'item_sub_category_id': str(item_sub_category_id)
             },files={'image_product': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})
@@ -437,7 +437,7 @@ class TestProduct(OperationTest):
             if x['loc'][-1] == 'per_page': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'live': assert x['msg'] == 'value could not be parsed to a boolean'
             if x['loc'][-1] == 'order_by': assert x['msg'] == \
-                "unexpected value; permitted: 'high_price', 'low_price', 'newest'"
+                "unexpected value; permitted: 'high_price', 'low_price', 'newest', 'visitor'"
             if x['loc'][-1] == 'p_min': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'p_max': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'pre_order': assert x['msg'] == 'value could not be parsed to a boolean'

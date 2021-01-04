@@ -4,11 +4,14 @@ from fastapi_jwt_auth import AuthJWT
 from controllers.ProductController import ProductFetch, ProductCrud
 from controllers.VariantController import VariantLogic, VariantCrud
 from controllers.ItemSubCategoryController import ItemSubCategoryFetch
+from controllers.WishlistController import WishlistLogic
 from controllers.BrandController import BrandFetch
 from controllers.UserController import UserFetch
 from dependencies.ProductDependant import create_form_product, get_all_query_product
-from schemas.products.ProductSchema import ProductPaginate, ProductSearchByName
+from schemas.products.ProductSchema import ProductPaginate, ProductSearchByName, ProductDataSlug
+from models.ProductModel import product
 from libs.MagicImage import MagicImage
+from libs.Visitor import Visitor
 from slugify import slugify
 from typing import List
 
@@ -44,10 +47,10 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
     user_id = authorize.get_jwt_subject()
     await UserFetch.user_is_admin(user_id)
 
-    form_data['slug_product'] = slugify(form_data['name_product'])
+    form_data['slug'] = slugify(form_data['name'])
 
     # check name duplicate
-    if await ProductFetch.filter_by_slug(form_data['slug_product']):
+    if await ProductFetch.filter_by_slug(form_data['slug']):
         raise HTTPException(status_code=400,detail="The name has already been taken.")
     # check item_sub_category_id exists in db
     if not await ItemSubCategoryFetch.filter_by_id(form_data['item_sub_category_id']):
@@ -63,7 +66,7 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
         width=550,
         height=550,
         path_upload='products/',
-        dir_name=form_data['slug_product']
+        dir_name=form_data['slug']
     )
     image_magic_products.save_image()
     form_data['image_product'] = json.dumps(image_magic_products.file_name)
@@ -76,7 +79,7 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
             width=550,
             height=550,
             path_upload='products/',
-            dir_name=form_data['slug_product']
+            dir_name=form_data['slug']
         )
         image_magic_variants.save_image()
         form_data['image_variant'] = image_magic_variants.file_name
@@ -85,16 +88,16 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
             form_data['variant_data']['va1_items'][index]['va1_image'] = value
 
     # save image size guide to product folder if supplied
-    if image_size_guide_product := form_data['image_size_guide_product']:
+    if image_size_guide := form_data['image_size_guide']:
         image_magic_guide = MagicImage(
-            file=image_size_guide_product.file,
+            file=image_size_guide.file,
             width=1200,
             height=778,
             path_upload='products/',
-            dir_name=form_data['slug_product']
+            dir_name=form_data['slug']
         )
         image_magic_guide.save_image()
-        form_data['image_size_guide_product'] = image_magic_guide.file_name
+        form_data['image_size_guide'] = image_magic_guide.file_name
 
     # save product to db
     product_data = {
@@ -109,8 +112,19 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
     return {"detail": "Successfully add a new product."}
 
 @router.get('/all-products',response_model=ProductPaginate)
-async def get_all_products(query_string: get_all_query_product = Depends()):
-    return await ProductFetch.get_all_products_paginate(**query_string)
+async def get_all_products(query_string: get_all_query_product = Depends(), authorize: AuthJWT = Depends()):
+    authorize.jwt_optional()
+
+    results = await ProductFetch.get_all_products_paginate(**query_string)
+    if user_id := authorize.get_jwt_subject():
+        [
+            data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
+            for data in results['data']
+        ]
+    else:
+        [data.__setitem__('products_love',False) for data in results['data']]
+
+    return results
 
 @router.put('/alive-archive/{product_id}',
     responses={
@@ -135,11 +149,39 @@ async def change_product_alive_archive(product_id: int = Path(...,gt=0), authori
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
-        await ProductCrud.change_product_alive_archive(product['id_product'],product['live_product'])
-        msg = 'alive' if not product['live_product'] else 'archive'
+        await ProductCrud.change_product_alive_archive(product['id'],product['live'])
+        msg = 'alive' if not product['live'] else 'archive'
         return {"detail": f"Successfully change the product to {msg}."}
     raise HTTPException(status_code=404,detail="Product not found!")
 
 @router.get('/search-by-name',response_model=List[ProductSearchByName])
 async def search_products_by_name(q: str = Query(...,min_length=1), limit: int = Query(...,gt=0)):
     return await ProductFetch.search_products_by_name(q=q,limit=limit)
+
+@router.get('/{slug}',
+    response_model=ProductDataSlug,
+    response_model_exclude_none=True,
+    responses={
+        404: {
+            "description": "Product not found",
+            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+        }
+    }
+)
+async def get_product_by_slug(
+    slug: str = Path(...,min_length=1),
+    authorize: AuthJWT = Depends(),
+    visitor: Visitor = Depends()
+):
+    authorize.jwt_optional()
+
+    if product_data := await ProductFetch.filter_by_slug(slug):
+        await visitor.increment_visitor(table=product,id_=product_data['id'])  # set visitor
+        results = await ProductFetch.get_product_by_slug(product_data['slug'])
+        # check wishlist product
+        if user_id := authorize.get_jwt_subject():
+            results.__setitem__('products_love', await WishlistLogic.check_wishlist(product_data['id'],user_id))
+        else:
+            results.__setitem__('products_love', False)
+        return results
+    raise HTTPException(status_code=404,detail="Product not found!")

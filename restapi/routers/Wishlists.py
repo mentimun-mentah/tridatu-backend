@@ -30,8 +30,8 @@ async def love_product(res: Response, product_id: int = Path(...,gt=0), authoriz
     user_id = authorize.get_jwt_subject()
     if user := await UserFetch.filter_by_id(user_id):
         if product := await ProductFetch.filter_by_id(product_id):
-            if not await WishlistLogic.check_wishlist(product['id_product'],user['id']):
-                await WishlistCrud.create_wishlist(product['id_product'],user['id'])
+            if not await WishlistLogic.check_wishlist(product['id'],user['id']):
+                await WishlistCrud.create_wishlist(product['id'],user['id'])
                 return {"detail": "Product successfully added to wishlist."}
             res.status_code = 200
             return {"detail":"Product already on the wishlist."}
@@ -55,8 +55,8 @@ async def unlove_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = 
     user_id = authorize.get_jwt_subject()
     if user := await UserFetch.filter_by_id(user_id):
         if product := await ProductFetch.filter_by_id(product_id):
-            if await WishlistLogic.check_wishlist(product['id_product'],user['id']):
-                await WishlistCrud.delete_wishlist(product['id_product'],user['id'])
+            if await WishlistLogic.check_wishlist(product['id'],user['id']):
+                await WishlistCrud.delete_wishlist(product['id'],user['id'])
                 return {"detail": "Product has been removed from the wishlist."}
             return {"detail": "Product not on the wishlist."}
         raise HTTPException(status_code=404,detail="Product not found!")
@@ -67,4 +67,6 @@ async def user_wishlist(query_string: get_user_query_wishlist = Depends(), autho
 
     user_id = authorize.get_jwt_subject()
     if user := await UserFetch.filter_by_id(user_id):
-        return await WishlistFetch.get_user_wishlist_paginate(user['id'],**query_string)
+        results = await WishlistFetch.get_user_wishlist_paginate(user['id'],**query_string)
+        [data.__setitem__('products_love',True) for data in results['data']]
+        return results

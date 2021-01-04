@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_jwt_auth.exceptions import AuthJWTException
+from fastapi.openapi.docs import get_swagger_ui_html
 from starlette.middleware.sessions import SessionMiddleware
 from config import database, redis_conn, settings
 from docs import (
@@ -18,10 +19,11 @@ from docs import (
 from routers import (
     Users, OAuth2, Address, Outlets,
     Brands, Categories, SubCategories, ItemSubCategories,
-    Products, Variants, Wishlists
+    Products, Variants, Wishlists, Shipping,
+    Comments, Replies
 )
 
-app = FastAPI(default_response_class=ORJSONResponse)
+app = FastAPI(default_response_class=ORJSONResponse,docs_url=None,redoc_url=None)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -48,6 +50,14 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     return ORJSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.message}
+    )
+
+@app.get("/docs",include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title="Tridatu Bali ID",
+        swagger_css_url="/static/swagger-ui.css",
     )
 
 def custom_openapi():
@@ -104,3 +114,6 @@ app.include_router(ItemSubCategories.router,tags=['item-sub-categories'],prefix=
 app.include_router(Products.router,tags=['products'],prefix="/products")
 app.include_router(Variants.router,tags=['variants'],prefix="/variants")
 app.include_router(Wishlists.router,tags=['wishlists'],prefix="/wishlists")
+app.include_router(Shipping.router,tags=['shipping'],prefix="/shipping")
+app.include_router(Comments.router,tags=['comments'],prefix="/comments")
+app.include_router(Replies.router,tags=['replies'],prefix="/replies")

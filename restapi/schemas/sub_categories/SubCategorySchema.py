@@ -1,8 +1,8 @@
 from pydantic import BaseModel, constr, conint
 
 class SubCategorySchema(BaseModel):
-    name_sub_category: constr(strict=True)
     category_id: conint(strict=True, gt=0)
+    name: constr(strict=True)
 
     class Config:
         min_anystr_length = 3
@@ -13,4 +13,4 @@ class SubCategoryCreateUpdate(SubCategorySchema):
     pass
 
 class SubCategoryData(SubCategorySchema):
-    id_sub_category: int
+    id: int

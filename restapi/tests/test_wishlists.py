@@ -98,7 +98,7 @@ class TestWishlist(OperationTest):
         csrf_access_token = response.cookies.get('csrf_access_token')
         # create category
         response = await async_client.post('/categories/create',
-            json={'name_category': self.name},
+            json={'name': self.name},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -106,7 +106,7 @@ class TestWishlist(OperationTest):
         # create sub category
         category_id = await self.get_category_id(self.name)
         response = await async_client.post('/sub-categories/create',
-            json={'name_sub_category': self.name,'category_id': category_id},
+            json={'name': self.name,'category_id': category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -114,7 +114,7 @@ class TestWishlist(OperationTest):
         # create item sub category
         sub_category_id = await self.get_sub_category_id(self.name)
         response = await async_client.post('/item-sub-categories/create',
-            json={'name_item_sub_category': self.name, 'sub_category_id': sub_category_id},
+            json={'name': self.name, 'sub_category_id': sub_category_id},
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
@@ -133,10 +133,10 @@ class TestWishlist(OperationTest):
         # create product 1
         with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
             response = await async_client.post('/products/create',data={
-                'name_product': self.name,
-                'desc_product': 'a' * 20,
-                'condition_product': 'false',
-                'weight_product': '1',
+                'name': self.name,
+                'desc': 'a' * 20,
+                'condition': 'false',
+                'weight': '1',
                 'ticket_variant': self.without_variant,
                 'item_sub_category_id': str(item_sub_category_id)
             },files={'image_product': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})
@@ -145,10 +145,10 @@ class TestWishlist(OperationTest):
         # create product 2
         with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
             response = await async_client.post('/products/create',data={
-                'name_product': self.name2,
-                'desc_product': 'a' * 20,
-                'condition_product': 'false',
-                'weight_product': '1',
+                'name': self.name2,
+                'desc': 'a' * 20,
+                'condition': 'false',
+                'weight': '1',
                 'ticket_variant': self.single_variant,
                 'item_sub_category_id': str(item_sub_category_id)
             },files={'image_product': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})

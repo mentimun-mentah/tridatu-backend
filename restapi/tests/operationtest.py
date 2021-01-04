@@ -12,6 +12,7 @@ from models.CategoryModel import category
 from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
 from models.ProductModel import product
+from models.CommentModel import comment
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -36,6 +37,11 @@ class OperationTest:
     async def set_user_to_admin(self,email: str):
         query = user.update().where(user.c.email == email)
         await database.execute(query=query,values={'role': 'admin'})
+
+    @pytest.mark.asyncio
+    async def set_user_to_guest(self,email: str):
+        query = user.update().where(user.c.email == email)
+        await database.execute(query=query,values={'role':'guest'})
 
     @pytest.mark.asyncio
     async def reset_password_user_to_default(self,email: str):
@@ -127,44 +133,56 @@ class OperationTest:
 
     @pytest.mark.asyncio
     async def get_brand_image(self,name: str):
-        query = select([brand]).where(brand.c.name_brand == name)
+        query = select([brand]).where(brand.c.name == name)
         brand_data = await database.fetch_one(query=query)
-        return brand_data['image_brand']
+        return brand_data['image']
 
     @pytest.mark.asyncio
     async def get_brand_id(self,name: str):
-        query = select([brand]).where(brand.c.name_brand == name)
+        query = select([brand]).where(brand.c.name == name)
         brand_data = await database.fetch_one(query=query)
-        return brand_data['id_brand']
+        return brand_data['id']
 
     # ================ CATEGORY SECTION ================
 
     @pytest.mark.asyncio
     async def get_category_id(self,name: str):
-        query = select([category]).where(category.c.name_category == name)
+        query = select([category]).where(category.c.name == name)
         category_data = await database.fetch_one(query=query)
-        return category_data['id_category']
+        return category_data['id']
 
     # ================ SUB-CATEGORY SECTION ================
 
     @pytest.mark.asyncio
     async def get_sub_category_id(self,name: str):
-        query = select([sub_category]).where(sub_category.c.name_sub_category == name)
+        query = select([sub_category]).where(sub_category.c.name == name)
         sub_category_data = await database.fetch_one(query=query)
-        return sub_category_data['id_sub_category']
+        return sub_category_data['id']
 
     # ================ ITEM-SUB-CATEGORY SECTION ================
 
     @pytest.mark.asyncio
     async def get_item_sub_category_id(self,name: str):
-        query = select([item_sub_category]).where(item_sub_category.c.name_item_sub_category == name)
+        query = select([item_sub_category]).where(item_sub_category.c.name == name)
         item_sub_category_data = await database.fetch_one(query=query)
-        return item_sub_category_data['id_item_sub_category']
+        return item_sub_category_data['id']
 
     # ================ PRODUCT SECTION ================
 
     @pytest.mark.asyncio
     async def get_product_id(self,name: str):
-        query = select([product]).where(product.c.name_product == name)
+        query = select([product]).where(product.c.name == name)
         product_data = await database.fetch_one(query=query)
-        return product_data['id_product']
+        return product_data['id']
+
+    # ================ COMMENT SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_comment_id(self, message: str, commentable_id: int, commentable_type: str):
+        query = select([comment]).where(
+            (comment.c.message == message) &
+            (comment.c.commentable_id == commentable_id) &
+            (comment.c.commentable_type == commentable_type)
+        )
+        comment_data = await database.fetch_one(query=query)
+        return comment_data['id']
