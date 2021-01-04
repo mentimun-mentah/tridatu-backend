@@ -4,7 +4,6 @@ from controllers.ItemSubCategoryController import ItemSubCategoryFetch, ItemSubC
 from controllers.SubCategoryController import SubCategoryFetch
 from controllers.UserController import UserFetch
 from schemas.item_sub_categories.ItemSubCategorySchema import ItemSubCategoryCreateUpdate, ItemSubCategoryData
-from typing import List
 
 router = APIRouter()
 
@@ -39,18 +38,11 @@ async def create_item_sub_category(item_sub_category: ItemSubCategoryCreateUpdat
     if not await SubCategoryFetch.filter_by_id(item_sub_category.sub_category_id):
         raise HTTPException(status_code=404,detail="Sub-category not found!")
 
-    if await ItemSubCategoryFetch.check_duplicate_name(
-        item_sub_category.sub_category_id,
-        item_sub_category.name_item_sub_category
-    ):
+    if await ItemSubCategoryFetch.check_duplicate_name(item_sub_category.sub_category_id,item_sub_category.name):
         raise HTTPException(status_code=400,detail="The name has already been taken in the item sub-category.")
 
     await ItemSubCategoryCrud.create_item_sub_category(**item_sub_category.dict())
     return {"detail": "Successfully add a new item sub-category."}
-
-@router.get('/all-item-sub-categories',response_model=List[ItemSubCategoryData])
-async def get_all_item_sub_categories():
-    return await ItemSubCategoryFetch.get_all_item_sub_categories()
 
 @router.get('/get-item-sub-category/{item_sub_category_id}',response_model=ItemSubCategoryData,
     responses={
@@ -112,16 +104,16 @@ async def update_item_sub_category(
 
         if await ItemSubCategoryFetch.check_duplicate_name(
             item_sub_category_data.sub_category_id,
-            item_sub_category_data.name_item_sub_category
+            item_sub_category_data.name
         ):
             raise HTTPException(status_code=400,detail="The name has already been taken in the item sub-category.")
 
         data = {
-            "name_item_sub_category": item_sub_category_data.name_item_sub_category,
+            "name": item_sub_category_data.name,
             "sub_category_id": item_sub_category_data.sub_category_id
         }
 
-        await ItemSubCategoryCrud.update_item_sub_category(item_sub_category['id_item_sub_category'],**data)
+        await ItemSubCategoryCrud.update_item_sub_category(item_sub_category['id'],**data)
         return {"detail": "Successfully update the item sub-category."}
     raise HTTPException(status_code=404,detail="Item sub-category not found!")
 
@@ -148,6 +140,6 @@ async def delete_item_sub_category(item_sub_category_id: int = Path(...,gt=0), a
     await UserFetch.user_is_admin(user_id)
 
     if item_sub_category := await ItemSubCategoryFetch.filter_by_id(item_sub_category_id):
-        await ItemSubCategoryCrud.delete_item_sub_category(item_sub_category['id_item_sub_category'])
+        await ItemSubCategoryCrud.delete_item_sub_category(item_sub_category['id'])
         return {"detail": "Successfully delete the item sub-category."}
     raise HTTPException(status_code=404,detail="Item sub-category not found!")

@@ -66,6 +66,7 @@ class UserFetch:
             if user_admin['role'] == 'admin':
                 return user_admin
             raise HTTPException(status_code=401,detail="Only users with admin privileges can do this action.")
+        raise HTTPException(status_code=404,detail="User not found!")
 
     @staticmethod
     async def filter_by_email(email: str) -> user:

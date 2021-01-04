@@ -174,9 +174,9 @@ class TestBrand(OperationTest):
 
         response = await async_client.get(url + str(brand_id))
         assert response.status_code == 200
-        assert "id_brand" in response.json()
-        assert "name_brand" in response.json()
-        assert "image_brand" in response.json()
+        assert "id" in response.json()
+        assert "name" in response.json()
+        assert "image" in response.json()
 
     def test_validation_update_brand(self,client):
         url = self.prefix + '/update/'

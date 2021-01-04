@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, Path, Query, HTTPException
 from fastapi_jwt_auth import AuthJWT
 from controllers.CategoryController import CategoryFetch, CategoryCrud
 from controllers.UserController import UserFetch
-from schemas.categories.CategorySchema import CategoryCreateUpdate, CategoryData, CategoryWithChildrenData
+from schemas.categories.CategorySchema import (
+    CategoryCreateUpdate,
+    CategoryData,
+    CategoryDataWithoutLabels,
+    CategoryWithChildrenData
+)
 from typing import List
 
 router = APIRouter()
@@ -29,10 +34,10 @@ async def create_category(category: CategoryCreateUpdate, authorize: AuthJWT = D
     user_id = authorize.get_jwt_subject()
     await UserFetch.user_is_admin(user_id)
 
-    if await CategoryFetch.filter_by_name(category.name_category):
+    if await CategoryFetch.filter_by_name(category.name):
         raise HTTPException(status_code=400,detail="The name has already been taken.")
 
-    await CategoryCrud.create_category(category.name_category)
+    await CategoryCrud.create_category(category.name)
     return {"detail": "Successfully add a new category."}
 
 @router.get('/',response_model=List[CategoryWithChildrenData])
@@ -43,7 +48,7 @@ async def get_categories_with_children():
 async def get_all_categories(with_sub: bool = Query(...)):
     return await CategoryFetch.get_all_categories(with_sub)
 
-@router.get('/get-category/{category_id}',response_model=CategoryData,
+@router.get('/get-category/{category_id}',response_model=CategoryDataWithoutLabels,
     responses={
         401: {
             "description": "User without role admin",
@@ -96,13 +101,10 @@ async def update_category(
     await UserFetch.user_is_admin(user_id)
 
     if category := await CategoryFetch.filter_by_id(category_id):
-        if (
-            category['name_category'] != category_data.name_category and
-            await CategoryFetch.filter_by_name(category_data.name_category)
-        ):
+        if category['name'] != category_data.name and await CategoryFetch.filter_by_name(category_data.name):
             raise HTTPException(status_code=400,detail="The name has already been taken.")
 
-        await CategoryCrud.update_category(category['id_category'],name_category=category_data.name_category)
+        await CategoryCrud.update_category(category['id'],name=category_data.name)
         return {"detail": "Successfully update the category."}
     raise HTTPException(status_code=404,detail="Category not found!")
 
@@ -129,6 +131,6 @@ async def delete_category(category_id: int = Path(...,gt=0), authorize: AuthJWT 
     await UserFetch.user_is_admin(user_id)
 
     if category := await CategoryFetch.filter_by_id(category_id):
-        await CategoryCrud.delete_category(category['id_category'])
+        await CategoryCrud.delete_category(category['id'])
         return {"detail": "Successfully delete the category."}
     raise HTTPException(status_code=404,detail="Category not found!")
