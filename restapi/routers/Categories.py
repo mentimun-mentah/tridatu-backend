@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Path, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, Path, HTTPException
 from fastapi_jwt_auth import AuthJWT
 from controllers.CategoryController import CategoryFetch, CategoryCrud
 from controllers.UserController import UserFetch
@@ -41,12 +41,12 @@ async def create_category(category: CategoryCreateUpdate, authorize: AuthJWT = D
     return {"detail": "Successfully add a new category."}
 
 @router.get('/',response_model=List[CategoryWithChildrenData])
-async def get_categories_with_children():
-    return await CategoryFetch.get_categories_with_children()
+async def get_categories_with_children(q: str = Query(None,min_length=1)):
+    return await CategoryFetch.get_categories_with_children(q)
 
 @router.get('/all-categories',response_model=List[CategoryData], response_model_exclude_none=True)
-async def get_all_categories(with_sub: bool = Query(...)):
-    return await CategoryFetch.get_all_categories(with_sub)
+async def get_all_categories(with_sub: bool = Query(...), q: str = Query(None,min_length=1)):
+    return await CategoryFetch.get_all_categories(with_sub,q)
 
 @router.get('/get-category/{category_id}',response_model=CategoryDataWithoutLabels,
     responses={

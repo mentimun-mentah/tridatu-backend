@@ -98,6 +98,17 @@ class TestCategory(OperationTest):
 
     def test_get_categories_with_children(self,client):
         url = self.prefix + '/'
+        # all field blank
+        response = client.get(url + '?q=')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'q': assert x['msg'] == 'ensure this value has at least 1 characters'
+
+        # with search
+        response = client.get(url + '?q=t')
+        assert response.status_code == 200
+        assert response.json() != []
+        # without search
         response = client.get(url)
         assert response.status_code == 200
         assert response.json() != []
@@ -109,6 +120,11 @@ class TestCategory(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'with_sub': assert x['msg'] == 'field required'
+        # all field blank
+        response = client.get(url + '?q=')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'q': assert x['msg'] == 'ensure this value has at least 1 characters'
         # check all field type data
         response = client.get(url + '?with_sub=asd')
         assert response.status_code == 422
@@ -116,6 +132,13 @@ class TestCategory(OperationTest):
             if x['loc'][-1] == 'with_sub': assert x['msg'] == 'value could not be parsed to a boolean'
 
     def test_get_all_categories(self,client):
+        # with search
+        url = self.prefix + '/all-categories?with_sub=false&q=t'
+        response = client.get(url)
+        assert response.status_code == 200
+        assert response.json() != []
+
+        # without search
         url = self.prefix + '/all-categories?with_sub=false'
         response = client.get(url)
         assert response.status_code == 200
