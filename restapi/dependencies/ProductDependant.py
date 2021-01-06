@@ -1,14 +1,9 @@
 import json
 from fastapi import UploadFile, File, Form, Query, Depends, HTTPException
 from libs.MagicImage import validate_multiple_upload_images, validate_single_upload_image
+from libs.Parser import parse_int_list
 from typing import Optional, List, Literal
 from config import redis_conn
-
-def parse_int_list(items: List[str], seperator: str) -> List[int]:
-    try:
-        return [int(float(item)) for item in items.split(seperator)]
-    except Exception:
-        return None
 
 def upload_image_product(image_product: List[UploadFile] = File(...)):
     return validate_multiple_upload_images(

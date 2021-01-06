@@ -16,7 +16,7 @@ with open("private_key.txt") as f:
     private_key = f.read().strip()
 
 class Settings(BaseSettings):
-    authjwt_token_location: set = {"headers","cookies"}
+    authjwt_token_location: set = {"cookies"}
     authjwt_secret_key: str
     authjwt_algorithm: str = "RS512"
     authjwt_public_key: str = public_key

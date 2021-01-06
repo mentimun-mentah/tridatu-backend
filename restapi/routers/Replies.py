@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Path, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
 from controllers.ReplyController import ReplyCrud
 from controllers.UserController import UserFetch
 from controllers.CommentController import CommentFetch
 from schemas.replies.ReplySchema import ReplyCreate
 from libs.MessageCooldown import MessageCooldown
+from libs.Parser import parse_int_list
 
 router = APIRouter()
 
@@ -50,3 +51,7 @@ async def create_reply(
 
         await ReplyCrud.create_reply(**reply.dict(),user_id=user['id'])
         return {"detail": "Successfully reply to this comment."}
+
+@router.get('/all-replies/{comment_id}')
+async def get_all_replies(comment_id: str = Path(...,min_length=1,description="Example 1-2-3")):
+    print(parse_int_list(comment_id,"-"))

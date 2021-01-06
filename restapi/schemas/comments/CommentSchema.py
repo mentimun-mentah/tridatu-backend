@@ -17,6 +17,7 @@ class CommentData(CommentSchema):
     comments_created_at: str
     users_username: str
     users_avatar: str
+    total_replies: int
 
     @validator('comments_created_at',pre=True)
     def convert_datetime_to_str(cls, v):
