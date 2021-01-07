@@ -257,6 +257,38 @@ class TestReply(OperationTest):
         assert response.status_code == 201
         assert response.json() == {"detail": "Successfully reply to this comment."}
 
+    def test_validation_get_all_replies_in_comment(self,client):
+        url = self.prefix + '/comments/'
+        # wrong format path param
+        response = client.get(url + 'a')
+        assert response.status_code == 200
+        assert response.json() == []
+
+        response = client.get(url + '1,2,3')
+        assert response.status_code == 200
+        assert response.json() == []
+
+        response = client.get(url + '1-')
+        assert response.status_code == 200
+        assert response.json() == []
+
+    @pytest.mark.asyncio
+    async def test_get_all_replies_in_comment(self,async_client):
+        url = self.prefix + '/comments/'
+        product_id_one = await self.get_product_id(self.name)
+        product_id_two = await self.get_product_id(self.name2)
+        comment_id_one = await self.get_comment_id(self.name,product_id_one,'product')
+        comment_id_two = await self.get_comment_id(self.name2,product_id_two,'product')
+
+        # get replies in one comment
+        response = await async_client.get(url + str(comment_id_one))
+        assert response.status_code == 200
+        assert isinstance(response.json(), dict)
+        # get replies in multiple comment
+        response = await async_client.get(url + str(comment_id_one) + '-' + str(comment_id_two))
+        assert response.status_code == 200
+        assert isinstance(response.json(), list) and response.json() != []
+
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):
         # set user one to admin
