@@ -13,6 +13,7 @@ from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
 from models.ProductModel import product
 from models.CommentModel import comment
+from models.ReplyModel import reply
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -186,3 +187,11 @@ class OperationTest:
         )
         comment_data = await database.fetch_one(query=query)
         return comment_data['id']
+
+    # ================ REPLY SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_reply_id(self, message: str, comment_id: int):
+        query = select([reply]).where((reply.c.message == message) & (reply.c.comment_id == comment_id))
+        reply_data = await database.fetch_one(query=query)
+        return reply_data['id']

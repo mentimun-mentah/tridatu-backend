@@ -9,6 +9,10 @@ class ReplyCrud:
     async def create_reply(**kwargs) -> int:
         return await database.execute(reply.insert(),values=kwargs)
 
+    @staticmethod
+    async def delete_reply(id_: int) -> None:
+        await database.execute(query=reply.delete().where(reply.c.id == id_))
+
 class ReplyFetch:
     @staticmethod
     async def get_all_replies_in_comment(comment_id: list) -> Union[list,dict]:
@@ -35,3 +39,8 @@ class ReplyFetch:
             reply_data = [{index:value for index,value in item.items()} for item in reply_db]
 
             return {'comments_id': comment_id[0], 'comments_replies': reply_data}
+
+    @staticmethod
+    async def filter_by_id(id_: int) -> reply:
+        query = select([reply]).where(reply.c.id == id_)
+        return await database.fetch_one(query=query)

@@ -56,3 +56,32 @@ async def create_reply(
 @router.get('/comments/{comment_id}',response_model=Union[List[ReplyCommentData],ReplyCommentData])
 async def get_all_replies_in_comment(comment_id: str = Path(...,min_length=1,description="Example 1-2-3")):
     return await ReplyFetch.get_all_replies_in_comment(parse_int_list(comment_id,"-"))
+
+@router.delete('/delete/{reply_id}',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"Reply successfully deleted."}}}
+        },
+        400: {
+            "description": "Reply not match with user",
+            "content": {"application/json":{"example": {"detail":"Reply not match with the current user."}}}
+        },
+        404: {
+            "description": "Reply not found",
+            "content": {"application/json":{"example": {"detail":"Reply not found!"}}}
+        }
+    }
+)
+async def delete_reply(reply_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    if user := await UserFetch.filter_by_id(user_id):
+        if reply := await ReplyFetch.filter_by_id(reply_id):
+            if user['id'] != reply['user_id']:
+                raise HTTPException(status_code=400,detail="Reply not match with the current user.")
+
+            await ReplyCrud.delete_reply(reply['id'])  # delete reply
+            return {"detail": "Reply successfully deleted."}
+        raise HTTPException(status_code=404,detail="Reply not found!")
