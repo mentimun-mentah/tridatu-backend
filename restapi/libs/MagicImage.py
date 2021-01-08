@@ -1,4 +1,4 @@
-import os, shutil
+import os, shutil, dhash
 from uuid import uuid4
 from fastapi import File, UploadFile, HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -13,10 +13,17 @@ def validate_multiple_upload_images(
 ) -> List[UploadFile]:
     max_file_size_mb = max_file_size * 1024 * 1024  # convert to Mb
 
+    # for detect duplicate image
+    image_hash = list()
+
     for index, image in enumerate(images, 1):
         # validation image
         try:
             with Image.open(image.file) as img:
+                # extract hash image for detect duplicate image
+                row_hash, col_hash = dhash.dhash_row_col(img,size=17)
+                image_hash.append(dhash.format_hex(row_hash,col_hash))
+
                 if img.format.lower() not in allow_file_ext and img.mode != 'RGB':
                     msg = "The image at index {} must be between {}.".format(index,', '.join(allow_file_ext))
                     raise HTTPException(status_code=422,detail=msg)
@@ -31,6 +38,10 @@ def validate_multiple_upload_images(
             msg_size = f"An image at index {index} cannot greater than {max_file_size} Mb."
             raise HTTPException(status_code=413,detail=msg_size)
         size.seek(0)
+
+    # image must be unique in a list of images
+    if len(set(image_hash)) != len(image_hash):
+        raise HTTPException(status_code=409,detail="Each image must be unique.")
 
     # check minimum or maximum image in list
     if min_file_in_list and len(images) < min_file_in_list:

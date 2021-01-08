@@ -36,6 +36,10 @@ router = APIRouter()
             "description": "Item sub-category, Brand, Ticket variant not found",
             "content": {"application/json": {"example": {"detail":"string"}}}
         },
+        409: {
+            "description": "Conflict",
+            "content": {"application/json": {"example": {"detail":"Each image must be unique."}}}
+        },
         413: {
             "description": "Request Entity Too Large",
             "content": {"application/json": {"example": {"detail":"An image cannot greater than 4 Mb."}}}

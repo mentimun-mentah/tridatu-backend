@@ -210,16 +210,33 @@ class TestProduct(OperationTest):
 
         # max file in list 10 image product
         response = client.post(url,files=[
-            ("image_product",("image.jpeg", open(self.test_image_dir + 'image.jpeg','rb'),"image/jpg")) for x in range(20)
+            ("image_product", (f"{x}.png", open(f"{self.test_image_dir}list_image/{x}.png",'rb'),"image/png"))
+            for x in range(1,12)
         ])
         assert response.status_code == 422
         assert response.json() == {"detail": "Maximal 10 images to be upload."}
+        # image cannot be duplicate in image product
+        response = client.post(url,files=[
+            ("image_product", ("1.png", open(self.test_image_dir + 'list_image/1.png','rb'),"image/png")),
+            ("image_product", ("1.png", open(self.test_image_dir + 'list_image/1.png','rb'),"image/png"))
+        ])
+        assert response.status_code == 409
+        assert response.json() == {"detail": "Each image must be unique."}
+
         # max file in list 20 image variant
         response = client.post(url,files=[
-            ("image_variant",("image.jpeg", open(self.test_image_dir + 'image.jpeg','rb'),"image/jpg")) for x in range(21)
+            ("image_variant",(f"{x}.png", open(f"{self.test_image_dir}list_image/{x}.png",'rb'),"image/png"))
+            for x in range(1,22)
         ])
         assert response.status_code == 422
         assert response.json() == {"detail": "Maximal 20 images to be upload."}
+        # image cannot be duplicate in image variant
+        response = client.post(url,files=[
+            ("image_variant", ("1.png", open(self.test_image_dir + 'list_image/1.png','rb'),"image/png")),
+            ("image_variant", ("1.png", open(self.test_image_dir + 'list_image/1.png','rb'),"image/png"))
+        ])
+        assert response.status_code == 409
+        assert response.json() == {"detail": "Each image must be unique."}
 
         # danger file extension
         with open(self.test_image_dir + 'test.txt','rb') as tmp:
