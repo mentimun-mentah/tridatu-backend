@@ -367,17 +367,21 @@ class TestProduct(OperationTest):
             assert response.status_code == 404
             assert response.json() == {'detail': 'Brand not found!'}
 
-        with open(self.test_image_dir + 'image.jpeg','rb') as tmp:
-            response = await async_client.post(url,data={
-                'name': self.name,
-                'desc': 'a' * 20,
-                'condition': 'false',
-                'weight': '1',
-                'ticket_variant': self.without_variant,
-                'item_sub_category_id': str(item_sub_category_id)
-            },files={'image_product': tmp},headers={'X-CSRF-TOKEN': csrf_access_token})
-            assert response.status_code == 201
-            assert response.json() == {"detail":"Successfully add a new product."}
+        response = await async_client.post(url,data={
+            'name': self.name,
+            'desc': 'a' * 20,
+            'condition': 'false',
+            'weight': '1',
+            'video': 'https://www.youtube.com/watch?v=VTVC4weBFUA',
+            'preorder': '12',
+            'ticket_variant': self.without_variant,
+            'item_sub_category_id': str(item_sub_category_id)
+        },files={
+            'image_product': open(self.test_image_dir + 'image.jpeg','rb'),
+            'image_size_guide': open(self.test_image_dir + 'image.jpeg','rb')
+        },headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 201
+        assert response.json() == {"detail":"Successfully add a new product."}
 
         # check folder exists in directory
         assert Path(self.product_dir + self.name).is_dir() is True
@@ -500,6 +504,10 @@ class TestProduct(OperationTest):
         response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200
         assert response.json() == {"detail": "Successfully change the product to archive."}
+        # set product to alive
+        response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully change the product to alive."}
 
     def test_search_products_by_name(self,client):
         url = self.prefix + '/search-by-name'
@@ -524,6 +532,84 @@ class TestProduct(OperationTest):
         response = client.get(url + '?q=t&limit=1')
         assert response.status_code == 200
         assert len(response.json()) == 1
+
+    def test_get_product_by_slug(self,client):
+        url = self.prefix + '/'
+        # field required
+        response = client.get(url + 'a')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'recommendation': assert x['msg'] == 'field required'
+        # check all field type data
+        response = client.get(url + 'a?recommendation=a')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'recommendation': assert x['msg'] == 'value could not be parsed to a boolean'
+
+        # product not found
+        response = client.get(url + 'a?recommendation=false')
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Product not found!"}
+
+        # guest access
+        # recommendation true
+        response = client.get(url + f'{self.name}?recommendation=true')
+        assert response.status_code == 200
+        assert 'products_id' in response.json()
+        assert 'products_name' in response.json()
+        assert 'products_slug' in response.json()
+        assert 'products_desc' in response.json()
+        assert 'products_condition' in response.json()
+        assert 'products_image_product' in response.json()
+        assert 'products_weight' in response.json()
+        assert 'products_image_size_guide' in response.json()
+        assert 'products_video' in response.json()
+        assert 'products_preorder' in response.json()
+        assert 'products_live' in response.json()
+        assert 'products_visitor' in response.json()
+        assert 'products_love' in response.json()
+        assert 'products_category' in response.json()
+        assert 'products_brand' in response.json()
+        assert 'products_variant' in response.json()
+        assert 'products_recommendation' in response.json()
+        assert 'products_created_at' in response.json()
+        assert 'products_updated_at' in response.json()
+        # recommendation false
+        response = client.get(url + f'{self.name}?recommendation=false')
+        assert response.status_code == 200
+        assert 'products_recommendation' not in response.json()
+
+        # user access
+        response = client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        # recommendation true
+        response = client.get(url + f'{self.name}?recommendation=true')
+        assert response.status_code == 200
+        assert 'products_id' in response.json()
+        assert 'products_name' in response.json()
+        assert 'products_slug' in response.json()
+        assert 'products_desc' in response.json()
+        assert 'products_condition' in response.json()
+        assert 'products_image_product' in response.json()
+        assert 'products_weight' in response.json()
+        assert 'products_image_size_guide' in response.json()
+        assert 'products_video' in response.json()
+        assert 'products_preorder' in response.json()
+        assert 'products_live' in response.json()
+        assert 'products_visitor' in response.json()
+        assert 'products_love' in response.json()
+        assert 'products_category' in response.json()
+        assert 'products_brand' in response.json()
+        assert 'products_variant' in response.json()
+        assert 'products_recommendation' in response.json()
+        assert 'products_created_at' in response.json()
+        assert 'products_updated_at' in response.json()
+        # recommendation false
+        response = client.get(url + f'{self.name}?recommendation=false')
+        assert response.status_code == 200
+        assert 'products_recommendation' not in response.json()
 
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):

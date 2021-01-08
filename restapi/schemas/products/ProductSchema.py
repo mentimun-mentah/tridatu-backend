@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pydantic import BaseModel, validator
 from typing import Optional, List
 
@@ -24,7 +25,9 @@ class ProductData(ProductSchema):
 
     @validator('products_created_at','products_updated_at',pre=True)
     def convert_datetime_to_str(cls, v):
-        return v.isoformat()
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
 
 class ProductPaginate(BaseModel):
     data: List[ProductData]
@@ -89,6 +92,7 @@ class ProductDataSlug(ProductSchema):
     products_category: ProductCategory
     products_brand: Optional[ProductBrand]
     products_variant: ProductVariant
+    products_recommendation: Optional[List[ProductData]]
 
     products_created_at: str
     products_updated_at: str

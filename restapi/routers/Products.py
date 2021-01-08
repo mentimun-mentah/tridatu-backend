@@ -1,5 +1,6 @@
 import json
 from fastapi import APIRouter, Query, Path, Depends, HTTPException
+from fastapi.requests import Request
 from fastapi_jwt_auth import AuthJWT
 from controllers.ProductController import ProductFetch, ProductCrud
 from controllers.VariantController import VariantLogic, VariantCrud
@@ -169,19 +170,43 @@ async def search_products_by_name(q: str = Query(...,min_length=1), limit: int =
     }
 )
 async def get_product_by_slug(
+    request: Request,
     slug: str = Path(...,min_length=1),
+    recommendation: bool = Query(...),
     authorize: AuthJWT = Depends(),
     visitor: Visitor = Depends()
 ):
     authorize.jwt_optional()
 
+    # set redis conn from state
+    redis = request.app.state.redis
+
     if product_data := await ProductFetch.filter_by_slug(slug):
         await visitor.increment_visitor(table=product,id_=product_data['id'])  # set visitor
         results = await ProductFetch.get_product_by_slug(product_data['slug'])
-        # check wishlist product
+        # get product recommendation
+        if recommendation is True:
+            if redis.get(f"products_recommendation:{slug}") is None:
+                results['products_recommendation'] = await ProductFetch.get_product_recommendation(limit=6)
+                redis.set(
+                    f"products_recommendation:{slug}",
+                    json.dumps(results['products_recommendation'],default=str), 600
+                )  # save product recommendation by slug in cache 10 minutes
+            else:
+                results['products_recommendation'] = json.loads(redis.get(f"products_recommendation:{slug}"))
+
+        # check wishlist product & product recommendation
         if user_id := authorize.get_jwt_subject():
             results.__setitem__('products_love', await WishlistLogic.check_wishlist(product_data['id'],user_id))
+            if recommendation is True:
+                [
+                    data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
+                    for data in results['products_recommendation']
+                ]
         else:
             results.__setitem__('products_love', False)
+            if recommendation is True:
+                [data.__setitem__('products_love',False) for data in results['products_recommendation']]
+
         return results
     raise HTTPException(status_code=404,detail="Product not found!")

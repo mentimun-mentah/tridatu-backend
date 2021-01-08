@@ -1,4 +1,5 @@
 from config import database
+from sqlalchemy import true
 from sqlalchemy.sql import select, func
 from models.BrandModel import brand
 from models.ProductModel import product
@@ -25,11 +26,23 @@ class ProductCrud:
 class ProductFetch:
     @staticmethod
     async def search_products_by_name(q: str, limit: int) -> list:
-        query = select([product]).where(product.c.name.ilike(f"%{q}%")).limit(limit)
+        query = select([product]).where((product.c.name.ilike(f"%{q}%")) & (product.c.live == true())).limit(limit)
         product_db = await database.fetch_all(query=query)
         return [
             {'value':value for index,value in item.items() if index == 'name'} for item in product_db
         ]
+
+    @staticmethod
+    async def get_product_recommendation(limit: int) -> list:
+        product_alias = select([product.join(variant)]).distinct(product.c.id).apply_labels().alias()
+
+        query = select([product_alias]).where(product_alias.c.products_live == true()) \
+            .order_by(func.random()).limit(limit)
+
+        product_db = await database.fetch_all(query=query)
+        product_data = [{index:value for index,value in item.items()} for item in product_db]
+
+        return product_data
 
     @staticmethod
     async def get_all_products_paginate(**kwargs) -> dict:
