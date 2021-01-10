@@ -19,9 +19,14 @@ class ProductCrud:
         return await database.execute(product.insert(),values=kwargs)
 
     @staticmethod
+    async def update_product(id_: int, **kwargs) -> None:
+        kwargs.update({"updated_at": func.now()})
+        await database.execute(query=product.update().where(product.c.id == id_),values=kwargs)
+
+    @staticmethod
     async def change_product_alive_archive(id_: int, live: bool) -> None:
         query = product.update().where(product.c.id == id_)
-        await database.execute(query=query,values={'live': not live})
+        await database.execute(query=query,values={'live': not live, 'updated_at': func.now()})
 
 class ProductFetch:
     @staticmethod

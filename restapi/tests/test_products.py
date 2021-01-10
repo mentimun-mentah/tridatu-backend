@@ -594,6 +594,7 @@ class TestProduct(OperationTest):
         # recommendation false
         response = client.get(url + f'{self.name}?recommendation=false')
         assert response.status_code == 200
+        assert 'products_love' not in response.json()
         assert 'products_recommendation' not in response.json()
 
         # user access
@@ -626,6 +627,7 @@ class TestProduct(OperationTest):
         # recommendation false
         response = client.get(url + f'{self.name}?recommendation=false')
         assert response.status_code == 200
+        assert 'products_love' not in response.json()
         assert 'products_recommendation' not in response.json()
 
     @pytest.mark.asyncio

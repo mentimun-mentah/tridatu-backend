@@ -1,11 +1,21 @@
 import json
 from fastapi import UploadFile, File, Form, Query, Depends, HTTPException
 from libs.MagicImage import validate_multiple_upload_images, validate_single_upload_image
-from libs.Parser import parse_int_list
+from libs.Parser import parse_int_list, parse_str_list
 from typing import Optional, List, Literal
 from config import redis_conn
 
 def upload_image_product(image_product: List[UploadFile] = File(...)):
+    return validate_multiple_upload_images(
+        images=image_product,
+        allow_file_ext=['jpg','png','jpeg'],
+        max_file_size=4,
+        max_file_in_list=10
+    )
+
+def upload_image_product_optional(image_product: Optional[List[UploadFile]] = File(None)):
+    if not image_product: return
+
     return validate_multiple_upload_images(
         images=image_product,
         allow_file_ext=['jpg','png','jpeg'],
@@ -70,6 +80,62 @@ def create_form_product(
         "preorder": preorder,
         "item_sub_category_id": item_sub_category_id,
         "brand_id": brand_id,
+        "image_product": image_product,
+        "image_variant": image_variant,
+        "image_size_guide": image_size_guide,
+        "variant_data": variant_data
+    }
+
+def update_form_product(
+    name: str = Form(...,min_length=5,max_length=100),
+    desc: str = Form(...,min_length=20),
+    condition: bool = Form(...),
+    weight: int = Form(...,gt=0),
+    video: str = Form(None,min_length=2,regex=r"^(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.+"),
+    preorder: int = Form(None,gt=0,le=500),
+    ticket_variant: str = Form(None,min_length=5,max_length=100),
+    item_sub_category_id: int = Form(...,gt=0),
+    brand_id: int = Form(None,gt=0),
+    image_product_delete: str = Form(None,min_length=1,description="Example 1.jpg,2.png,3.jpeg"),
+    image_product: upload_image_product_optional = Depends(),
+    image_variant: upload_image_variant = Depends(),
+    image_size_guide: upload_image_size_guide = Depends()
+):
+
+    variant_data = None
+
+    if ticket_variant:
+        if variant_data := redis_conn.get(ticket_variant):
+            variant_data = json.loads(variant_data)
+            # match variant_data with image without, single and double variant
+            if 'va1_name' not in variant_data and image_variant:
+                raise HTTPException(status_code=422,detail="The image variant must not be filled.")
+
+            # without image or all image must be filled if single or double variant
+            len_va1_items = len(variant_data['va1_items'])
+            len_image_variant = len(image_variant or [])
+            if len_image_variant != 0 and len_image_variant != len_va1_items:
+                raise HTTPException(status_code=422,detail="You must fill all variant images or even without images.")
+        else:
+            raise HTTPException(status_code=404,detail="Ticket variant not found!")
+
+    if not ticket_variant and image_variant:
+        raise HTTPException(status_code=422,detail="The image variant must not be filled.")
+
+    image_product_delete = parse_str_list(image_product_delete,",")
+    if image_product_delete and False in [img.endswith(('.jpg','.png','.jpeg')) for img in image_product_delete]:
+        raise HTTPException(status_code=422,detail="Invalid image format on image_product_delete")
+
+    return {
+        "name": name,
+        "desc": desc,
+        "condition": condition,
+        "weight": weight,
+        "video": video,
+        "preorder": preorder,
+        "item_sub_category_id": item_sub_category_id,
+        "brand_id": brand_id,
+        "image_product_delete": image_product_delete,
         "image_product": image_product,
         "image_variant": image_variant,
         "image_size_guide": image_size_guide,

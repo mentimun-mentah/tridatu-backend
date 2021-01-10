@@ -88,7 +88,7 @@ class ProductDataSlug(ProductSchema):
     products_preorder: Optional[int]
     products_live: bool
     products_visitor: int
-    products_love: bool
+    products_love: Optional[bool]
     products_category: ProductCategory
     products_brand: Optional[ProductBrand]
     products_variant: ProductVariant

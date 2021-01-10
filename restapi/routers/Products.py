@@ -8,8 +8,16 @@ from controllers.ItemSubCategoryController import ItemSubCategoryFetch
 from controllers.WishlistController import WishlistLogic
 from controllers.BrandController import BrandFetch
 from controllers.UserController import UserFetch
-from dependencies.ProductDependant import create_form_product, get_all_query_product
-from schemas.products.ProductSchema import ProductPaginate, ProductSearchByName, ProductDataSlug
+from dependencies.ProductDependant import (
+    create_form_product,
+    update_form_product,
+    get_all_query_product
+)
+from schemas.products.ProductSchema import (
+    ProductPaginate,
+    ProductSearchByName,
+    ProductDataSlug
+)
 from models.ProductModel import product
 from libs.MagicImage import MagicImage
 from libs.Visitor import Visitor
@@ -182,14 +190,14 @@ async def get_product_by_slug(
 ):
     authorize.jwt_optional()
 
-    # set redis conn from state
-    redis = request.app.state.redis
-
     if product_data := await ProductFetch.filter_by_slug(slug):
-        await visitor.increment_visitor(table=product,id_=product_data['id'])  # set visitor
         results = await ProductFetch.get_product_by_slug(product_data['slug'])
-        # get product recommendation
+
         if recommendation is True:
+            redis = request.app.state.redis  # set redis conn from state
+            await visitor.increment_visitor(table=product,id_=product_data['id'])  # set visitor
+
+            # get product recommendation
             if redis.get(f"products_recommendation:{slug}") is None:
                 results['products_recommendation'] = await ProductFetch.get_product_recommendation(limit=6)
                 redis.set(
@@ -200,17 +208,106 @@ async def get_product_by_slug(
                 results['products_recommendation'] = json.loads(redis.get(f"products_recommendation:{slug}"))
 
         # check wishlist product & product recommendation
-        if user_id := authorize.get_jwt_subject():
-            results.__setitem__('products_love', await WishlistLogic.check_wishlist(product_data['id'],user_id))
-            if recommendation is True:
+        if recommendation is True:
+            if user_id := authorize.get_jwt_subject():
+                results.__setitem__('products_love', await WishlistLogic.check_wishlist(product_data['id'],user_id))
                 [
                     data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
                     for data in results['products_recommendation']
                 ]
-        else:
-            results.__setitem__('products_love', False)
-            if recommendation is True:
+            else:
+                results.__setitem__('products_love', False)
                 [data.__setitem__('products_love',False) for data in results['products_recommendation']]
 
         return results
+    raise HTTPException(status_code=404,detail="Product not found!")
+
+@router.put('/update/{product_id}',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"Successfully update the product."}}}
+        },
+        401: {
+            "description": "User without role admin",
+            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+        },
+        404: {
+            "description": "Product not found",
+            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+        }
+    }
+)
+async def update_product(
+    product_id: int = Path(...,gt=0),
+    form_data: update_form_product = Depends(),
+    authorize: AuthJWT = Depends()
+):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    await UserFetch.user_is_admin(user_id)
+
+    if product := await ProductFetch.filter_by_id(product_id):
+        form_data['slug'] = slugify(form_data['name'])
+        # check name duplicate
+        if product['slug'] != form_data['slug'] and await ProductFetch.filter_by_slug(form_data['slug']):
+            raise HTTPException(status_code=400,detail="The name has already been taken.")
+        # check item_sub_category_id exists in db
+        if not await ItemSubCategoryFetch.filter_by_id(form_data['item_sub_category_id']):
+            raise HTTPException(status_code=404,detail="Item sub-category not found!")
+        # check brand exists in db if data supplied
+        if form_data['brand_id'] and not await BrandFetch.filter_by_id(form_data['brand_id']):
+            raise HTTPException(status_code=404,detail="Brand not found!")
+
+        # change folder name if name in db not same with form_data
+        if product['slug'] != form_data['slug']:
+            MagicImage.rename_folder(old_name=product['slug'],new_name=form_data['slug'],path_update='products/')
+
+        # ================ IMAGE PRODUCT SECTION ================
+        image_product_db = [item for item in json.loads(product['image_product']).values()]
+        # delete image_product on db temporary
+        if image_product_delete := form_data['image_product_delete']:
+            for item in image_product_delete:
+                try: image_product_db.remove(item)
+                except ValueError: pass
+
+            if len(image_product_db + (form_data.get('image_product') or [])) < 1:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Image is required, make sure this product has at least one image."
+                )
+
+        if image_product := form_data['image_product']:
+            if len(image_product_db + image_product) > 10:
+                raise HTTPException(status_code=422,detail="Maximal 10 images to be upload.")
+            image_magic_products = MagicImage(
+                square=True,
+                file=image_product,
+                width=550,
+                height=550,
+                path_upload='products/',
+                dir_name=form_data['slug']
+            )
+            image_magic_products.save_image()
+            image_magic_products = [item for item in image_magic_products.file_name.values()]
+            image_product_db = [*image_product_db,*image_magic_products]
+
+        # delete image_product on storage
+        if image_product_delete := form_data['image_product_delete']:
+            [
+                MagicImage.delete_image(file=file,path_delete=f"products/{product['slug']}")
+                for file in image_product_delete
+            ]
+
+        form_data['image_product'] = json.dumps({key:value for key,value in enumerate(image_product_db)})
+        # ================ IMAGE PRODUCT SECTION ================
+
+        product_update_data = {
+            key:value for key,value in form_data.items()
+            if key != 'image_product_delete' and key != 'image_variant' and key != 'variant_data'
+        }
+
+        await ProductCrud.update_product(product['id'],**product_update_data)  # update product on db
+        return {"detail": "Successfully update the product."}
     raise HTTPException(status_code=404,detail="Product not found!")
