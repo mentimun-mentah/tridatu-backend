@@ -20,6 +20,7 @@ class VariantOneData(VariantSchema):
     va1_stock: Optional[conint(strict=True, ge=0)]
     va1_code: Optional[constr(strict=True, max_length=50)]
     va1_barcode: Optional[constr(strict=True, max_length=50)]
+    va1_image: Optional[constr(strict=True, max_length=100)]
 
     va2_items: Optional[conlist(VariantTwoData, min_items=1, max_items=20)]
 

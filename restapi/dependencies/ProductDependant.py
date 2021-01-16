@@ -59,7 +59,7 @@ def create_form_product(
 
     if variant_data := redis_conn.get(ticket_variant):
         variant_data = json.loads(variant_data)
-        # match variant_data with image without, single and double variant
+        # image cannot be passed if no variant
         if 'va1_name' not in variant_data and image_variant:
             raise HTTPException(status_code=422,detail="The image variant must not be filled.")
 
@@ -93,38 +93,36 @@ def update_form_product(
     weight: int = Form(...,gt=0),
     video: str = Form(None,min_length=2,regex=r"^(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.+"),
     preorder: int = Form(None,gt=0,le=500),
-    ticket_variant: str = Form(None,min_length=5,max_length=100),
+    ticket_variant: str = Form(...,min_length=5,max_length=100),
     item_sub_category_id: int = Form(...,gt=0),
     brand_id: int = Form(None,gt=0),
     image_product_delete: str = Form(None,min_length=1,description="Example 1.jpg,2.png,3.jpeg"),
+    image_size_guide_delete: str = Form(None,min_length=1,description="Example 1.jpg"),
     image_product: upload_image_product_optional = Depends(),
     image_variant: upload_image_variant = Depends(),
     image_size_guide: upload_image_size_guide = Depends()
 ):
+    if variant_data := redis_conn.get(ticket_variant):
+        variant_data = json.loads(variant_data)
+        # image cannot be passed if no variant
+        if 'va1_name' not in variant_data and image_variant:
+            raise HTTPException(status_code=422,detail="The image variant must not be filled.")
 
-    variant_data = None
-
-    if ticket_variant:
-        if variant_data := redis_conn.get(ticket_variant):
-            variant_data = json.loads(variant_data)
-            # match variant_data with image without, single and double variant
-            if 'va1_name' not in variant_data and image_variant:
-                raise HTTPException(status_code=422,detail="The image variant must not be filled.")
-
-            # without image or all image must be filled if single or double variant
-            len_va1_items = len(variant_data['va1_items'])
-            len_image_variant = len(image_variant or [])
-            if len_image_variant != 0 and len_image_variant != len_va1_items:
-                raise HTTPException(status_code=422,detail="You must fill all variant images or even without images.")
-        else:
-            raise HTTPException(status_code=404,detail="Ticket variant not found!")
-
-    if not ticket_variant and image_variant:
-        raise HTTPException(status_code=422,detail="The image variant must not be filled.")
+        # without image or all image must be filled if single or double variant
+        len_va1_image = len([x.get('va1_image') for x in variant_data['va1_items'] if x.get('va1_image')])
+        len_va1_items = len(variant_data['va1_items'])
+        len_image_variant = len(image_variant or [])
+        if (len_va1_image + len_image_variant) != 0 and (len_va1_image + len_image_variant) != len_va1_items:
+            raise HTTPException(status_code=422,detail="You must fill all variant images or even without images.")
+    else:
+        raise HTTPException(status_code=404,detail="Ticket variant not found!")
 
     image_product_delete = parse_str_list(image_product_delete,",")
     if image_product_delete and False in [img.endswith(('.jpg','.png','.jpeg')) for img in image_product_delete]:
         raise HTTPException(status_code=422,detail="Invalid image format on image_product_delete")
+
+    if image_size_guide_delete and image_size_guide_delete.endswith(('.jpg','.png','.jpeg')) is False:
+        raise HTTPException(status_code=422,detail="Invalid image format on image_size_guide_delete")
 
     return {
         "name": name,
@@ -136,6 +134,7 @@ def update_form_product(
         "item_sub_category_id": item_sub_category_id,
         "brand_id": brand_id,
         "image_product_delete": image_product_delete,
+        "image_size_guide_delete": image_size_guide_delete,
         "image_product": image_product,
         "image_variant": image_variant,
         "image_size_guide": image_size_guide,

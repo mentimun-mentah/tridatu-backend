@@ -1,6 +1,6 @@
 import json, uuid
 from config import redis_conn, database
-# from sqlalchemy.sql import select
+from sqlalchemy.sql import select
 from models.VariantModel import variant
 
 class VariantLogic:
@@ -148,10 +148,19 @@ class VariantCrud:
         await database.execute_many(query=variant.insert(),values=variant_db)
 
     @staticmethod
+    async def delete_variant(product_id: int) -> None:
+        await database.execute(query=variant.delete().where(variant.c.product_id == product_id))
+
+    @staticmethod
     def add_variant_to_redis_storage(data_variant: dict) -> str:
         ticket = str(uuid.uuid4())
         redis_conn.set(ticket, json.dumps(data_variant), 300)  # set expired 5 minutes
         return ticket
 
 class VariantFetch:
-    pass
+    async def get_product_variant_image(product_id: int) -> list:
+        query = select([variant.c.image]).where(variant.c.product_id == product_id)
+        variant_db = await database.fetch_all(query=query)
+        variant_image = [item['image'] for item in variant_db if item['image']]
+
+        return [v for i,v in enumerate(variant_image) if variant_image[i] not in variant_image[i + 1:]]

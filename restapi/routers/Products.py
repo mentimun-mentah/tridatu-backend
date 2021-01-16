@@ -3,7 +3,7 @@ from fastapi import APIRouter, Query, Path, Depends, HTTPException
 from fastapi.requests import Request
 from fastapi_jwt_auth import AuthJWT
 from controllers.ProductController import ProductFetch, ProductCrud
-from controllers.VariantController import VariantLogic, VariantCrud
+from controllers.VariantController import VariantLogic, VariantCrud, VariantFetch
 from controllers.ItemSubCategoryController import ItemSubCategoryFetch
 from controllers.WishlistController import WishlistLogic
 from controllers.BrandController import BrandFetch
@@ -260,9 +260,18 @@ async def update_product(
         if form_data['brand_id'] and not await BrandFetch.filter_by_id(form_data['brand_id']):
             raise HTTPException(status_code=404,detail="Brand not found!")
 
-        # change folder name if name in db not same with form_data
-        if product['slug'] != form_data['slug']:
-            MagicImage.rename_folder(old_name=product['slug'],new_name=form_data['slug'],path_update='products/')
+        # validate image on input variant
+        image_variant_db = await VariantFetch.get_product_variant_image(product['id'])
+        image_variant_input = [
+            item.get('va1_image') for item in form_data['variant_data']['va1_items'] if item.get('va1_image')
+        ]
+        if True in [c not in image_variant_db for c in image_variant_input]:
+            raise HTTPException(status_code=404,detail="The image on variant not found in db.")
+
+        # validate image on input delete_size_guide is same with db
+        if image_size_guide_delete := form_data['image_size_guide_delete']:
+            if image_size_guide_delete != product['image_size_guide']:
+                raise HTTPException(status_code=422,detail="image_size_guide_delete not same with database.")
 
         # ================ IMAGE PRODUCT SECTION ================
         image_product_db = [item for item in json.loads(product['image_product']).values()]
@@ -303,11 +312,71 @@ async def update_product(
         form_data['image_product'] = json.dumps({key:value for key,value in enumerate(image_product_db)})
         # ================ IMAGE PRODUCT SECTION ================
 
+        # ================ IMAGE VARIANT SECTION ================
+        # detect image to remove from storage
+        if image_variant_remove := [item for item in image_variant_db if item not in image_variant_input]:
+            [
+                MagicImage.delete_image(file=file,path_delete=f"products/{product['slug']}")
+                for file in image_variant_remove
+            ]
+        # save image to storage
+        if image_variant := form_data['image_variant']:
+            image_magic_variants = MagicImage(
+                square=True,
+                file=image_variant,
+                width=550,
+                height=550,
+                path_upload='products/',
+                dir_name=form_data['slug']
+            )
+            image_magic_variants.save_image()
+            form_data['image_variant'] = image_magic_variants.file_name
+
+            index_img = 0
+            for item in form_data['variant_data']['va1_items']:
+                if 'va1_image' not in item:
+                    item.update({'va1_image': form_data['image_variant'][index_img]})
+                    index_img += 1
+        # ================ IMAGE VARIANT SECTION ================
+
+        # ================ IMAGE SIZE GUIDE SECTION ================
+        # save image size guide to product folder if supplied
+        if image_size_guide := form_data['image_size_guide']:
+            image_magic_guide = MagicImage(
+                file=image_size_guide.file,
+                width=1200,
+                height=778,
+                path_upload='products/',
+                dir_name=form_data['slug']
+            )
+            image_magic_guide.save_image()
+            form_data['image_size_guide'] = image_magic_guide.file_name
+
+        # delete image
+        if image_size_guide_delete := form_data['image_size_guide_delete']:
+            MagicImage.delete_image(file=image_size_guide_delete,path_delete=f"products/{product['slug']}")
+
+        # pop image_size_guide from form_data if nothing happen
+        if form_data['image_size_guide_delete'] is None and form_data['image_size_guide'] is None:
+            form_data.pop('image_size_guide',None)
+        # ================ IMAGE SIZE GUIDE SECTION ================
+
+        # change folder name if name in db not same with form_data
+        if product['slug'] != form_data['slug']:
+            MagicImage.rename_folder(old_name=product['slug'],new_name=form_data['slug'],path_update='products/')
+
+        # update product on db
         product_update_data = {
             key:value for key,value in form_data.items()
-            if key != 'image_product_delete' and key != 'image_variant' and key != 'variant_data'
+            if key != 'image_product_delete' and key != 'image_size_guide_delete' and
+            key != 'image_variant' and key != 'variant_data'
         }
+        await ProductCrud.update_product(product['id'],**product_update_data)
 
-        await ProductCrud.update_product(product['id'],**product_update_data)  # update product on db
+        # save variant to db
+        variant_db = VariantLogic.convert_data_to_db(form_data['variant_data'],product['id'])
+        await VariantCrud.delete_variant(product['id'])
+        await VariantCrud.create_variant(variant_db)
+
         return {"detail": "Successfully update the product."}
     raise HTTPException(status_code=404,detail="Product not found!")
