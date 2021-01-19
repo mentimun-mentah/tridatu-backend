@@ -19,5 +19,6 @@ jobs:
         working-directory: ./restapi
       - name: Publish Coveralls
         uses: coverallsapp/github-action@v1.1.2
+        working-directory: ./restapi
         with:
           github-token: ${{ github.token }}
