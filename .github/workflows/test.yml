@@ -6,8 +6,6 @@ defaults:
 jobs:
   test:
     runs-on: ubuntu-18.04
-    env:
-      working-directory: ./restapi
     steps:
       - uses: actions/checkout@v2
       - name: Copy .env file
@@ -24,9 +22,7 @@ jobs:
       - name: Install Coveralls
         run: pip install coveralls
       - name: Coveralls
-        working-directory: ./restapi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          coveralls
-
+          coveralls --service=github
