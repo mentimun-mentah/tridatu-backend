@@ -1,5 +1,8 @@
 name: Tests
 on: [push, pull_request]
+defaults:
+  run:
+    working-directory: ./restapi
 jobs:
   test:
     runs-on: ubuntu-18.04
@@ -15,7 +18,15 @@ jobs:
         run: bash scripts/migrate.sh
       - name: Test
         run: bash scripts/test.sh
-      - name: Publish Coveralls
-        uses: coverallsapp/github-action@v1.1.2
+      - uses: actions/setup-python@master
         with:
-          github-token: ${{ github.token }}
+          python-version: '3.8'
+      - name: Install Coveralls
+        run: pip install coveralls
+      - name: Coveralls
+        working-directory: ./restapi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls
+
