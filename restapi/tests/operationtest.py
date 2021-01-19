@@ -1,4 +1,4 @@
-import pytest, bcrypt, os
+import pytest, bcrypt, json, os
 from config import database
 from sqlalchemy import desc
 from sqlalchemy.sql import select
@@ -175,6 +175,12 @@ class OperationTest:
         query = select([product]).where(product.c.name == name)
         product_data = await database.fetch_one(query=query)
         return product_data['id']
+
+    @pytest.mark.asyncio
+    async def get_product_image(self,name: str):
+        query = select([product.c.image_product]).where(product.c.name == name)
+        product_data = await database.fetch_one(query=query)
+        return json.loads(product_data['image_product'])
 
     # ================ COMMENT SECTION ================
 

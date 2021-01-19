@@ -228,13 +228,25 @@ async def get_product_by_slug(
             "description": "Successful Response",
             "content": {"application/json":{"example": {"detail":"Successfully update the product."}}}
         },
+        400: {
+            "description": "Name already taken",
+            "content": {"application/json":{"example": {"detail":"The name has already been taken."}}}
+        },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example":{"detail":"Only users with admin privileges can do this action."}}}
         },
         404: {
-            "description": "Product not found",
-            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+            "description": "Product, Item sub-category, Brand, Ticket Variant not found",
+            "content": {"application/json": {"example": {"detail":"string"}}}
+        },
+        409: {
+            "description": "Conflict",
+            "content": {"application/json": {"example": {"detail":"Each image must be unique."}}}
+        },
+        413: {
+            "description": "Request Entity Too Large",
+            "content": {"application/json": {"example": {"detail":"An image cannot greater than 4 Mb."}}}
         }
     }
 )
@@ -266,7 +278,7 @@ async def update_product(
             item.get('va1_image') for item in form_data['variant_data']['va1_items'] if item.get('va1_image')
         ]
         if True in [c not in image_variant_db for c in image_variant_input]:
-            raise HTTPException(status_code=404,detail="The image on variant not found in db.")
+            raise HTTPException(status_code=422,detail="The image on variant not found in db.")
 
         # validate image on input delete_size_guide is same with db
         if image_size_guide_delete := form_data['image_size_guide_delete']:
@@ -283,7 +295,7 @@ async def update_product(
 
             if len(image_product_db + (form_data.get('image_product') or [])) < 1:
                 raise HTTPException(
-                    status_code=400,
+                    status_code=422,
                     detail="Image is required, make sure this product has at least one image."
                 )
 

@@ -96,8 +96,8 @@ def update_form_product(
     ticket_variant: str = Form(...,min_length=5,max_length=100),
     item_sub_category_id: int = Form(...,gt=0),
     brand_id: int = Form(None,gt=0),
-    image_product_delete: str = Form(None,min_length=1,description="Example 1.jpg,2.png,3.jpeg"),
-    image_size_guide_delete: str = Form(None,min_length=1,description="Example 1.jpg"),
+    image_product_delete: str = Form(None,min_length=2,description="Example 1.jpg,2.png,3.jpeg"),
+    image_size_guide_delete: str = Form(None,min_length=2,description="Example 1.jpg"),
     image_product: upload_image_product_optional = Depends(),
     image_variant: upload_image_variant = Depends(),
     image_size_guide: upload_image_size_guide = Depends()
