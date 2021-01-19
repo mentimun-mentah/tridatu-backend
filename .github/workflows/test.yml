@@ -3,22 +3,19 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-18.04
+    env:
+      working-directory: ./restapi
     steps:
       - uses: actions/checkout@v2
       - name: Copy .env file
         run: cp .env.example .env
-        working-directory: ./restapi
       - name: Build the stack
         run: docker-compose up -d
-        working-directory: ./restapi
       - name: Migrate Database
         run: bash scripts/migrate.sh
-        working-directory: ./restapi
       - name: Test
         run: bash scripts/test.sh
-        working-directory: ./restapi
       - name: Publish Coveralls
         uses: coverallsapp/github-action@v1.1.2
         with:
           github-token: ${{ github.token }}
-        working-directory: ./restapi
