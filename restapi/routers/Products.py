@@ -392,3 +392,31 @@ async def update_product(
 
         return {"detail": "Successfully update the product."}
     raise HTTPException(status_code=404,detail="Product not found!")
+
+@router.delete('/delete/{product_id}',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"Successfully delete the product."}}}
+        },
+        401: {
+            "description": "User without role admin",
+            "content": {"application/json": {"example":{"detail":"Only users with admin privileges can do this action."}}}
+        },
+        404: {
+            "description": "Product not found",
+            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+        }
+    }
+)
+async def delete_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = authorize.get_jwt_subject()
+    await UserFetch.user_is_admin(user_id)
+
+    if product := await ProductFetch.filter_by_id(product_id):
+        await ProductCrud.delete_product(product['id'])
+        MagicImage.delete_folder(name_folder=product['slug'],path_delete='products/')
+        return {"detail": "Successfully delete the product."}
+    raise HTTPException(status_code=404,detail="Product not found!")

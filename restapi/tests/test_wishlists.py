@@ -1,5 +1,6 @@
 import pytest
 from .operationtest import OperationTest
+from pathlib import Path
 
 class TestWishlist(OperationTest):
     prefix = "/wishlists"
@@ -276,6 +277,34 @@ class TestWishlist(OperationTest):
         response = await async_client.delete(url + str(product_id_two),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200
         assert response.json() == {"detail": "Product has been removed from the wishlist."}
+
+    @pytest.mark.asyncio
+    async def test_delete_product(self,async_client):
+        # user admin login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # delete product one
+        product_id = await self.get_product_id(self.name)
+        response = await async_client.delete('/products/delete/' + str(product_id),
+            headers={'X-CSRF-TOKEN': csrf_access_token}
+        )
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully delete the product."}
+        # check folder has been delete in directory
+        assert Path(self.product_dir + self.name + 'a').is_dir() is False
+
+        product_id = await self.get_product_id(self.name2)
+        # delete product two
+        response = await async_client.delete('/products/delete/' + str(product_id),
+            headers={'X-CSRF-TOKEN': csrf_access_token}
+        )
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully delete the product."}
+        # check folder has been delete in directory
+        assert Path(self.product_dir + self.name2).is_dir() is False
 
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):

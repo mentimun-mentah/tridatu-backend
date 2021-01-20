@@ -1054,6 +1054,58 @@ class TestProduct(OperationTest):
         assert response.status_code == 200
         assert response.json() == {'detail': 'Successfully update the product.'}
 
+    def test_validation_delete_product(self,client):
+        url = self.prefix + '/delete/'
+        # all field blank
+        response = client.delete(url + '0')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'ensure this value is greater than 0'
+        # check all field type data
+        response = client.delete(url + 'a')
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'value is not a valid integer'
+
+    @pytest.mark.asyncio
+    async def test_delete_product(self,async_client):
+        response = await async_client.post('/users/login',json={
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        url = self.prefix + '/delete/'
+        product_id = await self.get_product_id(self.name + 'a')
+        # check user is admin
+        response = await async_client.delete(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 401
+        assert response.json() == {"detail": "Only users with admin privileges can do this action."}
+        # user admin login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+        # product not found
+        response = await async_client.delete(url + '9' * 8,headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Product not found!"}
+        # delete product one
+        response = await async_client.delete(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully delete the product."}
+        # check folder has been delete in directory
+        assert Path(self.product_dir + self.name + 'a').is_dir() is False
+
+        product_id = await self.get_product_id(self.name2)
+        # delete product two
+        response = await async_client.delete(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully delete the product."}
+        # check folder has been delete in directory
+        assert Path(self.product_dir + self.name2).is_dir() is False
+
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):
         # user admin login

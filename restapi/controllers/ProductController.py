@@ -24,6 +24,10 @@ class ProductCrud:
         await database.execute(query=product.update().where(product.c.id == id_),values=kwargs)
 
     @staticmethod
+    async def delete_product(id_: int) -> None:
+        await database.execute(query=product.delete().where(product.c.id == id_))
+
+    @staticmethod
     async def change_product_alive_archive(id_: int, live: bool) -> None:
         query = product.update().where(product.c.id == id_)
         await database.execute(query=query,values={'live': not live, 'updated_at': func.now()})
