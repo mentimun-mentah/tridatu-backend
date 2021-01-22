@@ -50,13 +50,13 @@ def create_form_product(
     video: str = Form(None,min_length=2,regex=r"^(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.+"),
     preorder: int = Form(None,gt=0,le=500),
     ticket_variant: str = Form(...,min_length=5,max_length=100),
+    ticket_wholesale: str = Form(None,min_length=5,max_length=100),
     item_sub_category_id: int = Form(...,gt=0),
     brand_id: int = Form(None,gt=0),
     image_product: upload_image_product = Depends(),
     image_variant: upload_image_variant = Depends(),
     image_size_guide: upload_image_size_guide = Depends()
 ):
-
     if variant_data := redis_conn.get(ticket_variant):
         variant_data = json.loads(variant_data)
         # image cannot be passed if no variant
@@ -71,6 +71,13 @@ def create_form_product(
     else:
         raise HTTPException(status_code=404,detail="Ticket variant not found!")
 
+    wholesale_data = None
+
+    if ticket_wholesale and not redis_conn.get(ticket_wholesale):
+        raise HTTPException(status_code=404,detail="Ticket wholesale not found!")
+    if ticket_wholesale and redis_conn.get(ticket_wholesale):
+        wholesale_data = json.loads(redis_conn.get(ticket_wholesale))['items']
+
     return {
         "name": name,
         "desc": desc,
@@ -83,7 +90,8 @@ def create_form_product(
         "image_product": image_product,
         "image_variant": image_variant,
         "image_size_guide": image_size_guide,
-        "variant_data": variant_data
+        "variant_data": variant_data,
+        "wholesale_data": wholesale_data
     }
 
 def update_form_product(

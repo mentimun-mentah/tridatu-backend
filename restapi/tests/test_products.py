@@ -4,6 +4,7 @@ from pathlib import Path
 
 class TestProduct(OperationTest):
     prefix = "/products"
+    wholesale = None
     without_variant = None
     single_variant = None
     single_variant_wrong_image = None
@@ -112,6 +113,25 @@ class TestProduct(OperationTest):
         # assign to variable
         self.__class__.single_variant_wrong_image = response.json()['ticket']
 
+    def test_create_wholesale(self,client):
+        url = '/wholesale/create-ticket'
+
+        # user admin login
+        response = client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        # create wholesale
+        response = client.post(url,json={
+            'variant': self.without_variant,
+            'items': [{'min_qty': 2, 'price': 8000},{'min_qty': 3, 'price': 7000}]
+        },headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 201
+        # assign to variable
+        self.__class__.wholesale = response.json()['ticket']
+
     @pytest.mark.asyncio
     async def test_create_item_sub_category(self,async_client):
         # user admin login
@@ -167,6 +187,7 @@ class TestProduct(OperationTest):
             'video': ' ',
             'preorder': 0,
             'ticket_variant': ' ',
+            'ticket_wholesale': ' ',
             'item_sub_category_id': 0,
             'brand_id': 0
         })
@@ -178,6 +199,7 @@ class TestProduct(OperationTest):
             if x['loc'][-1] == 'video': assert x['msg'] == 'ensure this value has at least 2 characters'
             if x['loc'][-1] == 'preorder': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at least 5 characters'
+            if x['loc'][-1] == 'ticket_wholesale': assert x['msg'] == 'ensure this value has at least 5 characters'
             if x['loc'][-1] == 'item_sub_category_id': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'brand_id': assert x['msg'] == 'ensure this value is greater than 0'
 
@@ -189,6 +211,7 @@ class TestProduct(OperationTest):
             'video': 'a' * 200,
             'preorder': 1000,
             'ticket_variant': 'a' * 200,
+            'ticket_wholesale': 'a' * 200,
             'item_sub_category_id': 200,
             'brand_id': 200
         })
@@ -200,6 +223,7 @@ class TestProduct(OperationTest):
                     'string does not match regex \"^(http(s)?:\\/\\/)?((w){3}.)?youtu(be|.be)?(\\.com)?\\/.+\"'
             if x['loc'][-1] == 'preorder': assert x['msg'] == 'ensure this value is less than or equal to 500'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'ticket_wholesale': assert x['msg'] == 'ensure this value has at most 100 characters'
 
         # check all field type data
         response = client.post(url,data={
@@ -350,6 +374,20 @@ class TestProduct(OperationTest):
         })
         assert response.status_code == 422
         assert response.json() == {'detail': 'You must fill all variant images or even without images.'}
+        # ticket wholesale not found
+        response = client.post(url,data={
+            'name': 'a' * 20,
+            'desc': 'a' * 20,
+            'condition': False,
+            'weight': 1,
+            'ticket_variant': self.without_variant,
+            'ticket_wholesale': 'a' * 5,
+            'item_sub_category_id': 1
+        },files={
+            'image_product': ('image.jpeg', open(self.test_image_dir + 'image.jpeg','rb'), 'image/jpg'),
+        })
+        assert response.status_code == 404
+        assert response.json() == {'detail': 'Ticket wholesale not found!'}
 
     @pytest.mark.asyncio
     async def test_create_product(self,async_client):
@@ -416,6 +454,7 @@ class TestProduct(OperationTest):
             'video': 'https://www.youtube.com/watch?v=VTVC4weBFUA',
             'preorder': '12',
             'ticket_variant': self.without_variant,
+            'ticket_wholesale': self.wholesale,
             'item_sub_category_id': str(item_sub_category_id)
         },files={
             'image_product': open(self.test_image_dir + 'image.jpeg','rb'),

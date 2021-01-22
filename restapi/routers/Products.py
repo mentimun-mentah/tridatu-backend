@@ -4,6 +4,7 @@ from fastapi.requests import Request
 from fastapi_jwt_auth import AuthJWT
 from controllers.ProductController import ProductFetch, ProductCrud
 from controllers.VariantController import VariantLogic, VariantCrud, VariantFetch
+from controllers.WholeSaleController import WholeSaleCrud
 from controllers.ItemSubCategoryController import ItemSubCategoryFetch
 from controllers.WishlistController import WishlistLogic
 from controllers.BrandController import BrandFetch
@@ -41,7 +42,7 @@ router = APIRouter()
             "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
         },
         404: {
-            "description": "Item sub-category, Brand, Ticket variant not found",
+            "description": "Item sub-category, Brand, Ticket variant & wholesale not found",
             "content": {"application/json": {"example": {"detail":"string"}}}
         },
         409: {
@@ -114,13 +115,18 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
 
     # save product to db
     product_data = {
-        index:value for index, value in form_data.items() if index != 'variant_data' and index != 'image_variant'
+        index:value for index, value in form_data.items()
+        if index != 'variant_data' and index != 'wholesale_data' and index != 'image_variant'
     }
     product_id = await ProductCrud.create_product(**product_data)
 
     # save variant to db
     variant_db = VariantLogic.convert_data_to_db(form_data['variant_data'],product_id)
     await VariantCrud.create_variant(variant_db)
+    # save wholesale to db if exists
+    if wholesale_data := form_data['wholesale_data']:
+        [data.__setitem__('product_id',product_id) for data in wholesale_data]
+        await WholeSaleCrud.create_wholesale(wholesale_data)
 
     return {"detail": "Successfully add a new product."}
 
