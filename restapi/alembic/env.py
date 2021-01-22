@@ -29,7 +29,7 @@ from models import (
     PostalCodeModel, AddressModel, OutletModel, BrandModel, CategoryModel,
     SubCategoryModel, ItemSubCategoryModel, ProductModel, VariantModel,
     WishlistModel, ShippingProvinceModel, ShippingCityModel, ShippingSubdistrictModel,
-    CommentModel, ReplyModel
+    CommentModel, ReplyModel, WholeSaleModel
 )
 
 with warnings.catch_warnings():
@@ -52,7 +52,7 @@ with warnings.catch_warnings():
         VariantModel.metadata, WishlistModel.metadata,
         ShippingProvinceModel.metadata, ShippingCityModel.metadata,
         ShippingSubdistrictModel.metadata, CommentModel.metadata,
-        ReplyModel.metadata
+        ReplyModel.metadata, WholeSaleModel.metadata
     )
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
