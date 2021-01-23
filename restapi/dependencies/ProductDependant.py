@@ -102,6 +102,7 @@ def update_form_product(
     video: str = Form(None,min_length=2,regex=r"^(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.+"),
     preorder: int = Form(None,gt=0,le=500),
     ticket_variant: str = Form(...,min_length=5,max_length=100),
+    ticket_wholesale: str = Form(None,min_length=5,max_length=100),
     item_sub_category_id: int = Form(...,gt=0),
     brand_id: int = Form(None,gt=0),
     image_product_delete: str = Form(None,min_length=2,description="Example 1.jpg,2.png,3.jpeg"),
@@ -132,6 +133,13 @@ def update_form_product(
     if image_size_guide_delete and image_size_guide_delete.endswith(('.jpg','.png','.jpeg')) is False:
         raise HTTPException(status_code=422,detail="Invalid image format on image_size_guide_delete")
 
+    wholesale_data = None
+
+    if ticket_wholesale and not redis_conn.get(ticket_wholesale):
+        raise HTTPException(status_code=404,detail="Ticket wholesale not found!")
+    if ticket_wholesale and redis_conn.get(ticket_wholesale):
+        wholesale_data = json.loads(redis_conn.get(ticket_wholesale))['items']
+
     return {
         "name": name,
         "desc": desc,
@@ -146,7 +154,8 @@ def update_form_product(
         "image_product": image_product,
         "image_variant": image_variant,
         "image_size_guide": image_size_guide,
-        "variant_data": variant_data
+        "variant_data": variant_data,
+        "wholesale_data": wholesale_data
     }
 
 def get_all_query_product(

@@ -750,6 +750,7 @@ class TestProduct(OperationTest):
             'video': ' ',
             'preorder': 0,
             'ticket_variant': ' ',
+            'ticket_wholesale': ' ',
             'item_sub_category_id': 0,
             'brand_id': 0,
             'image_product_delete': ' ',
@@ -764,6 +765,7 @@ class TestProduct(OperationTest):
             if x['loc'][-1] == 'video': assert x['msg'] == 'ensure this value has at least 2 characters'
             if x['loc'][-1] == 'preorder': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at least 5 characters'
+            if x['loc'][-1] == 'ticket_wholesale': assert x['msg'] == 'ensure this value has at least 5 characters'
             if x['loc'][-1] == 'item_sub_category_id': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'brand_id': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'image_product_delete': assert x['msg'] == 'ensure this value has at least 2 characters'
@@ -776,6 +778,7 @@ class TestProduct(OperationTest):
             'video': 'a' * 200,
             'preorder': 1000,
             'ticket_variant': 'a' * 200,
+            'ticket_wholesale': 'a' * 200,
             'item_sub_category_id': 200,
             'brand_id': 200,
             'image_product_delete': 'a' * 200,
@@ -789,6 +792,7 @@ class TestProduct(OperationTest):
                     'string does not match regex \"^(http(s)?:\\/\\/)?((w){3}.)?youtu(be|.be)?(\\.com)?\\/.+\"'
             if x['loc'][-1] == 'preorder': assert x['msg'] == 'ensure this value is less than or equal to 500'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at most 100 characters'
+            if x['loc'][-1] == 'ticket_wholesale': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
         response = client.put(url + 'a',data={
             'condition': 123,
@@ -964,6 +968,20 @@ class TestProduct(OperationTest):
         assert response.status_code == 422
         assert response.json() == {'detail': 'Invalid image format on image_size_guide_delete'}
 
+        # ticket wholesale not found
+        response = client.put(url + '1',data={
+            'name': 'a' * 20,
+            'desc': 'a' * 20,
+            'condition': False,
+            'weight': 1,
+            'ticket_variant': self.without_variant,
+            'ticket_wholesale': 'a' * 5,
+            'item_sub_category_id': 1
+        })
+
+        assert response.status_code == 404
+        assert response.json() == {'detail': 'Ticket wholesale not found!'}
+
     @pytest.mark.asyncio
     async def test_update_product(self,async_client):
         response = await async_client.post('/users/login',json={
@@ -1103,6 +1121,7 @@ class TestProduct(OperationTest):
             'condition': 'true',
             'weight': '1',
             'ticket_variant': self.without_variant,
+            'ticket_wholesale': self.wholesale,
             'item_sub_category_id':str(item_sub_category_id),
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200

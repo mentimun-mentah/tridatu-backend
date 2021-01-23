@@ -4,7 +4,7 @@ from fastapi.requests import Request
 from fastapi_jwt_auth import AuthJWT
 from controllers.ProductController import ProductFetch, ProductCrud
 from controllers.VariantController import VariantLogic, VariantCrud, VariantFetch
-from controllers.WholeSaleController import WholeSaleCrud
+from controllers.WholeSaleController import WholeSaleCrud, WholeSaleFetch
 from controllers.ItemSubCategoryController import ItemSubCategoryFetch
 from controllers.WishlistController import WishlistLogic
 from controllers.BrandController import BrandFetch
@@ -243,7 +243,7 @@ async def get_product_by_slug(
             "content": {"application/json": {"example":{"detail":"Only users with admin privileges can do this action."}}}
         },
         404: {
-            "description": "Product, Item sub-category, Brand, Ticket Variant not found",
+            "description": "Product, Item sub-category, Brand, Ticket variant & wholesale not found",
             "content": {"application/json": {"example": {"detail":"string"}}}
         },
         409: {
@@ -387,7 +387,7 @@ async def update_product(
         product_update_data = {
             key:value for key,value in form_data.items()
             if key != 'image_product_delete' and key != 'image_size_guide_delete' and
-            key != 'image_variant' and key != 'variant_data'
+            key != 'image_variant' and key != 'variant_data' and key != 'wholesale_data'
         }
         await ProductCrud.update_product(product['id'],**product_update_data)
 
@@ -395,6 +395,15 @@ async def update_product(
         variant_db = VariantLogic.convert_data_to_db(form_data['variant_data'],product['id'])
         await VariantCrud.delete_variant(product['id'])
         await VariantCrud.create_variant(variant_db)
+
+        # update wholesale if wholesale_data exists
+        if wholesale_data := form_data['wholesale_data']:
+            previous_data = await WholeSaleFetch.get_wholesale_by_product_id(product['id'],exclude=['id','product_id'])
+            # delete and create again wholesale if incoming data not same with db
+            if previous_data != wholesale_data:
+                [data.__setitem__('product_id',product['id']) for data in wholesale_data]
+                await WholeSaleCrud.delete_wholesale(product['id'])
+                await WholeSaleCrud.create_wholesale(wholesale_data)
 
         return {"detail": "Successfully update the product."}
     raise HTTPException(status_code=404,detail="Product not found!")
