@@ -1,9 +1,10 @@
 from config import database
 from sqlalchemy import true
-from sqlalchemy.sql import select, func
+from sqlalchemy.sql import select, func, exists
 from models.BrandModel import brand
 from models.ProductModel import product
 from models.VariantModel import variant
+from models.WholeSaleModel import wholesale
 from models.CategoryModel import category
 from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
@@ -11,7 +12,10 @@ from controllers.VariantController import VariantLogic
 from libs.Pagination import Pagination
 
 class ProductLogic:
-    pass
+    @staticmethod
+    async def check_wholesale(product_id: int) -> bool:
+        query = select([exists().where(wholesale.c.product_id == product_id)]).as_scalar()
+        return await database.execute(query=query)
 
 class ProductCrud:
     @staticmethod
@@ -50,6 +54,7 @@ class ProductFetch:
 
         product_db = await database.fetch_all(query=query)
         product_data = [{index:value for index,value in item.items()} for item in product_db]
+        [data.__setitem__('products_wholesale', await ProductLogic.check_wholesale(data['products_id'])) for data in product_data]
 
         return product_data
 
@@ -88,14 +93,18 @@ class ProductFetch:
                 query = query.where(product_alias.c.products_preorder.is_(None))
         if kwargs['condition'] is not None:
             query = query.where(product_alias.c.products_condition == kwargs['condition'])
+        if kwargs['wholesale'] is True:
+            query = query.where(product_alias.c.products_id.in_(select([wholesale.c.product_id])))
 
         total = await database.execute(query=select([func.count()]).select_from(query.alias()).as_scalar())
         query = query.limit(kwargs['per_page']).offset((kwargs['page'] - 1) * kwargs['per_page'])
         product_db = await database.fetch_all(query=query)
 
         paginate = Pagination(kwargs['page'], kwargs['per_page'], total, product_db)
+        product_data = [{index:value for index,value in item.items()} for item in paginate.items]
+        [data.__setitem__('products_wholesale', await ProductLogic.check_wholesale(data['products_id'])) for data in product_data]
         return {
-            "data": [{index:value for index,value in item.items()} for item in paginate.items],
+            "data": product_data,
             "total": paginate.total,
             "next_num": paginate.next_num,
             "prev_num": paginate.prev_num,
@@ -127,6 +136,11 @@ class ProductFetch:
             [{index:value for index,value in item.items()} for item in variant_db], key=lambda v: v['id']
         )
         product_data['products_variant'] = VariantLogic.convert_db_to_data(variant_data)[0]
+
+        # get wholesale
+        query = select([wholesale]).where(wholesale.c.product_id == product_data['products_id']).apply_labels()
+        wholesale_db = await database.fetch_all(query=query)
+        product_data['products_wholesale'] = [{index:value for index,value in item.items()} for item in wholesale_db]
 
         return product_data
 

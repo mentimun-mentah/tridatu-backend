@@ -11,9 +11,10 @@ class ProductData(ProductSchema):
     products_id: int
     products_name: str
     products_slug: str
-    products_image_product: dict
+    products_image_product: str
     products_live: bool
     products_love: bool
+    products_wholesale: bool
     products_created_at: str
     products_updated_at: str
 
@@ -21,7 +22,7 @@ class ProductData(ProductSchema):
 
     @validator('products_image_product',pre=True)
     def convert_image_product(cls, v):
-        return json.loads(v)
+        return json.loads(v)['0']
 
     @validator('products_created_at','products_updated_at',pre=True)
     def convert_datetime_to_str(cls, v):
@@ -38,6 +39,11 @@ class ProductPaginate(BaseModel):
     iter_pages: list
 
 # ============ PRODUCT SLUG ============
+
+class ProductWholeSale(ProductSchema):
+    wholesale_id: int
+    wholesale_min_qty: int
+    wholesale_price: int
 
 class ProductCategory(ProductSchema):
     categories_id: int
@@ -92,6 +98,7 @@ class ProductDataSlug(ProductSchema):
     products_category: ProductCategory
     products_brand: Optional[ProductBrand]
     products_variant: ProductVariant
+    products_wholesale: Optional[List[ProductWholeSale]]
     products_recommendation: Optional[List[ProductData]]
 
     products_created_at: str

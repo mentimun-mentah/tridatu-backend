@@ -534,7 +534,7 @@ class TestProduct(OperationTest):
         response = client.get(
             url +
             '?page=a&per_page=a&q=123&live=a&order_by=a&p_min=a' +
-            '&p_max=a&item_sub_cat=a&brand=a&pre_order=a&condition=a'
+            '&p_max=a&item_sub_cat=a&brand=a&pre_order=a&condition=a&wholesale=a'
         )
         assert response.status_code == 422
         for x in response.json()['detail']:
@@ -547,6 +547,7 @@ class TestProduct(OperationTest):
             if x['loc'][-1] == 'p_max': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'pre_order': assert x['msg'] == 'value could not be parsed to a boolean'
             if x['loc'][-1] == 'condition': assert x['msg'] == 'value could not be parsed to a boolean'
+            if x['loc'][-1] == 'wholesale': assert x['msg'] == 'value could not be parsed to a boolean'
 
     def test_get_all_products(self,client):
         url = self.prefix + '/all-products'
@@ -559,6 +560,18 @@ class TestProduct(OperationTest):
         assert 'prev_num' in response.json()
         assert 'page' in response.json()
         assert 'iter_pages' in response.json()
+
+        # check data exists and type data
+        assert type(response.json()['data'][0]['products_id']) == int
+        assert type(response.json()['data'][0]['products_name']) == str
+        assert type(response.json()['data'][0]['products_slug']) == str
+        assert type(response.json()['data'][0]['products_image_product']) == str
+        assert type(response.json()['data'][0]['products_live']) == bool
+        assert type(response.json()['data'][0]['products_love']) == bool
+        assert type(response.json()['data'][0]['products_wholesale']) == bool
+        assert type(response.json()['data'][0]['products_created_at']) == str
+        assert type(response.json()['data'][0]['products_updated_at']) == str
+        assert type(response.json()['data'][0]['variants_price']) == int
 
     def test_validation_change_product_alive_archive(self,client):
         url = self.prefix + '/alive-archive/'
@@ -672,6 +685,7 @@ class TestProduct(OperationTest):
         assert 'products_category' in response.json()
         assert 'products_brand' in response.json()
         assert 'products_variant' in response.json()
+        assert 'products_wholesale' in response.json()
         assert 'products_recommendation' in response.json()
         assert 'products_created_at' in response.json()
         assert 'products_updated_at' in response.json()
@@ -705,6 +719,7 @@ class TestProduct(OperationTest):
         assert 'products_category' in response.json()
         assert 'products_brand' in response.json()
         assert 'products_variant' in response.json()
+        assert 'products_wholesale' in response.json()
         assert 'products_recommendation' in response.json()
         assert 'products_created_at' in response.json()
         assert 'products_updated_at' in response.json()
