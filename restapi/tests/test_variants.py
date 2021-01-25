@@ -258,6 +258,20 @@ class TestVariant(OperationTest):
         for x in response.json()['detail']:
             if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_stock at index 0 value is not null'
 
+        response = client.post(url,json={
+            "va1_name": "Ukuran",
+            "va1_items": [
+                {"va1_option": "XL", "va1_price": 3000, "va1_stock": 1},
+                {"va1_option": "M", "va1_price": 1000, "va1_stock": 1},
+                {"va1_option": "S", "va1_price": 7001, "va1_stock": 1},
+                {"va1_option": "XLL", "va1_price": 6000, "va1_stock": 1}
+            ]
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_items': assert x['msg'] == \
+                'the price difference between variations is too large, please set the price for the variation accordingly.'
+
         # double variant
         response = client.post(url,json={
             'va1_items': [{'va2_items': [{'va2_option':'XL', 'va2_price': 1, 'va2_stock': 0}]}]
@@ -282,6 +296,47 @@ class TestVariant(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_option at index 0 value is not null'
+
+        response = client.post(url,json={
+            "va1_name": "Ukuran",
+            "va2_name": "Warna",
+            "va1_items": [
+                {
+                    "va1_option": "XL",
+                    "va2_items": [
+                        {
+                            "va2_option": "hitam",
+                            "va2_price": 4000,
+                            "va2_stock": 2,
+                        },
+                        {
+                            "va2_option": "putih",
+                            "va2_price": 1000,
+                            "va2_stock": 2,
+                        }
+                    ]
+                },
+                {
+                    "va1_option": "M",
+                    "va2_items": [
+                        {
+                            "va2_option": "hitam",
+                            "va2_price": 7001,
+                            "va2_stock": 2,
+                        },
+                        {
+                            "va2_option": "putih",
+                            "va2_price": 3000,
+                            "va2_stock": 2,
+                        }
+                    ]
+                }
+            ]
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_items': assert x['msg'] == \
+                'the price difference between variations is too large, please set the price for the variation accordingly.'
 
     def test_create_variant(self,client):
         response = client.post('/users/login',json={
@@ -322,31 +377,60 @@ class TestVariant(OperationTest):
         assert 'ticket' in response.json()
         # create single variant
         response = client.post(url,json={
-            'va1_name': 'ukuran',
-            'va1_items': [{
-                'va1_option': 'XL',
-                'va1_price': 11000,
-                'va1_stock': 1,
-                'va1_code': None,
-                'va1_barcode': None
-            }]
+            "va1_name": "Ukuran",
+            "va1_items": [
+                {"va1_option": "XL", "va1_price": 3000, "va1_stock": 1, "va1_code": None, "va1_barcode": None},
+                {"va1_option": "M", "va1_price": 1000, "va1_stock": 1, "va1_code": None, "va1_barcode": None},
+                {"va1_option": "S", "va1_price": 7000, "va1_stock": 1, "va1_code": None, "va1_barcode": None},
+                {"va1_option": "XLL", "va1_price": 6000, "va1_stock": 1, "va1_code": None, "va1_barcode": None}
+            ]
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 201
         assert 'ticket' in response.json()
         # create double variant
         response = client.post(url,json={
-            'va1_name': 'warna',
-            'va2_name': 'ukuran',
-            'va1_items': [{
-                'va1_option': 'Hijau',
-                'va2_items': [{
-                    'va2_option': 'XL',
-                    'va2_price': 11000,
-                    'va2_stock': 1,
-                    'va2_code': None,
-                    'va2_barcode': None
-                }]
-            }]
+            "va1_name": "Ukuran",
+            "va2_name": "Warna",
+            "va1_items": [
+                {
+                    "va1_option": "XL",
+                    "va2_items": [
+                        {
+                            "va2_option": "hitam",
+                            "va2_price": 4000,
+                            "va2_stock": 2,
+                            "va2_code": None,
+                            "va2_barcode": None
+                        },
+                        {
+                            "va2_option": "putih",
+                            "va2_price": 1000,
+                            "va2_stock": 2,
+                            "va2_code": None,
+                            "va2_barcode": None
+                        }
+                    ]
+                },
+                {
+                    "va1_option": "M",
+                    "va2_items": [
+                        {
+                            "va2_option": "hitam",
+                            "va2_price": 7000,
+                            "va2_stock": 2,
+                            "va2_code": None,
+                            "va2_barcode": None
+                        },
+                        {
+                            "va2_option": "putih",
+                            "va2_price": 3000,
+                            "va2_stock": 2,
+                            "va2_code": None,
+                            "va2_barcode": None
+                        }
+                    ]
+                }
+            ]
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 201
         assert 'ticket' in response.json()

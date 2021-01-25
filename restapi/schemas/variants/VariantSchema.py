@@ -50,11 +50,19 @@ class VariantCreateUpdate(VariantSchema):
             if 'va2_name' in values and values['va2_name'] is None:
                 raise ValueError("ensure va2_name value is not null")
 
+            list_price = list()
             for index, value in enumerate(v):
                 assert value.va1_option is not None, f"ensure va1_option at index {index} value is not null"
                 # item below must doesn't exists
                 # va1_items.va1_price, va1_items.va1_stock, va1_items.va1_code, va1_items.va1_barcode
                 value.va1_price, value.va1_stock, value.va1_code, value.va1_barcode = None, None, None, None
+                # get all price on va2_items
+                [list_price.append(price) for price in [item.va2_price for item in value.va2_items]]
+
+            min_price = min(list_price) * 7
+            for price in list_price:
+                if price > min_price:
+                    raise ValueError("the price difference between variations is too large, please set the price for the variation accordingly.")
 
         elif (
             ('va1_name' in values and values['va1_name'] is None) and
@@ -70,10 +78,17 @@ class VariantCreateUpdate(VariantSchema):
             if 'va1_name' in values and values['va1_name'] is None:
                 raise ValueError("ensure va1_name value is not null")
 
+            list_price = list()
             for index, value in enumerate(v):
                 assert value.va1_option is not None, f"ensure va1_option at index {index} value is not null"
                 assert value.va1_price is not None, f"ensure va1_price at index {index} value is not null"
                 assert value.va1_stock is not None, f"ensure va1_stock at index {index} value is not null"
+                list_price.append(value.va1_price)
+
+            min_price = min(list_price) * 7
+            for price in list_price:
+                if price > min_price:
+                    raise ValueError("the price difference between variations is too large, please set the price for the variation accordingly.")
 
             # item below must doesn't exists
             # va2_name
