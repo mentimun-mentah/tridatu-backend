@@ -396,14 +396,18 @@ async def update_product(
         await VariantCrud.delete_variant(product['id'])
         await VariantCrud.create_variant(variant_db)
 
+        previous_wholesale = await WholeSaleFetch.get_wholesale_by_product_id(product['id'],exclude=['id','product_id'])
         # update wholesale if wholesale_data exists
         if wholesale_data := form_data['wholesale_data']:
-            previous_data = await WholeSaleFetch.get_wholesale_by_product_id(product['id'],exclude=['id','product_id'])
             # delete and create again wholesale if incoming data not same with db
-            if previous_data != wholesale_data:
+            if previous_wholesale != wholesale_data:
                 [data.__setitem__('product_id',product['id']) for data in wholesale_data]
                 await WholeSaleCrud.delete_wholesale(product['id'])
                 await WholeSaleCrud.create_wholesale(wholesale_data)
+
+        # delete wholesale if in db exists and doesn't have ticket
+        if previous_wholesale and form_data['wholesale_data'] is None:
+            await WholeSaleCrud.delete_wholesale(product['id'])
 
         return {"detail": "Successfully update the product."}
     raise HTTPException(status_code=404,detail="Product not found!")
