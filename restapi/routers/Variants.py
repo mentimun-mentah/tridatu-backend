@@ -27,7 +27,9 @@ async def add_variant_to_temp_storage(variant_data: VariantCreateUpdate, authori
           "va1_price": 11000,
           "va1_stock": 0,
           "va1_code": "1271521-899-SM",
-          "va1_barcode": "889362033471"
+          "va1_barcode": "889362033471",
+          "va1_discount": null,
+          "va1_discount_active": null
         }
       ]
     }</code></pre>
@@ -41,7 +43,10 @@ async def add_variant_to_temp_storage(variant_data: VariantCreateUpdate, authori
           "va1_price": 11000,
           "va1_stock": 1,
           "va1_code": null,
-          "va1_barcode": null
+          "va1_barcode": null,
+          "va1_discount": null,
+          "va1_discount_active": null,
+          "va1_image": null
         }
       ]
     }</code></pre>
@@ -53,13 +58,16 @@ async def add_variant_to_temp_storage(variant_data: VariantCreateUpdate, authori
       "va1_items": [
         {
           "va1_option": "XL",
+          "va1_image": null,
           "va2_items": [
             {
               "va2_option": "hitam",
               "va2_price": 29000,
               "va2_stock": 2,
               "va2_code": null,
-              "va2_barcode": null
+              "va2_barcode": null,
+              "va2_discount": null,
+              "va2_discount_active": null
             }
           ]
         }

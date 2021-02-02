@@ -140,7 +140,9 @@ async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
         if user['password'] and UserLogic.password_is_same_as_hash(user_data.password,user['password']):
             confirm = await ConfirmationFetch.filter_by_user_id(user['id'])
             if confirm['activated']:
-                access_token = authorize.create_access_token(subject=user['id'],fresh=True)
+                access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
+
+                access_token = authorize.create_access_token(subject=user['id'],fresh=True,expires_time=access_expires)
                 refresh_token = authorize.create_refresh_token(subject=user['id'])
                 # set jwt in cookies
                 authorize.set_access_cookies(access_token)
@@ -167,7 +169,9 @@ async def fresh_token(user_data: UserConfirmPassword, authorize: AuthJWT = Depen
             raise HTTPException(status_code=422,detail="Password does not match with our records.")
 
         # set fresh access token in cookie
-        access_token = authorize.create_access_token(subject=user['id'],fresh=True)
+        access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
+
+        access_token = authorize.create_access_token(subject=user['id'],fresh=True,expires_time=access_expires)
         authorize.set_access_cookies(access_token)
         return {"detail": "Successfully make a fresh token."}
 
@@ -179,13 +183,16 @@ async def fresh_token(user_data: UserConfirmPassword, authorize: AuthJWT = Depen
         }
     }
 )
-def refresh_token(authorize: AuthJWT = Depends()):
+async def refresh_token(authorize: AuthJWT = Depends()):
     authorize.jwt_refresh_token_required()
 
     user_id = authorize.get_jwt_subject()
-    new_token = authorize.create_access_token(subject=user_id)
-    authorize.set_access_cookies(new_token)
-    return {"detail": "The token has been refreshed."}
+    if user := await UserFetch.filter_by_id(user_id):
+        access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
+
+        new_token = authorize.create_access_token(subject=user_id,expires_time=access_expires)
+        authorize.set_access_cookies(new_token)
+        return {"detail": "The token has been refreshed."}
 
 @router.delete('/access-revoke',
     responses={

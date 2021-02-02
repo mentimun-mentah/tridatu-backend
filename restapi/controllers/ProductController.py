@@ -8,14 +8,41 @@ from models.WholeSaleModel import wholesale
 from models.CategoryModel import category
 from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
-from controllers.VariantController import VariantLogic
+from controllers.VariantController import VariantFetch
 from libs.Pagination import Pagination
+from datetime import datetime
+from pytz import timezone
+from config import settings
+
+tz = timezone(settings.timezone)
 
 class ProductLogic:
     @staticmethod
     async def check_wholesale(product_id: int) -> bool:
         query = select([exists().where(wholesale.c.product_id == product_id)]).as_scalar()
         return await database.execute(query=query)
+
+    @staticmethod
+    def set_discount_status(product_data: list) -> list:
+        for data in product_data:
+            # not active
+            if data['products_discount_start'] is None and data['products_discount_end'] is None:
+                data.update({'products_discount_status': 'not_active'})
+            else:
+                discount_start = tz.localize(data['products_discount_start'])
+                discount_end = tz.localize(data['products_discount_end'])
+                time_now = datetime.now(tz)
+                # ongoing
+                if time_now > discount_start and time_now < discount_end:
+                    data.update({'products_discount_status': 'ongoing'})
+                # will come
+                elif time_now < discount_start:
+                    data.update({'products_discount_status': 'will_come'})
+                # have ended
+                elif time_now > discount_end:
+                    data.update({'products_discount_status': 'have_ended'})
+
+        return product_data
 
 class ProductCrud:
     @staticmethod
@@ -57,6 +84,45 @@ class ProductFetch:
         [data.__setitem__('products_wholesale', await ProductLogic.check_wholesale(data['products_id'])) for data in product_data]
 
         return product_data
+
+    @staticmethod
+    async def get_all_discounts_paginate(**kwargs) -> dict:
+        variant_alias = select([
+            func.min(variant.c.price).label('min_price'),
+            func.max(variant.c.price).label('max_price'),
+            func.max(variant.c.discount).label('discount'),
+            variant.c.product_id
+        ]).group_by(variant.c.product_id).alias('variants')
+        product_alias = select([product.join(variant_alias)]).distinct(product.c.id).apply_labels().alias()
+
+        query = select([product_alias]).where(product_alias.c.products_live == true()).order_by(product_alias.c.products_updated_at.desc())
+
+        time_now = datetime.now(tz).replace(tzinfo=None)
+        if q := kwargs['q']:
+            query = query.where(product_alias.c.products_name.ilike(f"%{q}%"))
+        if kwargs['status'] == 'not_active':
+            query = query.where((product_alias.c.products_discount_start.is_(None)) & ((product_alias.c.products_discount_end.is_(None))))
+        if kwargs['status'] == 'ongoing':
+            query = query.where((time_now > product_alias.c.products_discount_start) & (time_now < product_alias.c.products_discount_end))
+        if kwargs['status'] == 'will_come':
+            query = query.where(time_now < product_alias.c.products_discount_start)
+        if kwargs['status'] == 'have_ended':
+            query = query.where(time_now > product_alias.c.products_discount_end)
+
+        total = await database.execute(query=select([func.count()]).select_from(query.alias()).as_scalar())
+        query = query.limit(kwargs['per_page']).offset((kwargs['page'] - 1) * kwargs['per_page'])
+        product_db = await database.fetch_all(query=query)
+
+        paginate = Pagination(kwargs['page'], kwargs['per_page'], total, product_db)
+        product_data = [{index:value for index,value in item.items()} for item in paginate.items]
+        return {
+            "data": ProductLogic.set_discount_status(product_data),
+            "total": paginate.total,
+            "next_num": paginate.next_num,
+            "prev_num": paginate.prev_num,
+            "page": paginate.page,
+            "iter_pages": [x for x in paginate.iter_pages()]
+        }
 
     @staticmethod
     async def get_all_products_paginate(**kwargs) -> dict:
@@ -130,12 +196,7 @@ class ProductFetch:
         product_data['products_brand'] = {index:value for index,value in brand_db.items()} if brand_db else {}
 
         # get variant
-        query = select([variant]).where(variant.c.product_id == product_data['products_id'])
-        variant_db = await database.fetch_all(query=query)
-        variant_data = sorted(
-            [{index:value for index,value in item.items()} for item in variant_db], key=lambda v: v['id']
-        )
-        product_data['products_variant'] = VariantLogic.convert_db_to_data(variant_data)[0]
+        product_data['products_variant'] = await VariantFetch.get_variant_by_product_id(product_data['products_id'])
 
         # get wholesale
         query = select([wholesale]).where(wholesale.c.product_id == product_data['products_id']).apply_labels()

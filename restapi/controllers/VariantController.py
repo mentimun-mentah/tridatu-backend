@@ -13,20 +13,24 @@ class VariantLogic:
                 # without variant
                 va1_code = variant_item['va1_code'] if 'va1_code' in variant_item else None
                 va1_barcode = variant_item['va1_barcode'] if 'va1_barcode' in variant_item else None
-                variant_db.append({
+                va1_data = {
                     'price': variant_item['va1_price'],
                     'stock': variant_item['va1_stock'],
                     'code': va1_code,
                     'barcode': va1_barcode,
                     'product_id': product_id
-                })
+                }
+                if 'va1_discount' in variant_item and 'va1_discount_active' in variant_item:
+                    va1_data.update({'discount': variant_item['va1_discount'], 'discount_active': variant_item['va1_discount_active']})
+
+                variant_db.append(va1_data)
             elif 'va2_name' in variant_data:
                 # double variant
                 va1_image = variant_item['va1_image'] if 'va1_image' in variant_item else None
                 for variant_two in variant_item['va2_items']:
                     va2_code = variant_two['va2_code'] if 'va2_code' in variant_two else None
                     va2_barcode = variant_two['va2_barcode'] if 'va2_barcode' in variant_two else None
-                    variant_db.append({
+                    va2_data = {
                         'name': '{}:{}'.format(variant_data['va1_name'],variant_data['va2_name']),
                         'option': '{}:{}'.format(variant_item['va1_option'],variant_two['va2_option']),
                         'price': variant_two['va2_price'],
@@ -35,13 +39,17 @@ class VariantLogic:
                         'barcode': va2_barcode,
                         'image': va1_image,
                         'product_id': product_id
-                    })
+                    }
+                    if 'va2_discount' in variant_two and 'va2_discount_active' in variant_two:
+                        va2_data.update({'discount': variant_two['va2_discount'], 'discount_active': variant_two['va2_discount_active']})
+
+                    variant_db.append(va2_data)
             else:
                 # single variant
                 va1_code = variant_item['va1_code'] if 'va1_code' in variant_item else None
                 va1_barcode = variant_item['va1_barcode'] if 'va1_barcode' in variant_item else None
                 va1_image = variant_item['va1_image'] if 'va1_image' in variant_item else None
-                variant_db.append({
+                va1_data = {
                     'name': variant_data['va1_name'],
                     'option': variant_item['va1_option'],
                     'price': variant_item['va1_price'],
@@ -50,7 +58,11 @@ class VariantLogic:
                     'barcode': va1_barcode,
                     'image': va1_image,
                     'product_id': product_id
-                })
+                }
+                if 'va1_discount' in variant_item and 'va1_discount_active' in variant_item:
+                    va1_data.update({'discount': variant_item['va1_discount'], 'discount_active': variant_item['va1_discount_active']})
+
+                variant_db.append(va1_data)
 
         return variant_db
 
@@ -82,7 +94,9 @@ class VariantLogic:
                                 'va1_price': var['v_price'],
                                 'va1_stock': var['v_stock'],
                                 'va1_code': var['v_code'],
-                                'va1_barcode': var['v_barcode']
+                                'va1_barcode': var['v_barcode'],
+                                'va1_discount': var['v_discount'],
+                                'va1_discount_active': var['v_discount_active']
                             }]
                         })
                     # single variant
@@ -94,6 +108,8 @@ class VariantLogic:
                             'va1_stock': var['v_stock'],
                             'va1_code': var['v_code'],
                             'va1_barcode': var['v_barcode'],
+                            'va1_discount': var['v_discount'],
+                            'va1_discount_active': var['v_discount_active'],
                             'va1_image': var['v_image']
                         }
                         if len(tmp) == 0:
@@ -115,6 +131,8 @@ class VariantLogic:
                             'va2_stock': var['v_stock'],
                             'va2_code': var['v_code'],
                             'va2_barcode': var['v_barcode'],
+                            'va2_discount': var['v_discount'],
+                            'va2_discount_active': var['v_discount_active'],
                         }
                         if len(tmp) == 0:
                             tmp.update({
@@ -164,3 +182,11 @@ class VariantFetch:
         variant_image = [item['image'] for item in variant_db if item['image']]
 
         return [v for i,v in enumerate(variant_image) if variant_image[i] not in variant_image[i + 1:]]
+
+    async def get_variant_by_product_id(product_id: int) -> list:
+        query = select([variant]).where(variant.c.product_id == product_id)
+        variant_db = await database.fetch_all(query=query)
+        variant_data = sorted(
+            [{index:value for index,value in item.items()} for item in variant_db], key=lambda v: v['id']
+        )
+        return VariantLogic.convert_db_to_data(variant_data)[0]

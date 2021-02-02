@@ -1,4 +1,4 @@
-from pydantic import BaseModel, constr, conint, conlist, validator
+from pydantic import BaseModel, StrictBool, constr, conint, conlist, validator
 from typing import Optional
 
 class VariantSchema(BaseModel):
@@ -13,6 +13,9 @@ class VariantTwoData(VariantSchema):
     va2_stock: conint(strict=True, ge=0)
     va2_code: Optional[constr(strict=True, max_length=50)]
     va2_barcode: Optional[constr(strict=True, max_length=50)]
+    # for discount product
+    va2_discount: Optional[conint(strict=True, ge=0, le=95)]
+    va2_discount_active: Optional[StrictBool]
 
 class VariantOneData(VariantSchema):
     va1_option: Optional[constr(strict=True, max_length=20)]
@@ -20,6 +23,10 @@ class VariantOneData(VariantSchema):
     va1_stock: Optional[conint(strict=True, ge=0)]
     va1_code: Optional[constr(strict=True, max_length=50)]
     va1_barcode: Optional[constr(strict=True, max_length=50)]
+    # for discount product
+    va1_discount: Optional[conint(strict=True, ge=0, le=95)]
+    va1_discount_active: Optional[StrictBool]
+    # for update product
     va1_image: Optional[constr(strict=True, max_length=100)]
 
     va2_items: Optional[conlist(VariantTwoData, min_items=1, max_items=20)]
@@ -50,19 +57,24 @@ class VariantCreateUpdate(VariantSchema):
             if 'va2_name' in values and values['va2_name'] is None:
                 raise ValueError("ensure va2_name value is not null")
 
-            list_price = list()
             for index, value in enumerate(v):
                 assert value.va1_option is not None, f"ensure va1_option at index {index} value is not null"
-                # item below must doesn't exists
-                # va1_items.va1_price, va1_items.va1_stock, va1_items.va1_code, va1_items.va1_barcode
-                value.va1_price, value.va1_stock, value.va1_code, value.va1_barcode = None, None, None, None
-                # get all price on va2_items
-                [list_price.append(price) for price in [item.va2_price for item in value.va2_items]]
 
-            min_price = min(list_price) * 7
-            for price in list_price:
-                if price > min_price:
-                    raise ValueError("the price difference between variations is too large, please set the price for the variation accordingly.")
+                for index_v2, value_v2 in enumerate(value.va2_items):
+                    # validation for discount
+                    if value_v2.va2_discount is not None and value_v2.va2_discount_active is None:
+                        raise ValueError(f"ensure va2_discount_active at option {value.va1_option} and index {index_v2} value is not null")
+                    if value_v2.va2_discount is None and value_v2.va2_discount_active is not None:
+                        raise ValueError(f"ensure va2_discount at option {value.va1_option} and index {index_v2} value is not null")
+                    if value_v2.va2_discount_active is True and value_v2.va2_discount < 1:
+                        raise ValueError(f"ensure va2_discount at option {value.va1_option} and index {index_v2} value is greater than 0")
+                    # set discount null if discount_active is false
+                    if value_v2.va2_discount_active is False:
+                        value_v2.va2_discount, value_v2.va2_discount_active = None, None
+
+                # item below must doesn't exists
+                value.va1_price, value.va1_stock, value.va1_code, value.va1_barcode = None, None, None, None
+                value.va1_discount, value.va1_discount_active = None, None
 
         elif (
             ('va1_name' in values and values['va1_name'] is None) and
@@ -72,26 +84,41 @@ class VariantCreateUpdate(VariantSchema):
             # data is without variant
             assert v[0].va1_price is not None, "ensure va1_price value is not null"
             assert v[0].va1_stock is not None, "ensure va1_stock value is not null"
+            # validation for discount
+            if v[0].va1_discount is not None and v[0].va1_discount_active is None:
+                raise ValueError("ensure va1_discount_active value is not null")
+            if v[0].va1_discount is None and v[0].va1_discount_active is not None:
+                raise ValueError("ensure va1_discount value is not null")
+            if v[0].va1_discount_active is True and v[0].va1_discount < 1:
+                raise ValueError("ensure va1_discount value is greater than 0")
+            # set discount null if discount_active is false
+            if v[0].va1_discount_active is False:
+                v[0].va1_discount, v[0].va1_discount_active = None, None
+
+            # va1_image must doesn't exists
+            v[0].va1_image = None
 
         else:
             # data is single variant
             if 'va1_name' in values and values['va1_name'] is None:
                 raise ValueError("ensure va1_name value is not null")
 
-            list_price = list()
             for index, value in enumerate(v):
                 assert value.va1_option is not None, f"ensure va1_option at index {index} value is not null"
                 assert value.va1_price is not None, f"ensure va1_price at index {index} value is not null"
                 assert value.va1_stock is not None, f"ensure va1_stock at index {index} value is not null"
-                list_price.append(value.va1_price)
+                # validation for discount
+                if value.va1_discount is not None and value.va1_discount_active is None:
+                    raise ValueError(f"ensure va1_discount_active at index {index} value is not null")
+                if value.va1_discount is None and value.va1_discount_active is not None:
+                    raise ValueError(f"ensure va1_discount at index {index} value is not null")
+                if value.va1_discount_active is True and value.va1_discount < 1:
+                    raise ValueError(f"ensure va1_discount at index {index} value is greater than 0")
+                # set discount null if discount_active is false
+                if value.va1_discount_active is False:
+                    value.va1_discount, value.va1_discount_active = None, None
 
-            min_price = min(list_price) * 7
-            for price in list_price:
-                if price > min_price:
-                    raise ValueError("the price difference between variations is too large, please set the price for the variation accordingly.")
-
-            # item below must doesn't exists
-            # va2_name
+            # va2_name must doesn't exists
             values['va2_name'] = None
 
         return v

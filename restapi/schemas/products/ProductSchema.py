@@ -15,20 +15,14 @@ class ProductData(ProductSchema):
     products_live: bool
     products_love: bool
     products_wholesale: bool
-    products_created_at: str
-    products_updated_at: str
+    products_created_at: datetime
+    products_updated_at: datetime
 
     variants_price: int
 
     @validator('products_image_product',pre=True)
     def convert_image_product(cls, v):
         return json.loads(v)['0']
-
-    @validator('products_created_at','products_updated_at',pre=True)
-    def convert_datetime_to_str(cls, v):
-        if isinstance(v, datetime):
-            return v.isoformat()
-        return v
 
 class ProductPaginate(BaseModel):
     data: List[ProductData]
@@ -65,6 +59,8 @@ class ProductVariantTwo(ProductSchema):
     va2_stock: int
     va2_code: Optional[str]
     va2_barcode: Optional[str]
+    va2_discount: Optional[int]
+    va2_discount_active: Optional[bool]
 
 class ProductVariantOne(ProductSchema):
     va1_id: Optional[int]
@@ -73,6 +69,8 @@ class ProductVariantOne(ProductSchema):
     va1_stock: Optional[int]
     va1_code: Optional[str]
     va1_barcode: Optional[str]
+    va1_discount: Optional[int]
+    va1_discount_active: Optional[bool]
     va1_image: Optional[str]
     va2_items: Optional[List[ProductVariantTwo]]
 
@@ -101,16 +99,12 @@ class ProductDataSlug(ProductSchema):
     products_wholesale: Optional[List[ProductWholeSale]]
     products_recommendation: Optional[List[ProductData]]
 
-    products_created_at: str
-    products_updated_at: str
+    products_created_at: datetime
+    products_updated_at: datetime
 
     @validator('products_image_product',pre=True)
     def convert_image_product(cls, v):
         return json.loads(v)
-
-    @validator('products_created_at','products_updated_at',pre=True)
-    def convert_datetime_to_str(cls, v):
-        return v.isoformat()
 
 # ============ PRODUCT SLUG ============
 
