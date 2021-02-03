@@ -2,13 +2,17 @@ import json
 from fastapi import APIRouter, Request, Path, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
 from controllers.UserController import UserFetch
-from controllers.ProductController import ProductFetch, ProductCrud
+from controllers.ProductController import ProductFetch, ProductCrud, ProductLogic
 from controllers.VariantController import VariantFetch, VariantCrud, VariantLogic
-from schemas.discounts.DiscountSchema import DiscountCreateUpdate, DiscountDataProduct, DiscountPaginate
+from schemas.discounts.DiscountSchema import DiscountCreate, DiscountUpdate, DiscountDataProduct, DiscountPaginate
 from schemas.variants.VariantSchema import VariantCreateUpdate
 from dependencies.DiscountDependant import get_all_query_discount
+from pytz import timezone
+from config import settings
 
 router = APIRouter()
+
+tz = timezone(settings.timezone)
 
 exclude_keys = {
     'va1_items': {
@@ -87,7 +91,7 @@ async def get_discount_product(product_id: int = Path(...,gt=0), authorize: Auth
         }
     }
 )
-async def create_discount_product(request: Request, discount_data: DiscountCreateUpdate, authorize: AuthJWT = Depends()):
+async def create_discount_product(request: Request, discount_data: DiscountCreate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
     user_id = authorize.get_jwt_subject()
@@ -123,19 +127,83 @@ async def create_discount_product(request: Request, discount_data: DiscountCreat
         return {"detail": "Successfully set discount on product."}
     raise HTTPException(status_code=404,detail="Product not found!")
 
-# @router.put('/update',
-#     responses={
-#         401: {
-#             "description": "User without role admin",
-#             "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
-#         }
-#     }
-# )
-# async def update_discount_product(authorize: AuthJWT = Depends()):
-#     authorize.jwt_required()
+@router.put('/update',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"Successfully updated discount on product."}}}
+        },
+        400: {
+            "description": "Must set discount before update it & Variant not same with product",
+            "content": {"application/json":{"example": {"detail":"string"}}}
+        },
+        401: {
+            "description": "User without role admin",
+            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+        },
+        404: {
+            "description": "Product & Ticket variant not found",
+            "content": {"application/json": {"example": {"detail":"string"}}}
+        }
+    }
+)
+async def update_discount_product(request: Request, discount_data: DiscountUpdate, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
 
-#     user_id = authorize.get_jwt_subject()
-#     await UserFetch.user_is_admin(user_id)
+    user_id = authorize.get_jwt_subject()
+    await UserFetch.user_is_admin(user_id)
+
+    redis_conn = request.app.state.redis
+
+    if product := await ProductFetch.filter_by_id(discount_data.product_id):
+        discount_db = [{index:value for index,value in product.items() if index in ['discount_start','discount_end']}]
+        discount_db = ProductLogic.set_discount_status(discount_db)[0]
+
+        discount_start, discount_end, discount_status = discount_db['discount_start'], discount_db['discount_end'], discount_db['discount_status']
+
+        if redis_conn.get(discount_data.ticket_variant) is None:
+            raise HTTPException(status_code=404,detail="Ticket variant not found!")
+        if discount_start is None and discount_end is None:
+            raise HTTPException(status_code=400,detail="You must set a discount on the product before update it.")
+
+        # validation variant input
+        variant_data_db = await VariantFetch.get_variant_by_product_id(product['id'])
+        variant_data_input = json.loads(redis_conn.get(discount_data.ticket_variant))
+        variant_db = VariantCreateUpdate.parse_obj(variant_data_db).dict(exclude=exclude_keys,exclude_none=True)
+        variant_input = VariantCreateUpdate.parse_obj(variant_data_input).dict(exclude=exclude_keys,exclude_none=True)
+
+        if variant_db != variant_input:
+            raise HTTPException(status_code=400,detail="Variant not same with product.")
+
+        # validation period promo
+        discount_start, discount_end = tz.localize(discount_start), tz.localize(discount_end)
+        # set input to data from db when promo is ongoing
+        if discount_status == 'ongoing':
+            discount_data.discount_start = discount_start
+
+        discount_between = (discount_data.discount_end - discount_data.discount_start)
+
+        if discount_start > discount_data.discount_start:
+            raise HTTPException(status_code=422,detail="The new start time must be after the set start time.")
+        if (round(discount_between.seconds / 3600, 2) < 1 and discount_between.days < 1) or discount_start > discount_data.discount_end:
+            raise HTTPException(status_code=422,detail="The expiration time must be at least one hour longer than the start time.")
+        if discount_between.days > 180:
+            raise HTTPException(status_code=422,detail="Promo period must be less than 180 days.")
+
+        # update data
+        variant_discount = VariantLogic.convert_data_to_db(variant_data_input,product['id'])
+        discount_data.discount_start = discount_data.discount_start.replace(tzinfo=None)
+        discount_data.discount_end = discount_data.discount_end.replace(tzinfo=None)
+
+        if len([1 for item in variant_discount if 'discount' in item and 'discount_active' in item]) == 0:
+            discount_data.discount_start, discount_data.discount_end = None, None
+
+        await ProductCrud.update_product(product['id'],**discount_data.dict(include={'discount_start','discount_end'}))
+        await VariantCrud.delete_variant(product['id'])
+        await VariantCrud.create_variant(variant_discount)
+
+        return {"detail": "Successfully updated discount on product."}
+    raise HTTPException(status_code=404,detail="Product not found!")
 
 @router.delete('/non-active/{product_id}',
     responses={

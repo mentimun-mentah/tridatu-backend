@@ -14,7 +14,7 @@ class DiscountSchema(BaseModel):
         max_anystr_length = 100
         anystr_strip_whitespace = True
 
-class DiscountCreateUpdate(DiscountSchema):
+class DiscountCreate(DiscountSchema):
     product_id: conint(strict=True, gt=0)
     ticket_variant: constr(strict=True)
     discount_start: datetime
@@ -50,6 +50,25 @@ class DiscountCreateUpdate(DiscountSchema):
                 raise ValueError("promo period must be less than 180 days")
         return v
 
+class DiscountUpdate(DiscountSchema):
+    product_id: conint(strict=True, gt=0)
+    ticket_variant: constr(strict=True)
+    discount_start: datetime
+    discount_end: datetime
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "product_id": 1,
+                "ticket_variant": "string",
+                "discount_start": format(datetime.now(tz) + timedelta(minutes=20), tf),
+                "discount_end": format(datetime.now(tz) + timedelta(hours=1,minutes=20), tf)
+            }
+        }
+
+    @validator('discount_start', 'discount_end', pre=True)
+    def parse_discount_format(cls, v):
+        return tz.localize(datetime.strptime(v,tf))
 
 class DiscountData(DiscountSchema):
     products_id: int

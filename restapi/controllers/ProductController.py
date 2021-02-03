@@ -23,24 +23,24 @@ class ProductLogic:
         return await database.execute(query=query)
 
     @staticmethod
-    def set_discount_status(product_data: list) -> list:
+    def set_discount_status(product_data: list, key: str = '') -> list:
         for data in product_data:
             # not active
-            if data['products_discount_start'] is None and data['products_discount_end'] is None:
-                data.update({'products_discount_status': 'not_active'})
+            if data[f'{key}discount_start'] is None and data[f'{key}discount_end'] is None:
+                data.update({f'{key}discount_status': 'not_active'})
             else:
-                discount_start = tz.localize(data['products_discount_start'])
-                discount_end = tz.localize(data['products_discount_end'])
+                discount_start = tz.localize(data[f'{key}discount_start'])
+                discount_end = tz.localize(data[f'{key}discount_end'])
                 time_now = datetime.now(tz)
                 # ongoing
                 if time_now > discount_start and time_now < discount_end:
-                    data.update({'products_discount_status': 'ongoing'})
+                    data.update({f'{key}discount_status': 'ongoing'})
                 # will come
                 elif time_now < discount_start:
-                    data.update({'products_discount_status': 'will_come'})
+                    data.update({f'{key}discount_status': 'will_come'})
                 # have ended
                 elif time_now > discount_end:
-                    data.update({'products_discount_status': 'have_ended'})
+                    data.update({f'{key}discount_status': 'have_ended'})
 
         return product_data
 
@@ -116,7 +116,7 @@ class ProductFetch:
         paginate = Pagination(kwargs['page'], kwargs['per_page'], total, product_db)
         product_data = [{index:value for index,value in item.items()} for item in paginate.items]
         return {
-            "data": ProductLogic.set_discount_status(product_data),
+            "data": ProductLogic.set_discount_status(product_data,'products_'),
             "total": paginate.total,
             "next_num": paginate.next_num,
             "prev_num": paginate.prev_num,
