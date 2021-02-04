@@ -3,7 +3,6 @@ from .operationtest import OperationTest
 
 class TestWholeSale(OperationTest):
     prefix = "/wholesale"
-
     without_variant = None
     double_variant = None
 

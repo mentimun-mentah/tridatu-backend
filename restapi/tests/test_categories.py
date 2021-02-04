@@ -96,6 +96,23 @@ class TestCategory(OperationTest):
         assert response.status_code == 400
         assert response.json() == {"detail": "The name has already been taken."}
 
+    @pytest.mark.asyncio
+    async def test_create_category_with_sub(self,async_client):
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        category_id = await self.get_category_id(self.name)
+
+        response = await async_client.post('/sub-categories/create',
+            json={'name': self.name,'category_id': category_id},
+            headers={'X-CSRF-TOKEN': csrf_access_token}
+        )
+        assert response.status_code == 201
+        assert response.json() == {"detail": "Successfully add a new sub-category."}
+
     def test_get_categories_with_children(self,client):
         url = self.prefix + '/'
         # all field blank
@@ -138,11 +155,27 @@ class TestCategory(OperationTest):
         assert response.status_code == 200
         assert response.json() != []
 
+        assert 'sub_categories_id' not in response.json()[0]
+        assert 'sub_categories_name' not in response.json()[0]
+
+        # check data exists and type data
+        assert type(response.json()[0]['categories_id']) == int
+        assert type(response.json()[0]['categories_name']) == str
+
         # without search
-        url = self.prefix + '/all-categories?with_sub=false'
+        url = self.prefix + '/all-categories?with_sub=true'
         response = client.get(url)
         assert response.status_code == 200
         assert response.json() != []
+
+        assert 'sub_categories_id' in response.json()[0]
+        assert 'sub_categories_name' in response.json()[0]
+
+        # check data exists and type data
+        assert type(response.json()[0]['categories_id']) == int
+        assert type(response.json()[0]['categories_name']) == str
+        assert type(response.json()[0]['sub_categories_id']) == int
+        assert type(response.json()[0]['sub_categories_name']) == str
 
     def test_validation_get_category_by_id(self,client):
         url = self.prefix + '/get-category/'

@@ -1,7 +1,7 @@
 import pytest, bcrypt, json, os
 from config import database
 from sqlalchemy import desc
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, func
 from models.UserModel import user
 from models.ConfirmationModel import confirmation
 from models.PasswordResetModel import password_reset
@@ -181,6 +181,11 @@ class OperationTest:
         query = select([product.c.image_product]).where(product.c.name == name)
         product_data = await database.fetch_one(query=query)
         return json.loads(product_data['image_product'])
+
+    @pytest.mark.asyncio
+    async def update_product_by_name(self,name: str, **kwargs):
+        kwargs.update({"updated_at": func.now()})
+        await database.execute(query=product.update().where(product.c.name == name),values=kwargs)
 
     # ================ COMMENT SECTION ================
 

@@ -4,6 +4,7 @@ from models.WishlistModel import wishlist
 from models.ProductModel import product
 from models.VariantModel import variant
 from libs.Pagination import Pagination
+from controllers.ProductController import ProductLogic
 
 class WishlistLogic:
     @staticmethod
@@ -28,8 +29,7 @@ class WishlistFetch:
         wishlist_alias = select([wishlist.join(product.join(variant))]) \
             .where(wishlist.c.user_id == user_id).distinct(wishlist.c.id).apply_labels().alias()
 
-        query = select([wishlist_alias])
-        query = query.where(wishlist_alias.c.products_live == expression.true())
+        query = select([wishlist_alias]).where(wishlist_alias.c.products_live == expression.true())
 
         if q := kwargs['q']:
             query = query.where(wishlist_alias.c.products_name.ilike(f"%{q}%"))
@@ -45,8 +45,10 @@ class WishlistFetch:
         wishlist_db = await database.fetch_all(query=query)
 
         paginate = Pagination(kwargs['page'], kwargs['per_page'], total, wishlist_db)
+        wishlist_data = [{index:value for index,value in item.items()} for item in paginate.items]
+        [data.__setitem__('products_wholesale', await ProductLogic.check_wholesale(data['products_id'])) for data in wishlist_data]
         return {
-            "data": [{index:value for index,value in item.items()} for item in paginate.items],
+            "data": wishlist_data,
             "total": paginate.total,
             "next_num": paginate.next_num,
             "prev_num": paginate.prev_num,

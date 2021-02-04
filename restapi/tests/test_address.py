@@ -60,6 +60,10 @@ class TestAddress(OperationTest):
         assert response.status_code == 200
         assert len(response.json()) == 4
 
+        # check data exists and type data
+        assert type(response.json()[0]['value']) == str
+        assert type(response.json()[0]['postal_code']) == list
+
     def test_validation_create_address(self,client):
         url = self.prefix + "/create"
         # field required
@@ -188,6 +192,16 @@ class TestAddress(OperationTest):
         assert 'prev_num' in response.json()
         assert 'page' in response.json()
         assert 'iter_pages' in response.json()
+
+        # check data exists and type data
+        assert type(response.json()['data'][0]['label']) == str
+        assert type(response.json()['data'][0]['receiver']) == str
+        assert type(response.json()['data'][0]['phone']) == str
+        assert type(response.json()['data'][0]['region']) == str
+        assert type(response.json()['data'][0]['postal_code']) == int
+        assert type(response.json()['data'][0]['recipient_address']) == str
+        assert type(response.json()['data'][0]['main_address']) == bool
+        assert type(response.json()['data'][0]['id']) == int
 
     def test_validation_my_address_by_id(self,client):
         url = self.prefix + '/my-address/'

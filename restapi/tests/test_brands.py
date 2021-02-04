@@ -136,6 +136,11 @@ class TestBrand(OperationTest):
         assert response.status_code == 200
         assert response.json() != []
 
+        # check data exists and type data
+        assert type(response.json()[0]['id']) == int
+        assert type(response.json()[0]['name']) == str
+        assert type(response.json()[0]['image']) == str
+
     def test_validation_get_brand_by_id(self,client):
         url = self.prefix + '/get-brand/'
         # all field blank

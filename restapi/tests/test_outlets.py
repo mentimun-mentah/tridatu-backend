@@ -97,6 +97,10 @@ class TestOutlet(OperationTest):
         assert response.status_code == 200
         assert response.json() != []
 
+        # check data exists and type data
+        assert type(response.json()[0]['id']) == int
+        assert type(response.json()[0]['image']) == str
+
     def test_validation_delete_outlet(self,client):
         url = self.prefix + '/delete/'
         # all field blank

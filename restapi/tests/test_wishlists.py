@@ -156,6 +156,27 @@ class TestWishlist(OperationTest):
             assert response.status_code == 201
             assert response.json() == {"detail":"Successfully add a new product."}
 
+    @pytest.mark.asyncio
+    async def test_set_product_live(self,async_client):
+        # user admin login
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        product_id_one = await self.get_product_id(self.name)
+        product_id_two = await self.get_product_id(self.name2)
+
+        # set product one to alive
+        response = await async_client.put('/products/alive-archive/' + str(product_id_one),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully change the product to alive."}
+        # set product two to alive
+        response = await async_client.put('/products/alive-archive/' + str(product_id_two),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully change the product to alive."}
+
     def test_validation_love_product(self,client):
         url = self.prefix + '/love/'
         # all field blank
@@ -200,6 +221,7 @@ class TestWishlist(OperationTest):
 
     def test_user_wishlist(self,client):
         url = self.prefix + '/user'
+
         # field required
         response = client.get(url)
         assert response.status_code == 422
@@ -221,10 +243,11 @@ class TestWishlist(OperationTest):
             if x['loc'][-1] == 'per_page': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'order_by': assert x['msg'] == \
                 "unexpected value; permitted: 'high_price', 'low_price', 'longest'"
+
         # user login
         response = client.post('/users/login',json={
-            'email': self.account_1['email'],
-            'password': self.account_1['password']
+            'email': self.account_2['email'],
+            'password': self.account_2['password']
         })
 
         response = client.get(url + '?page=1&per_page=1')
@@ -235,6 +258,18 @@ class TestWishlist(OperationTest):
         assert 'prev_num' in response.json()
         assert 'page' in response.json()
         assert 'iter_pages' in response.json()
+
+        # check data exists and type data
+        assert type(response.json()['data'][0]['products_id']) == int
+        assert type(response.json()['data'][0]['products_name']) == str
+        assert type(response.json()['data'][0]['products_slug']) == str
+        assert type(response.json()['data'][0]['products_image_product']) == str
+        assert type(response.json()['data'][0]['products_live']) == bool
+        assert type(response.json()['data'][0]['products_love']) == bool
+        assert type(response.json()['data'][0]['products_wholesale']) == bool
+        assert type(response.json()['data'][0]['products_created_at']) == str
+        assert type(response.json()['data'][0]['products_updated_at']) == str
+        assert type(response.json()['data'][0]['variants_price']) == int
 
     def test_validation_unlove_product(self,client):
         url = self.prefix + '/unlove/'

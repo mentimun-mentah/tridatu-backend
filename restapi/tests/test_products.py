@@ -647,6 +647,9 @@ class TestProduct(OperationTest):
         assert response.status_code == 200
         assert len(response.json()) == 1
 
+        # check data exists and type data
+        assert type(response.json()[0]['value']) == str
+
     def test_get_product_by_slug(self,client):
         url = self.prefix + '/'
         # field required
