@@ -116,13 +116,12 @@ async def create_discount_product(request: Request, discount_data: DiscountCreat
         variant_discount = VariantLogic.convert_data_to_db(variant_data_input,product['id'])
 
         # create variant with discount
-        if len([1 for item in variant_discount if 'discount' in item and 'discount_active' in item]) > 0:
+        if variant_discount := [item for item in variant_discount if item['discount_active'] is True]:
             discount_data.discount_start = discount_data.discount_start.replace(tzinfo=None)
             discount_data.discount_end = discount_data.discount_end.replace(tzinfo=None)
 
             await ProductCrud.update_product(product['id'],**discount_data.dict(include={'discount_start','discount_end'}))
-            await VariantCrud.delete_variant(product['id'])
-            await VariantCrud.create_variant(variant_discount)
+            await VariantCrud.update_variant(variant_discount)
 
         return {"detail": "Successfully set discount on product."}
     raise HTTPException(status_code=404,detail="Product not found!")
@@ -195,12 +194,11 @@ async def update_discount_product(request: Request, discount_data: DiscountUpdat
         discount_data.discount_start = discount_data.discount_start.replace(tzinfo=None)
         discount_data.discount_end = discount_data.discount_end.replace(tzinfo=None)
 
-        if len([1 for item in variant_discount if 'discount' in item and 'discount_active' in item]) == 0:
+        if len([1 for item in variant_discount if item['discount_active'] is True]) == 0:
             discount_data.discount_start, discount_data.discount_end = None, None
 
         await ProductCrud.update_product(product['id'],**discount_data.dict(include={'discount_start','discount_end'}))
-        await VariantCrud.delete_variant(product['id'])
-        await VariantCrud.create_variant(variant_discount)
+        await VariantCrud.update_variant(variant_discount)
 
         return {"detail": "Successfully updated discount on product."}
     raise HTTPException(status_code=404,detail="Product not found!")
@@ -233,8 +231,7 @@ async def non_active_discount(product_id: int = Path(...,gt=0), authorize: AuthJ
         variant_discount = VariantLogic.convert_data_to_db(variant_db,product['id'])
 
         await ProductCrud.update_product(product['id'],**{'discount_start': None, 'discount_end': None})
-        await VariantCrud.delete_variant(product['id'])
-        await VariantCrud.create_variant(variant_discount)
+        await VariantCrud.update_variant(variant_discount)
 
         return {"detail": "Successfully unset discount on the product."}
     raise HTTPException(status_code=404,detail="Product not found!")

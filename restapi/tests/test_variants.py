@@ -60,16 +60,19 @@ class TestVariant(OperationTest):
         response = client.post(url,json={
             'va1_name': '',
             'va2_name': '',
+            'va1_product_id': 0,
             'va1_items': []
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'va1_name': assert x['msg'] == 'ensure this value has at least 1 characters'
             if x['loc'][-1] == 'va2_name': assert x['msg'] == 'ensure this value has at least 1 characters'
+            if x['loc'][-1] == 'va1_product_id': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure this value has at least 1 items'
 
         response = client.post(url,json={
             'va1_items': [{
+                'va1_id': 0,
                 'va1_option': '',
                 'va1_price': 0,
                 'va1_stock': -1,
@@ -81,6 +84,7 @@ class TestVariant(OperationTest):
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_id': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'va1_option': assert x['msg'] == 'ensure this value has at least 1 characters'
             if x['loc'][-1] == 'va1_price': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'va1_stock': assert x['msg'] == 'ensure this value is greater than or equal to 0'
@@ -92,6 +96,7 @@ class TestVariant(OperationTest):
         response = client.post(url,json={
             'va1_items': [{
                 'va2_items': [{
+                    'va2_id': 0,
                     'va2_option': '',
                     'va2_price': 0,
                     'va2_stock': -1,
@@ -103,6 +108,7 @@ class TestVariant(OperationTest):
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
+            if x['loc'][-1] == 'va2_id': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'va2_option': assert x['msg'] == 'ensure this value has at least 1 characters'
             if x['loc'][-1] == 'va2_price': assert x['msg'] == 'ensure this value is greater than 0'
             if x['loc'][-1] == 'va2_stock': assert x['msg'] == 'ensure this value is greater than or equal to 0'
@@ -114,6 +120,7 @@ class TestVariant(OperationTest):
         response = client.post(url,json={
             'va1_name': 'a' * 200,
             'va2_name': 'a' * 200,
+            'va1_product_id': 200,
             'va1_items': [{"va1_option": f"{x}", "va1_price": 1, "va1_stock": 0} for x in range(30)]
         })
         assert response.status_code == 422
@@ -124,6 +131,7 @@ class TestVariant(OperationTest):
 
         response = client.post(url,json={
             'va1_items': [{
+                'va1_id': 200,
                 'va1_option': 'a' * 200,
                 'va1_price': 200,
                 'va1_stock': 200,
@@ -144,6 +152,7 @@ class TestVariant(OperationTest):
         response = client.post(url,json={
             'va1_items': [{
                 'va2_items': [{
+                    'va2_id': 200,
                     'va2_option': 'a' * 200,
                     'va2_price': 200,
                     'va2_stock': 200,
@@ -164,16 +173,19 @@ class TestVariant(OperationTest):
         response = client.post(url,json={
             'va1_name': 123,
             'va2_name': 123,
+            'va1_product_id': '123',
             'va1_items': {}
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'va1_name': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'va2_name': assert x['msg'] == 'str type expected'
+            if x['loc'][-1] == 'va1_product_id': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'va1_items': assert x['msg'] == 'value is not a valid list'
 
         response = client.post(url,json={
             'va1_items': [{
+                'va1_id': '123',
                 'va1_option': 123,
                 'va1_price': '123',
                 'va1_stock': '123',
@@ -186,6 +198,7 @@ class TestVariant(OperationTest):
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_id': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'va1_option': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'va1_price': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'va1_stock': assert x['msg'] == 'value is not a valid integer'
@@ -198,6 +211,7 @@ class TestVariant(OperationTest):
         response = client.post(url,json={
             'va1_items': [{
                 'va2_items': [{
+                    'va2_id': '123',
                     'va2_option': 123,
                     'va2_price': '123',
                     'va2_stock': '123',
@@ -210,6 +224,7 @@ class TestVariant(OperationTest):
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
+            if x['loc'][-1] == 'va2_id': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'va2_option': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'va2_price': assert x['msg'] == 'value is not a valid integer'
             if x['loc'][-1] == 'va2_stock': assert x['msg'] == 'value is not a valid integer'
@@ -268,6 +283,16 @@ class TestVariant(OperationTest):
         for x in response.json()['detail']:
             if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_discount value is greater than 0'
 
+        response = client.post(url,json={'va1_items': [{'va1_id': 1,'va1_price': 1, 'va1_stock': 0}]})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_product_id value is not null'
+
+        response = client.post(url,json={'va1_product_id': 1,'va1_items': [{'va1_price': 1, 'va1_stock': 0}]})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_id value is not null'
+
         # single variant
         response = client.post(url,json={'va1_items': [{'va1_option': 'XL'}]})
         assert response.status_code == 422
@@ -312,6 +337,23 @@ class TestVariant(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_discount at index 0 value is greater than 0'
+
+        response = client.post(url,json={
+            'va1_name': 'ukuran',
+            'va1_items': [{'va1_id': 1,'va1_option': 'XL','va1_price': 1, 'va1_stock': 0}]
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_product_id value is not null'
+
+        response = client.post(url,json={
+            'va1_name': 'ukuran',
+            'va1_product_id': 1,
+            'va1_items': [{'va1_option': 'XL','va1_price': 1, 'va1_stock': 0}]
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_id at index 0 value is not null'
 
         # double variant
         response = client.post(url,json={
@@ -373,6 +415,31 @@ class TestVariant(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va2_discount at option Hitam and index 0 value is greater than 0'
+
+        response = client.post(url,json={
+            'va1_name': 'warna',
+            'va2_name': 'ukuran',
+            'va1_items': [{
+                'va1_option': 'Hitam',
+                'va2_items': [{'va2_id': 1,'va2_option':'XL', 'va2_price': 1, 'va2_stock': 0}]
+            }]
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va1_product_id value is not null'
+
+        response = client.post(url,json={
+            'va1_name': 'warna',
+            'va2_name': 'ukuran',
+            'va1_product_id': 1,
+            'va1_items': [{
+                'va1_option': 'Hitam',
+                'va2_items': [{'va2_option':'XL', 'va2_price': 1, 'va2_stock': 0}]
+            }]
+        })
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'va1_items': assert x['msg'] == 'ensure va2_id at option Hitam and index 0 value is not null'
 
     def test_create_variant(self,client):
         response = client.post('/users/login',json={

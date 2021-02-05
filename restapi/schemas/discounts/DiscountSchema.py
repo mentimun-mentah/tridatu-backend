@@ -122,6 +122,7 @@ class DiscountVariantOne(DiscountSchema):
 class DiscountVariant(DiscountSchema):
     va1_name: Optional[str]
     va2_name: Optional[str]
+    va1_product_id: Optional[int]
     va1_items: List[DiscountVariantOne]
 
 class DiscountDataProduct(DiscountSchema):

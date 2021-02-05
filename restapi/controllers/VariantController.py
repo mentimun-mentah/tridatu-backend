@@ -18,10 +18,14 @@ class VariantLogic:
                     'stock': variant_item['va1_stock'],
                     'code': va1_code,
                     'barcode': va1_barcode,
+                    'discount': 0,
+                    'discount_active': False,
                     'product_id': product_id
                 }
                 if 'va1_discount' in variant_item and 'va1_discount_active' in variant_item:
                     va1_data.update({'discount': variant_item['va1_discount'], 'discount_active': variant_item['va1_discount_active']})
+                if 'va1_id' in variant_item:
+                    va1_data.update({'id': variant_item['va1_id']})
 
                 variant_db.append(va1_data)
             elif 'va2_name' in variant_data:
@@ -38,10 +42,14 @@ class VariantLogic:
                         'code': va2_code,
                         'barcode': va2_barcode,
                         'image': va1_image,
+                        'discount': 0,
+                        'discount_active': False,
                         'product_id': product_id
                     }
                     if 'va2_discount' in variant_two and 'va2_discount_active' in variant_two:
                         va2_data.update({'discount': variant_two['va2_discount'], 'discount_active': variant_two['va2_discount_active']})
+                    if 'va2_id' in variant_two:
+                        va2_data.update({'id': variant_two['va2_id']})
 
                     variant_db.append(va2_data)
             else:
@@ -57,10 +65,14 @@ class VariantLogic:
                     'code': va1_code,
                     'barcode': va1_barcode,
                     'image': va1_image,
+                    'discount': 0,
+                    'discount_active': False,
                     'product_id': product_id
                 }
                 if 'va1_discount' in variant_item and 'va1_discount_active' in variant_item:
                     va1_data.update({'discount': variant_item['va1_discount'], 'discount_active': variant_item['va1_discount_active']})
+                if 'va1_id' in variant_item:
+                    va1_data.update({'id': variant_item['va1_id']})
 
                 variant_db.append(va1_data)
 
@@ -168,6 +180,10 @@ class VariantCrud:
     @staticmethod
     async def delete_variant(product_id: int) -> None:
         await database.execute(query=variant.delete().where(variant.c.product_id == product_id))
+
+    @staticmethod
+    async def update_variant(variant_db: list) -> None:
+        [await database.execute(query=variant.update().where(variant.c.id == data['id']),values=data) for data in variant_db]
 
     @staticmethod
     def add_variant_to_redis_storage(data_variant: dict) -> str:

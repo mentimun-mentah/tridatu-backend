@@ -11,7 +11,6 @@ tf = '%d %b %Y %H:%M'
 class TestDiscount(OperationTest):
     prefix = "/discounts"
     without_variant = None
-    without_variant_discount = None
     single_variant = None
 
     @pytest.mark.asyncio
@@ -71,21 +70,6 @@ class TestDiscount(OperationTest):
         assert response.status_code == 201
         # assign to variable
         self.__class__.without_variant = response.json()['ticket']
-
-        # create without discount
-        response = await async_client.post(url,json={
-            'va1_items': [{
-                'va1_price': 1000,
-                'va1_stock': 0,
-                'va1_code': '1271521-899-SM',
-                'va1_barcode': '889362033471',
-                'va1_discount': 1,
-                'va1_discount_active': True
-            }]
-        },headers={'X-CSRF-TOKEN': csrf_access_token})
-        assert response.status_code == 201
-        # assign to variable
-        self.__class__.without_variant_discount = response.json()['ticket']
 
         # create single variant
         response = await async_client.post(url,json={
@@ -198,6 +182,34 @@ class TestDiscount(OperationTest):
         response = await async_client.put('/products/alive-archive/' + str(product_id_two),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200
         assert response.json() == {"detail": "Successfully change the product to alive."}
+
+    @pytest.mark.asyncio
+    async def test_update_variant_ticket(self,async_client):
+        response = await async_client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        product_id_one = await self.get_product_id(self.name)
+        product_id_two = await self.get_product_id(self.name2)
+
+        # get ticket variant for without_variant & without_variant_discount
+        response = await async_client.get(self.prefix + f'/get-discount/{product_id_one}')
+        without_variant = response.json()['products_variant']
+
+        response = await async_client.post('/variants/create-ticket',json=without_variant,headers={'X-CSRF-TOKEN': csrf_access_token})
+        self.__class__.without_variant = response.json()['ticket']
+
+        without_variant['va1_items'][0].update({'va1_discount': 1,'va1_discount_active': True})
+        response = await async_client.post('/variants/create-ticket',json=without_variant,headers={'X-CSRF-TOKEN': csrf_access_token})
+        self.__class__.without_variant_discount = response.json()['ticket']
+
+        # get ticket variant for single_variant
+        response = await async_client.get(self.prefix + f'/get-discount/{product_id_two}')
+        single_variant = response.json()['products_variant']
+        response = await async_client.post('/variants/create-ticket',json=single_variant,headers={'X-CSRF-TOKEN': csrf_access_token})
+        self.__class__.single_variant = response.json()['ticket']
 
     def test_validation_get_all_discounts(self,client):
         url = self.prefix + '/all-discounts'
