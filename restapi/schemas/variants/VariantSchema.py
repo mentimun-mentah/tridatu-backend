@@ -8,7 +8,7 @@ class VariantSchema(BaseModel):
         anystr_strip_whitespace = True
 
 class VariantTwoData(VariantSchema):
-    va2_id: Optional[conint(strict=True, gt=0)]
+    va2_id: Optional[conint(strict=True, ge=0)]
     va2_option: constr(strict=True, max_length=20)
     va2_price: conint(strict=True, gt=0)
     va2_stock: conint(strict=True, ge=0)
@@ -19,7 +19,7 @@ class VariantTwoData(VariantSchema):
     va2_discount_active: Optional[StrictBool]
 
 class VariantOneData(VariantSchema):
-    va1_id: Optional[conint(strict=True, gt=0)]
+    va1_id: Optional[conint(strict=True, ge=0)]
     va1_option: Optional[constr(strict=True, max_length=20)]
     va1_price: Optional[conint(strict=True, gt=0)]
     va1_stock: Optional[conint(strict=True, ge=0)]
