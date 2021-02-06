@@ -16,7 +16,7 @@ with open("private_key.txt") as f:
     private_key = f.read().strip()
 
 class Settings(BaseSettings):
-    authjwt_token_location: set = {"headers","cookies"}
+    authjwt_token_location: set = {"cookies"}
     authjwt_secret_key: str
     authjwt_algorithm: str = "RS512"
     authjwt_public_key: str = public_key
@@ -35,23 +35,30 @@ class Settings(BaseSettings):
     smtp_password: str
     smtp_tls: bool
 
+    timezone: str
+
     access_expires: Optional[int] = None
+    access_expires_admin: Optional[int] = None
     refresh_expires: Optional[int] = None
 
     GOOGLE_REDIRECT_URI: str
     FACEBOOK_REDIRECT_URI: str
 
     @validator('database_uri')
-    def validator_database_ur(cls, v):
+    def validate_database_uri(cls, v):
         assert v.path and len(v.path) > 1, 'database must be provided'
         return v
 
     @validator('access_expires',always=True)
-    def validate_access_expires(cls, v):
+    def parse_access_expires(cls, v):
         return int(timedelta(minutes=15).total_seconds())
 
+    @validator('access_expires_admin',always=True)
+    def parse_access_expires_admin(cls, v):
+        return int(timedelta(hours=3).total_seconds())
+
     @validator('refresh_expires',always=True)
-    def validate_refresh_expires(cls, v):
+    def parse_refresh_expires(cls, v):
         return int(timedelta(days=30).total_seconds())
 
     class Config:

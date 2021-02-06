@@ -1,4 +1,5 @@
-from sqlalchemy import Table, Column, Integer, String, BigInteger, ForeignKey
+from sqlalchemy import Table, Column, Integer, String, Boolean, BigInteger, ForeignKey
+from sqlalchemy.sql import expression, text
 from config import metadata
 
 variant = Table('variants', metadata,
@@ -10,5 +11,7 @@ variant = Table('variants', metadata,
     Column('code', String(100), nullable=True),
     Column('barcode', String(100), nullable=True),
     Column('image', String(100), nullable=True),
+    Column('discount', Integer, server_default=text("0")),
+    Column('discount_active', Boolean, server_default=expression.false()),
     Column('product_id',Integer,ForeignKey('products.id',onupdate='cascade',ondelete='cascade'),nullable=False)
 )

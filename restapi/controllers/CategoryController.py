@@ -3,6 +3,7 @@ from sqlalchemy.sql import select
 from models.CategoryModel import category
 from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
+from typing import Optional
 
 class CategoryLogic:
     @staticmethod
@@ -79,17 +80,34 @@ class CategoryCrud:
 
 class CategoryFetch:
     @staticmethod
-    async def get_all_categories(with_sub: bool) -> category:
+    async def get_all_categories(with_sub: bool, q: Optional[str]) -> category:
         if with_sub is False:
-            return await database.fetch_all(query=select([category]).apply_labels())
-        return await database.fetch_all(query=select([sub_category.join(category)]).apply_labels())
+            query = select([category]).apply_labels()
+            if q:
+                query = query.where(category.c.name.ilike(f"%{q}%"))
+        else:
+            query = select([sub_category.join(category)]).apply_labels()
+            if q:
+                query = query.where((category.c.name.ilike(f"%{q}%")) | (sub_category.c.name.ilike(f"%{q}%")))
+
+        return await database.fetch_all(query=query)
 
     @staticmethod
-    async def get_categories_with_children() -> list:
-        query = select([category.outerjoin(sub_category.outerjoin(item_sub_category))]).apply_labels()
+    async def get_categories_with_children(q: Optional[str]) -> list:
+        category_alias = select([category.outerjoin(sub_category.outerjoin(item_sub_category))]) \
+            .apply_labels().alias()
+
+        query = select([category_alias])
+
+        if q:
+            query = query.where(
+                (category_alias.c.categories_name.ilike(f"%{q}%")) |
+                (category_alias.c.sub_categories_name.ilike(f"%{q}%")) |
+                (category_alias.c.item_sub_categories_name.ilike(f"%{q}%"))
+            )
+
         category_db = await database.fetch_all(query=query)
         category_data = [{index:value for index,value in x.items()} for x in category_db]
-
         return CategoryLogic.extract_categories_with_children(category_data)
 
     @staticmethod

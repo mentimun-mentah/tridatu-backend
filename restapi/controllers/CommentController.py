@@ -1,8 +1,15 @@
 from config import database
 from sqlalchemy.sql import select, func
 from models.CommentModel import comment
+from models.ReplyModel import reply
 from models.UserModel import user
 from libs.Pagination import Pagination
+
+class CommentLogic:
+    @staticmethod
+    async def count_total_replies(comment_id: int) -> int:
+        query = select([func.count(reply.c.id)]).where(reply.c.comment_id == comment_id).as_scalar()
+        return await database.execute(query=query)
 
 class CommentCrud:
     @staticmethod
@@ -27,8 +34,14 @@ class CommentFetch:
         comment_db = await database.fetch_all(query=query)
 
         paginate = Pagination(kwargs['page'], kwargs['per_page'], total, comment_db)
+        paginate_data = [{index:value for index,value in item.items()} for item in paginate.items]
+        # count total replies on comment
+        [
+            data.__setitem__('total_replies', await CommentLogic.count_total_replies(data['comments_id']))
+            for data in paginate_data
+        ]
         return {
-            "data": [{index:value for index,value in item.items()} for item in paginate.items],
+            "data": paginate_data,
             "total": paginate.total,
             "next_num": paginate.next_num,
             "prev_num": paginate.prev_num,

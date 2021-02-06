@@ -31,6 +31,11 @@ class TestShipping:
         assert response.status_code == 200
         assert len(response.json()) == 1
 
+        # check data exists and type data
+        assert type(response.json()[0]['value']) == str
+        assert type(response.json()[0]['shipping_cities_id']) == int
+        assert type(response.json()[0]['shipping_subdistricts_id']) == int
+
     def test_validation_get_cost_from_courier(self,client):
         url = self.prefix + '/get-cost'
         # field required

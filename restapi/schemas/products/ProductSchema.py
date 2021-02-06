@@ -1,6 +1,7 @@
 import json
+from datetime import datetime
 from pydantic import BaseModel, validator
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 class ProductSchema(BaseModel):
     class Config:
@@ -10,21 +11,21 @@ class ProductData(ProductSchema):
     products_id: int
     products_name: str
     products_slug: str
-    products_image_product: dict
+    products_image_product: str
     products_live: bool
     products_love: bool
-    products_created_at: str
-    products_updated_at: str
+    products_wholesale: bool
+    products_discount_status: Literal['ongoing','will_come','not_active','have_ended']
+    products_created_at: datetime
+    products_updated_at: datetime
 
-    variants_price: int
+    variants_min_price: int
+    variants_max_price: int
+    variants_discount: int
 
     @validator('products_image_product',pre=True)
     def convert_image_product(cls, v):
-        return json.loads(v)
-
-    @validator('products_created_at','products_updated_at',pre=True)
-    def convert_datetime_to_str(cls, v):
-        return v.isoformat()
+        return json.loads(v)['0']
 
 class ProductPaginate(BaseModel):
     data: List[ProductData]
@@ -35,6 +36,11 @@ class ProductPaginate(BaseModel):
     iter_pages: list
 
 # ============ PRODUCT SLUG ============
+
+class ProductWholeSale(ProductSchema):
+    wholesale_id: int
+    wholesale_min_qty: int
+    wholesale_price: int
 
 class ProductCategory(ProductSchema):
     categories_id: int
@@ -56,6 +62,8 @@ class ProductVariantTwo(ProductSchema):
     va2_stock: int
     va2_code: Optional[str]
     va2_barcode: Optional[str]
+    va2_discount: Optional[int]
+    va2_discount_active: Optional[bool]
 
 class ProductVariantOne(ProductSchema):
     va1_id: Optional[int]
@@ -64,12 +72,15 @@ class ProductVariantOne(ProductSchema):
     va1_stock: Optional[int]
     va1_code: Optional[str]
     va1_barcode: Optional[str]
+    va1_discount: Optional[int]
+    va1_discount_active: Optional[bool]
     va1_image: Optional[str]
     va2_items: Optional[List[ProductVariantTwo]]
 
 class ProductVariant(ProductSchema):
     va1_name: Optional[str]
     va2_name: Optional[str]
+    va1_product_id: Optional[int]
     va1_items: List[ProductVariantOne]
 
 class ProductDataSlug(ProductSchema):
@@ -85,21 +96,24 @@ class ProductDataSlug(ProductSchema):
     products_preorder: Optional[int]
     products_live: bool
     products_visitor: int
-    products_love: bool
+    products_love: Optional[bool]
     products_category: ProductCategory
     products_brand: Optional[ProductBrand]
     products_variant: ProductVariant
+    products_wholesale: Optional[List[ProductWholeSale]]
+    products_recommendation: Optional[List[ProductData]]
 
-    products_created_at: str
-    products_updated_at: str
+    products_created_at: datetime
+    products_updated_at: datetime
+    products_discount_status: Literal['ongoing','will_come','not_active','have_ended']
+
+    variants_min_price: int
+    variants_max_price: int
+    variants_discount: int
 
     @validator('products_image_product',pre=True)
     def convert_image_product(cls, v):
         return json.loads(v)
-
-    @validator('products_created_at','products_updated_at',pre=True)
-    def convert_datetime_to_str(cls, v):
-        return v.isoformat()
 
 # ============ PRODUCT SLUG ============
 

@@ -19,6 +19,8 @@ product = Table('products', metadata,
     Column('preorder', Integer, nullable=True),
     Column('live', Boolean, server_default=expression.false()),
     Column('visitor', BigInteger, server_default=text("0")),
+    Column('discount_start', DateTime, nullable=True),
+    Column('discount_end', DateTime, nullable=True),
 
     Column(
         'item_sub_category_id', Integer,

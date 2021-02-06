@@ -19,7 +19,7 @@ services:
     volumes:
       - "./migration_data:/home"
     environment: 
-      - TZ=Asia/Kuala_Lumpur
+      - TZ=${timezone}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

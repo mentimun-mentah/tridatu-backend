@@ -4,6 +4,7 @@ from models.WishlistModel import wishlist
 from models.ProductModel import product
 from models.VariantModel import variant
 from libs.Pagination import Pagination
+from controllers.ProductController import ProductLogic
 
 class WishlistLogic:
     @staticmethod
@@ -25,28 +26,36 @@ class WishlistCrud:
 class WishlistFetch:
     @staticmethod
     async def get_user_wishlist_paginate(user_id: int, **kwargs) -> dict:
-        wishlist_alias = select([wishlist.join(product.join(variant))]) \
+        variant_alias = select([
+            func.min(variant.c.price).label('min_price'),
+            func.max(variant.c.price).label('max_price'),
+            func.max(variant.c.discount).label('discount'),
+            variant.c.product_id
+        ]).group_by(variant.c.product_id).alias('variants')
+
+        wishlist_alias = select([wishlist.join(product.join(variant_alias))]) \
             .where(wishlist.c.user_id == user_id).distinct(wishlist.c.id).apply_labels().alias()
 
-        query = select([wishlist_alias])
-        query = query.where(wishlist_alias.c.products_live == expression.true())
+        query = select([wishlist_alias]).where(wishlist_alias.c.products_live == expression.true())
 
         if q := kwargs['q']:
             query = query.where(wishlist_alias.c.products_name.ilike(f"%{q}%"))
         if kwargs['order_by'] is None:
             query = query.order_by(wishlist_alias.c.wishlists_id.desc())
         if kwargs['order_by'] == 'high_price':
-            query = query.order_by(wishlist_alias.c.variants_price.desc())
+            query = query.order_by(wishlist_alias.c.variants_max_price.desc())
         if kwargs['order_by'] == 'low_price':
-            query = query.order_by(wishlist_alias.c.variants_price.asc())
+            query = query.order_by(wishlist_alias.c.variants_min_price.asc())
 
         total = await database.execute(query=select([func.count()]).select_from(query.alias()).as_scalar())
         query = query.limit(kwargs['per_page']).offset((kwargs['page'] - 1) * kwargs['per_page'])
         wishlist_db = await database.fetch_all(query=query)
 
         paginate = Pagination(kwargs['page'], kwargs['per_page'], total, wishlist_db)
+        wishlist_data = [{index:value for index,value in item.items()} for item in paginate.items]
+        [data.__setitem__('products_wholesale', await ProductLogic.check_wholesale(data['products_id'])) for data in wishlist_data]
         return {
-            "data": [{index:value for index,value in item.items()} for item in paginate.items],
+            "data": ProductLogic.set_discount_status(wishlist_data,'products_'),
             "total": paginate.total,
             "next_num": paginate.next_num,
             "prev_num": paginate.prev_num,

@@ -1,7 +1,7 @@
-import pytest, bcrypt, os
+import pytest, bcrypt, json, os
 from config import database
 from sqlalchemy import desc
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, func
 from models.UserModel import user
 from models.ConfirmationModel import confirmation
 from models.PasswordResetModel import password_reset
@@ -13,6 +13,7 @@ from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
 from models.ProductModel import product
 from models.CommentModel import comment
+from models.ReplyModel import reply
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -175,6 +176,17 @@ class OperationTest:
         product_data = await database.fetch_one(query=query)
         return product_data['id']
 
+    @pytest.mark.asyncio
+    async def get_product_image(self,name: str):
+        query = select([product.c.image_product]).where(product.c.name == name)
+        product_data = await database.fetch_one(query=query)
+        return json.loads(product_data['image_product'])
+
+    @pytest.mark.asyncio
+    async def update_product_by_name(self,name: str, **kwargs):
+        kwargs.update({"updated_at": func.now()})
+        await database.execute(query=product.update().where(product.c.name == name),values=kwargs)
+
     # ================ COMMENT SECTION ================
 
     @pytest.mark.asyncio
@@ -186,3 +198,11 @@ class OperationTest:
         )
         comment_data = await database.fetch_one(query=query)
         return comment_data['id']
+
+    # ================ REPLY SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_reply_id(self, message: str, comment_id: int):
+        query = select([reply]).where((reply.c.message == message) & (reply.c.comment_id == comment_id))
+        reply_data = await database.fetch_one(query=query)
+        return reply_data['id']

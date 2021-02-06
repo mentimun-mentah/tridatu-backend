@@ -25,6 +25,7 @@ async def google_authorize(request: Request, authorize: AuthJWT = Depends()):
     user_data = await oauth.google.parse_id_token(request, token)
     user_data = dict(user_data)
 
+    access_expires = None
     user = await UserFetch.filter_by_email(user_data['email'])
     if not user:
         # save user to database
@@ -36,9 +37,10 @@ async def google_authorize(request: Request, authorize: AuthJWT = Depends()):
         await ConfirmationCrud.create_confirmation_activated(user_id)
     else:
         user_id = user['id']
+        access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
 
     # set token and redirect to frontend app
-    access_token = authorize.create_access_token(subject=user_id)
+    access_token = authorize.create_access_token(subject=user_id,expires_time=access_expires)
     refresh_token = authorize.create_refresh_token(subject=user_id)
 
     response = RedirectResponse(settings.frontend_uri)
@@ -64,6 +66,7 @@ async def facebook_authorize(request: Request, authorize: AuthJWT = Depends()):
     user_data = await oauth.facebook.get('me?fields=name,email,picture',token=token)
     user_data = user_data.json()
 
+    access_expires = None
     user = await UserFetch.filter_by_email(user_data['email'])
     if not user:
         # save user to database
@@ -75,9 +78,10 @@ async def facebook_authorize(request: Request, authorize: AuthJWT = Depends()):
         await ConfirmationCrud.create_confirmation_activated(user_id)
     else:
         user_id = user['id']
+        access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
 
     # set token and redirect to frontend app
-    access_token = authorize.create_access_token(subject=user_id)
+    access_token = authorize.create_access_token(subject=user_id,expires_time=access_expires)
     refresh_token = authorize.create_refresh_token(subject=user_id)
 
     response = RedirectResponse(settings.frontend_uri)

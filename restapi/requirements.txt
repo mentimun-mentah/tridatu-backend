@@ -24,6 +24,8 @@ Pillow
 phonenumbers
 fastapi-jwt-auth[asymmetric]
 user-agents
+dhash
+pytz
 
 # testing
 pytest
