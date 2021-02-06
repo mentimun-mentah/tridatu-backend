@@ -569,9 +569,12 @@ class TestProduct(OperationTest):
         assert type(response.json()['data'][0]['products_live']) == bool
         assert type(response.json()['data'][0]['products_love']) == bool
         assert type(response.json()['data'][0]['products_wholesale']) == bool
+        assert type(response.json()['data'][0]['products_discount_status']) == str
         assert type(response.json()['data'][0]['products_created_at']) == str
         assert type(response.json()['data'][0]['products_updated_at']) == str
-        assert type(response.json()['data'][0]['variants_price']) == int
+        assert type(response.json()['data'][0]['variants_min_price']) == int
+        assert type(response.json()['data'][0]['variants_max_price']) == int
+        assert type(response.json()['data'][0]['variants_discount']) == int
 
     def test_validation_change_product_alive_archive(self,client):
         url = self.prefix + '/alive-archive/'
@@ -692,6 +695,10 @@ class TestProduct(OperationTest):
         assert 'products_recommendation' in response.json()
         assert 'products_created_at' in response.json()
         assert 'products_updated_at' in response.json()
+        assert 'products_discount_status' in response.json()
+        assert 'variants_min_price' in response.json()
+        assert 'variants_max_price' in response.json()
+        assert 'variants_discount' in response.json()
         # recommendation false
         response = client.get(url + f'{self.name}?recommendation=false')
         assert response.status_code == 200
@@ -726,6 +733,10 @@ class TestProduct(OperationTest):
         assert 'products_recommendation' in response.json()
         assert 'products_created_at' in response.json()
         assert 'products_updated_at' in response.json()
+        assert 'products_discount_status' in response.json()
+        assert 'variants_min_price' in response.json()
+        assert 'variants_max_price' in response.json()
+        assert 'variants_discount' in response.json()
         # recommendation false
         response = client.get(url + f'{self.name}?recommendation=false')
         assert response.status_code == 200

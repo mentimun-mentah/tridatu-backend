@@ -267,9 +267,12 @@ class TestWishlist(OperationTest):
         assert type(response.json()['data'][0]['products_live']) == bool
         assert type(response.json()['data'][0]['products_love']) == bool
         assert type(response.json()['data'][0]['products_wholesale']) == bool
+        assert type(response.json()['data'][0]['products_discount_status']) == str
         assert type(response.json()['data'][0]['products_created_at']) == str
         assert type(response.json()['data'][0]['products_updated_at']) == str
-        assert type(response.json()['data'][0]['variants_price']) == int
+        assert type(response.json()['data'][0]['variants_min_price']) == int
+        assert type(response.json()['data'][0]['variants_max_price']) == int
+        assert type(response.json()['data'][0]['variants_discount']) == int
 
     def test_validation_unlove_product(self,client):
         url = self.prefix + '/unlove/'

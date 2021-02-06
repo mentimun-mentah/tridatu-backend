@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from pydantic import BaseModel, validator
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 class ProductSchema(BaseModel):
     class Config:
@@ -15,10 +15,13 @@ class ProductData(ProductSchema):
     products_live: bool
     products_love: bool
     products_wholesale: bool
+    products_discount_status: Literal['ongoing','will_come','not_active','have_ended']
     products_created_at: datetime
     products_updated_at: datetime
 
-    variants_price: int
+    variants_min_price: int
+    variants_max_price: int
+    variants_discount: int
 
     @validator('products_image_product',pre=True)
     def convert_image_product(cls, v):
@@ -77,6 +80,7 @@ class ProductVariantOne(ProductSchema):
 class ProductVariant(ProductSchema):
     va1_name: Optional[str]
     va2_name: Optional[str]
+    va1_product_id: Optional[int]
     va1_items: List[ProductVariantOne]
 
 class ProductDataSlug(ProductSchema):
@@ -101,6 +105,11 @@ class ProductDataSlug(ProductSchema):
 
     products_created_at: datetime
     products_updated_at: datetime
+    products_discount_status: Literal['ongoing','will_come','not_active','have_ended']
+
+    variants_min_price: int
+    variants_max_price: int
+    variants_discount: int
 
     @validator('products_image_product',pre=True)
     def convert_image_product(cls, v):

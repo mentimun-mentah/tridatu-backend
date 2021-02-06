@@ -8,7 +8,7 @@ from models.WholeSaleModel import wholesale
 from models.CategoryModel import category
 from models.SubCategoryModel import sub_category
 from models.ItemSubCategoryModel import item_sub_category
-from controllers.VariantController import VariantFetch
+from controllers.VariantController import VariantFetch, VariantLogic
 from libs.Pagination import Pagination
 from datetime import datetime
 from pytz import timezone
@@ -74,7 +74,14 @@ class ProductFetch:
 
     @staticmethod
     async def get_product_recommendation(limit: int) -> list:
-        product_alias = select([product.join(variant)]).distinct(product.c.id).apply_labels().alias()
+        variant_alias = select([
+            func.min(variant.c.price).label('min_price'),
+            func.max(variant.c.price).label('max_price'),
+            func.max(variant.c.discount).label('discount'),
+            variant.c.product_id
+        ]).group_by(variant.c.product_id).alias('variants')
+
+        product_alias = select([product.join(variant_alias)]).distinct(product.c.id).apply_labels().alias()
 
         query = select([product_alias]).where(product_alias.c.products_live == true()) \
             .order_by(func.random()).limit(limit)
@@ -83,7 +90,7 @@ class ProductFetch:
         product_data = [{index:value for index,value in item.items()} for item in product_db]
         [data.__setitem__('products_wholesale', await ProductLogic.check_wholesale(data['products_id'])) for data in product_data]
 
-        return product_data
+        return ProductLogic.set_discount_status(product_data,'products_')
 
     @staticmethod
     async def get_all_discounts_paginate(**kwargs) -> dict:
@@ -93,6 +100,7 @@ class ProductFetch:
             func.max(variant.c.discount).label('discount'),
             variant.c.product_id
         ]).group_by(variant.c.product_id).alias('variants')
+
         product_alias = select([product.join(variant_alias)]).distinct(product.c.id).apply_labels().alias()
 
         query = select([product_alias]).where(product_alias.c.products_live == true()).order_by(product_alias.c.products_updated_at.desc())
@@ -126,7 +134,14 @@ class ProductFetch:
 
     @staticmethod
     async def get_all_products_paginate(**kwargs) -> dict:
-        product_alias = select([product.join(variant)]).distinct(product.c.id).apply_labels().alias()
+        variant_alias = select([
+            func.min(variant.c.price).label('min_price'),
+            func.max(variant.c.price).label('max_price'),
+            func.max(variant.c.discount).label('discount'),
+            variant.c.product_id
+        ]).group_by(variant.c.product_id).alias('variants')
+
+        product_alias = select([product.join(variant_alias)]).distinct(product.c.id).apply_labels().alias()
 
         query = select([product_alias])
 
@@ -135,19 +150,19 @@ class ProductFetch:
         if q := kwargs['q']:
             query = query.where(product_alias.c.products_name.ilike(f"%{q}%"))
         if kwargs['order_by'] == 'high_price':
-            query = query.order_by(product_alias.c.variants_price.desc())
+            query = query.order_by(product_alias.c.variants_max_price.desc())
         if kwargs['order_by'] == 'low_price':
-            query = query.order_by(product_alias.c.variants_price.asc())
+            query = query.order_by(product_alias.c.variants_min_price.asc())
         if kwargs['order_by'] == 'newest':
             query = query.order_by(product_alias.c.products_id.desc())
         if kwargs['order_by'] == 'visitor':
             query = query.order_by(product_alias.c.products_visitor.desc())
         if (p_min := kwargs['p_min']) and (p_max := kwargs['p_max']):
-            query = query.where((product_alias.c.variants_price >= p_min) & (product_alias.c.variants_price <= p_max))
+            query = query.where((product_alias.c.variants_min_price >= p_min) & (product_alias.c.variants_max_price <= p_max))
         if (p_min := kwargs['p_min']) and not kwargs['p_max']:
-            query = query.where(product_alias.c.variants_price >= p_min)
+            query = query.where(product_alias.c.variants_min_price >= p_min)
         if (p_max := kwargs['p_max']) and not kwargs['p_min']:
-            query = query.where(product_alias.c.variants_price <= p_max)
+            query = query.where(product_alias.c.variants_max_price <= p_max)
         if item_sub_cat := kwargs['item_sub_cat']:
             query = query.where(product_alias.c.products_item_sub_category_id.in_(item_sub_cat))
         if brand := kwargs['brand']:
@@ -170,7 +185,7 @@ class ProductFetch:
         product_data = [{index:value for index,value in item.items()} for item in paginate.items]
         [data.__setitem__('products_wholesale', await ProductLogic.check_wholesale(data['products_id'])) for data in product_data]
         return {
-            "data": product_data,
+            "data": ProductLogic.set_discount_status(product_data,'products_'),
             "total": paginate.total,
             "next_num": paginate.next_num,
             "prev_num": paginate.prev_num,
@@ -197,13 +212,19 @@ class ProductFetch:
 
         # get variant
         product_data['products_variant'] = await VariantFetch.get_variant_by_product_id(product_data['products_id'])
+        variant_format_db = VariantLogic.convert_data_to_db(product_data['products_variant'],product_data['products_id'])
+        variant_price = [x['price'] for x in variant_format_db]
+        variant_discount = [x['discount'] for x in variant_format_db]
+        product_data['variants_min_price'] = min(variant_price)
+        product_data['variants_max_price'] = max(variant_price)
+        product_data['variants_discount'] = max(variant_discount)
 
         # get wholesale
         query = select([wholesale]).where(wholesale.c.product_id == product_data['products_id']).apply_labels()
         wholesale_db = await database.fetch_all(query=query)
         product_data['products_wholesale'] = [{index:value for index,value in item.items()} for item in wholesale_db]
 
-        return product_data
+        return ProductLogic.set_discount_status([product_data],'products_')[0]
 
     @staticmethod
     async def filter_by_slug(slug: str) -> product:
