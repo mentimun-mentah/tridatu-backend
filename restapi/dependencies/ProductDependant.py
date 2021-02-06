@@ -117,6 +117,8 @@ def update_form_product(
         if 'va1_name' not in variant_data and image_variant:
             raise HTTPException(status_code=422,detail="The image variant must not be filled.")
 
+        if 'va1_product_id' not in variant_data:
+            raise HTTPException(status_code=422,detail="You must fill an id on variant product.")
         # without image or all image must be filled if single or double variant
         len_va1_image = len([x.get('va1_image') for x in variant_data['va1_items'] if x.get('va1_image')])
         len_va1_items = len(variant_data['va1_items'])

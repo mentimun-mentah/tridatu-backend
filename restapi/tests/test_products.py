@@ -94,14 +94,17 @@ class TestProduct(OperationTest):
         # create single variant wrong image
         response = await async_client.post(url,json={
             'va1_name': 'ukuran',
+            'va1_product_id': 1,
             'va1_items': [
                 {
+                    'va1_id': 0,
                     'va1_option': 'XL',
                     'va1_price': 11000,
                     'va1_stock': 1,
                     'va1_image': 'lol.jpeg'
                 },
                 {
+                    'va1_id': 0,
                     'va1_option': 'M',
                     'va1_price': 11000,
                     'va1_stock': 1,
@@ -598,9 +601,10 @@ class TestProduct(OperationTest):
         csrf_access_token = response.cookies.get('csrf_access_token')
 
         url = self.prefix + '/alive-archive/'
-        product_id = await self.get_product_id(self.name)
+        product_id_one = await self.get_product_id(self.name)
+        product_id_two = await self.get_product_id(self.name2)
         # check user is admin
-        response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        response = await async_client.put(url + str(product_id_one),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 401
         assert response.json() == {"detail": "Only users with admin privileges can do this action."}
         # user admin login
@@ -614,15 +618,20 @@ class TestProduct(OperationTest):
         assert response.status_code == 404
         assert response.json() == {"detail": "Product not found!"}
 
-        response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        response = await async_client.put(url + str(product_id_one),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200
         assert response.json() == {"detail": "Successfully change the product to alive."}
         # change product again
-        response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        response = await async_client.put(url + str(product_id_one),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200
         assert response.json() == {"detail": "Successfully change the product to archive."}
         # set product to alive
-        response = await async_client.put(url + str(product_id),headers={'X-CSRF-TOKEN': csrf_access_token})
+        response = await async_client.put(url + str(product_id_one),headers={'X-CSRF-TOKEN': csrf_access_token})
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Successfully change the product to alive."}
+
+        # set product two to alive
+        response = await async_client.put(url + str(product_id_two),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200
         assert response.json() == {"detail": "Successfully change the product to alive."}
 
@@ -742,6 +751,27 @@ class TestProduct(OperationTest):
         assert response.status_code == 200
         assert 'products_love' not in response.json()
         assert 'products_recommendation' not in response.json()
+
+    def test_update_variant_ticket(self,client):
+        response = client.post('/users/login',json={
+            'email': self.account_1['email'],
+            'password': self.account_1['password']
+        })
+        csrf_access_token = response.cookies.get('csrf_access_token')
+
+        self.__class__.variant_without_id = self.without_variant
+
+        response = client.get(self.prefix + f'/{self.name}?recommendation=false')
+        without_variant = response.json()['products_variant']
+
+        response = client.post('/variants/create-ticket',json=without_variant,headers={'X-CSRF-TOKEN': csrf_access_token})
+        self.__class__.without_variant = response.json()['ticket']
+
+        response = client.get(self.prefix + f'/{self.name2}?recommendation=false')
+        single_variant = response.json()['products_variant']
+
+        response = client.post('/variants/create-ticket',json=single_variant,headers={'X-CSRF-TOKEN': csrf_access_token})
+        self.__class__.single_variant = response.json()['ticket']
 
     def test_validation_update_product(self,client):
         url = self.prefix + '/update/'
@@ -995,6 +1025,19 @@ class TestProduct(OperationTest):
 
         assert response.status_code == 404
         assert response.json() == {'detail': 'Ticket wholesale not found!'}
+
+        # id must be filled on product variant
+        response = client.put(url + '1',data={
+            'name': 'a' * 20,
+            'desc': 'a' * 20,
+            'condition': False,
+            'weight': 1,
+            'ticket_variant': self.variant_without_id,
+            'ticket_wholesale': self.wholesale,
+            'item_sub_category_id': 1
+        })
+        assert response.status_code == 422
+        assert response.json() == {'detail': 'You must fill an id on variant product.'}
 
     @pytest.mark.asyncio
     async def test_update_product(self,async_client):

@@ -186,12 +186,21 @@ class VariantCrud:
         [await database.execute(query=variant.update().where(variant.c.id == data['id']),values=data) for data in variant_db]
 
     @staticmethod
+    async def delete_variant_by_id(variant_id: list) -> None:
+        [await database.execute(query=variant.delete().where(variant.c.id == id_)) for id_ in variant_id]
+
+    @staticmethod
     def add_variant_to_redis_storage(data_variant: dict) -> str:
         ticket = str(uuid.uuid4())
         redis_conn.set(ticket, json.dumps(data_variant), 300)  # set expired 5 minutes
         return ticket
 
 class VariantFetch:
+    async def get_produt_variant_id(product_id: int) -> list:
+        query = select([variant.c.id]).where(variant.c.product_id == product_id)
+        variant_db = await database.fetch_all(query=query)
+        return [item['id'] for item in variant_db]
+
     async def get_product_variant_image(product_id: int) -> list:
         query = select([variant.c.image]).where(variant.c.product_id == product_id)
         variant_db = await database.fetch_all(query=query)

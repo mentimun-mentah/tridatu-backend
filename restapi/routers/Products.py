@@ -393,11 +393,21 @@ async def update_product(
 
         # save variant to db
         variant_db = VariantLogic.convert_data_to_db(form_data['variant_data'],product['id'])
-        await VariantCrud.delete_variant(product['id'])
-        await VariantCrud.create_variant(variant_db)
+        variant_db_id = await VariantFetch.get_produt_variant_id(product['id'])
+        # insert variant to db
+        if variant_insert_data := [{i:v for i,v in x.items() if i not in ['id']} for x in variant_db if x['id'] == 0]:
+            await VariantCrud.create_variant(variant_insert_data)
+        # update variant to db
+        if variant_update_data := [
+            {i:v for i,v in x.items() if i not in ['discount','discount_active']} for x in variant_db if x['id'] > 0 and x['id'] in variant_db_id
+        ]:
+            await VariantCrud.update_variant(variant_update_data)
+        # delete variant to db
+        if variant_delete_id := [i for i in variant_db_id if i not in [x['id'] for x in variant_db if x['id'] > 0]]:
+            await VariantCrud.delete_variant_by_id(variant_delete_id)
 
-        previous_wholesale = await WholeSaleFetch.get_wholesale_by_product_id(product['id'],exclude=['id','product_id'])
         # update wholesale if wholesale_data exists
+        previous_wholesale = await WholeSaleFetch.get_wholesale_by_product_id(product['id'],exclude=['id','product_id'])
         if wholesale_data := form_data['wholesale_data']:
             # delete and create again wholesale if incoming data not same with db
             if previous_wholesale != wholesale_data:

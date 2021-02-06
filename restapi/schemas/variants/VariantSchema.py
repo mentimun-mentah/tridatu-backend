@@ -83,7 +83,7 @@ class VariantCreateUpdate(VariantSchema):
 
                 # item below must doesn't exists
                 value.va1_price, value.va1_stock, value.va1_code, value.va1_barcode = None, None, None, None
-                value.va1_discount, value.va1_discount_active = None, None
+                value.va1_id, value.va1_discount, value.va1_discount_active = None, None, None
 
         elif (
             ('va1_name' in values and values['va1_name'] is None) and
