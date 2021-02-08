@@ -1,4 +1,4 @@
-name: Tests
+name: Tests & Deploy
 on: [push, pull_request]
 defaults:
   run:
@@ -26,3 +26,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls --service=github
+
+    deploy:
+      name: Deploy
+      runs-on: ubuntu-18.04
+      steps:
+        - name: deploy on vps
+          uses: appleboy/ssh-action@master
+          with:
+            host: ${{ secrets.HOST }}
+            username: ${{ secrets.USERNAME }}
+            password: ${{ secrets.PASSWORD }}
+            script: bash deploy_backend.sh

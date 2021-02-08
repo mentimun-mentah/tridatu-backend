@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     authjwt_public_key: str = public_key
     authjwt_private_key: str = private_key
     authjwt_denylist_enabled: bool = True
+    authjwt_cookie_domain: Optional[str] = None
     authjwt_cookie_secure: bool
     authjwt_cookie_samesite: str = "lax"
 
