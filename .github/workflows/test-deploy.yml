@@ -37,4 +37,5 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
+          command_timeout: 20m
           script: bash deploy_backend.sh

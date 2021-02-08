@@ -1,8 +1,10 @@
 FROM python:3.8.3
 
+ENV stage_app=production
+
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
 
-CMD ["uvicorn","app:app","--host","0.0.0.0","--proxy-headers","--reload"]
+CMD ["bash","docker-entrypoint.sh","${stage_app}"]

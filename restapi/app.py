@@ -45,13 +45,15 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
         content={"detail": exc.message}
     )
 
-@app.get("/docs",include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url=app.openapi_url,
-        title="Tridatu Bali ID",
-        swagger_css_url="/static/swagger-ui.css",
-    )
+
+if settings.stage_app == "development":
+    @app.get("/docs",include_in_schema=False)
+    async def custom_swagger_ui_html():
+        return get_swagger_ui_html(
+            openapi_url=app.openapi_url,
+            title="Tridatu Bali ID",
+            swagger_css_url="/static/swagger-ui.css",
+        )
 
 def custom_openapi():
     if app.openapi_schema:

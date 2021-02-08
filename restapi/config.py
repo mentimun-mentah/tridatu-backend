@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth
 from pydantic import BaseSettings, PostgresDsn, validator
-from typing import Optional
+from typing import Optional, Literal
 
 with open("public_key.txt") as f:
     public_key = f.read().strip()
@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     smtp_tls: bool
 
     timezone: str
+    stage_app: Literal['production','development']
 
     access_expires: Optional[int] = None
     access_expires_admin: Optional[int] = None
