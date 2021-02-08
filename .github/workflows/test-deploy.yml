@@ -28,7 +28,7 @@ jobs:
           coveralls --service=github
 
   deploy:
-    name: Deploy
+    needs: test
     runs-on: ubuntu-18.04
     steps:
       - name: deploy on vps
