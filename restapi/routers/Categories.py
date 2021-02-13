@@ -31,7 +31,7 @@ router = APIRouter()
 async def create_category(category: CategoryCreateUpdate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if await CategoryFetch.filter_by_name(category.name):
@@ -63,7 +63,7 @@ async def get_all_categories(with_sub: bool = Query(...), q: str = Query(None,mi
 async def get_category_by_id(category_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if category := await CategoryFetch.filter_by_id(category_id):
@@ -97,7 +97,7 @@ async def update_category(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if category := await CategoryFetch.filter_by_id(category_id):
@@ -127,7 +127,7 @@ async def update_category(
 async def delete_category(category_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if category := await CategoryFetch.filter_by_id(category_id):

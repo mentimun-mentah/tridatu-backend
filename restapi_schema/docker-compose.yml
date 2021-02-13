@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  schemaspy:
+    image: schemaspy/schemaspy:snapshot
+    volumes:
+      - "./output:/output"
+    command: [
+      "-t", "pgsql",
+      "--port","5432",
+      "-u","tridatu",
+      "-db","tridatu",
+      "-host","postgres",
+      "-p","123"
+    ]
+
+  client:
+    image: nginx:stable-alpine
+    ports:
+      - "0.0.0.0:9000:80"
+    volumes:
+      - "./output:/usr/share/nginx/html"
+
+networks:
+  default:
+    external:
+      name: restapi_networks

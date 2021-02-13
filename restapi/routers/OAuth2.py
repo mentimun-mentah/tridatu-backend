@@ -40,8 +40,8 @@ async def google_authorize(request: Request, authorize: AuthJWT = Depends()):
         access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
 
     # set token and redirect to frontend app
-    access_token = authorize.create_access_token(subject=user_id,expires_time=access_expires)
-    refresh_token = authorize.create_refresh_token(subject=user_id)
+    access_token = authorize.create_access_token(subject=str(user_id),expires_time=access_expires)
+    refresh_token = authorize.create_refresh_token(subject=str(user_id))
 
     response = RedirectResponse(settings.frontend_uri)
     authorize.set_access_cookies(access_token,response)
@@ -81,8 +81,8 @@ async def facebook_authorize(request: Request, authorize: AuthJWT = Depends()):
         access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
 
     # set token and redirect to frontend app
-    access_token = authorize.create_access_token(subject=user_id,expires_time=access_expires)
-    refresh_token = authorize.create_refresh_token(subject=user_id)
+    access_token = authorize.create_access_token(subject=str(user_id),expires_time=access_expires)
+    refresh_token = authorize.create_refresh_token(subject=str(user_id))
 
     response = RedirectResponse(settings.frontend_uri)
     authorize.set_access_cookies(access_token,response)

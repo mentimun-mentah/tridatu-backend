@@ -27,7 +27,7 @@ async def search_city_or_district(q: str = Query(...,min_length=3,max_length=100
 async def create_address(address: AddressCreateUpdate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         data = address.dict()
         if not await AddressFetch.check_main_address_true_in_db(user['id']):
@@ -39,7 +39,7 @@ async def create_address(address: AddressCreateUpdate, authorize: AuthJWT = Depe
 async def my_address(page: int = Query(...,gt=0), per_page: int = Query(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         return await AddressFetch.get_all_address_paginate(user['id'],page=page,per_page=per_page)
 
@@ -58,7 +58,7 @@ async def my_address(page: int = Query(...,gt=0), per_page: int = Query(...,gt=0
 async def my_address_by_id(address_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if address := await AddressFetch.filter_by_id(address_id):
             if user['id'] != address['user_id']:
@@ -89,7 +89,7 @@ async def update_address(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if address := await AddressFetch.filter_by_id(address_id):
             if user['id'] != address['user_id']:
@@ -118,7 +118,7 @@ async def update_address(
 async def main_address_true(address_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if address := await AddressFetch.filter_by_id(address_id):
             if user['id'] != address['user_id']:
@@ -148,7 +148,7 @@ async def main_address_true(address_id: int = Path(...,gt=0), authorize: AuthJWT
 async def delete_address(address_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if address := await AddressFetch.filter_by_id(address_id):
             if user['id'] != address['user_id']:

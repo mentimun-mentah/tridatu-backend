@@ -8,7 +8,7 @@ class ProductSchema(BaseModel):
         anystr_strip_whitespace = True
 
 class ProductData(ProductSchema):
-    products_id: int
+    products_id: str
     products_name: str
     products_slug: str
     products_image_product: str
@@ -19,8 +19,8 @@ class ProductData(ProductSchema):
     products_created_at: datetime
     products_updated_at: datetime
 
-    variants_min_price: int
-    variants_max_price: int
+    variants_min_price: str
+    variants_max_price: str
     variants_discount: int
 
     @validator('products_image_product',pre=True)
@@ -38,9 +38,9 @@ class ProductPaginate(BaseModel):
 # ============ PRODUCT SLUG ============
 
 class ProductWholeSale(ProductSchema):
-    wholesale_id: int
+    wholesale_id: str
     wholesale_min_qty: int
-    wholesale_price: int
+    wholesale_price: str
 
 class ProductCategory(ProductSchema):
     categories_id: int
@@ -56,20 +56,20 @@ class ProductBrand(ProductSchema):
     brands_image: Optional[str]
 
 class ProductVariantTwo(ProductSchema):
-    va2_id: int
+    va2_id: str
     va2_option: str
-    va2_price: int
-    va2_stock: int
+    va2_price: str
+    va2_stock: str
     va2_code: Optional[str]
     va2_barcode: Optional[str]
     va2_discount: Optional[int]
     va2_discount_active: Optional[bool]
 
 class ProductVariantOne(ProductSchema):
-    va1_id: Optional[int]
+    va1_id: Optional[str]
     va1_option: Optional[str]
-    va1_price: Optional[int]
-    va1_stock: Optional[int]
+    va1_price: Optional[str]
+    va1_stock: Optional[str]
     va1_code: Optional[str]
     va1_barcode: Optional[str]
     va1_discount: Optional[int]
@@ -80,22 +80,22 @@ class ProductVariantOne(ProductSchema):
 class ProductVariant(ProductSchema):
     va1_name: Optional[str]
     va2_name: Optional[str]
-    va1_product_id: Optional[int]
+    va1_product_id: Optional[str]
     va1_items: List[ProductVariantOne]
 
 class ProductDataSlug(ProductSchema):
-    products_id: int
+    products_id: str
     products_name: str
     products_slug: str
     products_desc: str
     products_condition: bool
     products_image_product: dict
-    products_weight: int
+    products_weight: str
     products_image_size_guide: Optional[str]
     products_video: Optional[str]
     products_preorder: Optional[int]
     products_live: bool
-    products_visitor: int
+    products_visitor: str
     products_love: Optional[bool]
     products_category: ProductCategory
     products_brand: Optional[ProductBrand]
@@ -107,8 +107,8 @@ class ProductDataSlug(ProductSchema):
     products_updated_at: datetime
     products_discount_status: Literal['ongoing','will_come','not_active','have_ended']
 
-    variants_min_price: int
-    variants_max_price: int
+    variants_min_price: str
+    variants_max_price: str
     variants_discount: int
 
     @validator('products_image_product',pre=True)

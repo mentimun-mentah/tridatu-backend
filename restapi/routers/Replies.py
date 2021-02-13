@@ -35,7 +35,7 @@ async def create_reply(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if not await CommentFetch.filter_by_id(reply.comment_id):
             raise HTTPException(status_code=404,detail="Comment not found!")
@@ -76,7 +76,7 @@ async def get_all_replies_in_comment(comment_id: str = Path(...,min_length=1,des
 async def delete_reply(reply_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if reply := await ReplyFetch.filter_by_id(reply_id):
             if user['id'] != reply['user_id']:

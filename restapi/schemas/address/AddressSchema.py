@@ -15,7 +15,7 @@ class AddressSchema(BaseModel):
     receiver: constr(strict=True, max_length=100)
     phone: constr(strict=True, max_length=20)
     region: constr(strict=True)
-    postal_code: conint(strict=True, gt=0)
+    postal_code: conint(strict=True, gt=0, lt=999999)
     recipient_address: constr(strict=True)
 
     @validator('phone')
@@ -41,7 +41,7 @@ class AddressCreateUpdate(AddressSchema):
 
 class AddressData(AddressSchema):
     main_address: bool
-    id: int
+    id: str
 
 class AddressPaginate(BaseModel):
     data: List[AddressData]

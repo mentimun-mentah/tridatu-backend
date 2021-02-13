@@ -58,7 +58,7 @@ router = APIRouter()
 async def create_product(form_data: create_form_product = Depends(), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     form_data['slug'] = slugify(form_data['name'])
@@ -135,7 +135,7 @@ async def get_all_products(query_string: get_all_query_product = Depends(), auth
     authorize.jwt_optional()
 
     results = await ProductFetch.get_all_products_paginate(**query_string)
-    if user_id := authorize.get_jwt_subject():
+    if user_id := int(authorize.get_jwt_subject() or 0):
         [
             data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
             for data in results['data']
@@ -164,7 +164,7 @@ async def get_all_products(query_string: get_all_query_product = Depends(), auth
 async def change_product_alive_archive(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
@@ -215,7 +215,7 @@ async def get_product_by_slug(
 
         # check wishlist product & product recommendation
         if recommendation is True:
-            if user_id := authorize.get_jwt_subject():
+            if user_id := int(authorize.get_jwt_subject() or 0):
                 results.__setitem__('products_love', await WishlistLogic.check_wishlist(product_data['id'],user_id))
                 [
                     data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
@@ -263,7 +263,7 @@ async def update_product(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
@@ -441,7 +441,7 @@ async def update_product(
 async def delete_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):

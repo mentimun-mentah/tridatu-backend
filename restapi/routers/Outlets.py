@@ -33,7 +33,7 @@ single_image_required = SingleImageRequired(
 async def create_outlet(file: UploadFile = Depends(single_image_required), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     magic_image = MagicImage(file=file.file,width=200,height=200,path_upload='outlets/',square=True)
@@ -65,7 +65,7 @@ async def get_all_outlets():
 async def delete_outlet(outlet_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if outlet := await OutletFetch.filter_by_id(outlet_id):

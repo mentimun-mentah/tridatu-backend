@@ -7,7 +7,7 @@ from sqlalchemy.sql import expression, text
 from config import metadata
 
 product = Table('products', metadata,
-    Column('id', Integer, primary_key=True),
+    Column('id', BigInteger, primary_key=True),
     Column('name', String(100), unique=True, index=True, nullable=False),
     Column('slug', Text, unique=True, index=True, nullable=False),
     Column('desc', Text, nullable=False),

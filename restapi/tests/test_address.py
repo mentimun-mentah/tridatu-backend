@@ -99,7 +99,7 @@ class TestAddress(OperationTest):
             "receiver": "a" * 200,
             "phone": "a" * 200,
             "region": "a" * 200,
-            "postal_code": 200,
+            "postal_code": 9999999,
             "recipient_address": "a" * 200,
         })
         assert response.status_code == 422
@@ -107,6 +107,7 @@ class TestAddress(OperationTest):
             if x['loc'][-1] == 'label': assert x['msg'] == 'ensure this value has at most 100 characters'
             if x['loc'][-1] == 'receiver': assert x['msg'] == 'ensure this value has at most 100 characters'
             if x['loc'][-1] == 'phone': assert x['msg'] == 'ensure this value has at most 20 characters'
+            if x['loc'][-1] == 'postal_code': assert x['msg'] == 'ensure this value is less than 999999'
         # check all field type data
         response = client.post(url,json={
             "label": 123,
@@ -201,7 +202,7 @@ class TestAddress(OperationTest):
         assert type(response.json()['data'][0]['postal_code']) == int
         assert type(response.json()['data'][0]['recipient_address']) == str
         assert type(response.json()['data'][0]['main_address']) == bool
-        assert type(response.json()['data'][0]['id']) == int
+        assert type(response.json()['data'][0]['id']) == str
 
     def test_validation_my_address_by_id(self,client):
         url = self.prefix + '/my-address/'
@@ -306,7 +307,7 @@ class TestAddress(OperationTest):
             "receiver": "a" * 200,
             "phone": "a" * 200,
             "region": "a" * 200,
-            "postal_code": 200,
+            "postal_code": 9999999,
             "recipient_address": "a" * 200,
         })
         assert response.status_code == 422
@@ -314,6 +315,7 @@ class TestAddress(OperationTest):
             if x['loc'][-1] == 'label': assert x['msg'] == 'ensure this value has at most 100 characters'
             if x['loc'][-1] == 'receiver': assert x['msg'] == 'ensure this value has at most 100 characters'
             if x['loc'][-1] == 'phone': assert x['msg'] == 'ensure this value has at most 20 characters'
+            if x['loc'][-1] == 'postal_code': assert x['msg'] == 'ensure this value is less than 999999'
         # check all field type data
         response = await async_client.put(url,json={
             "label": 123,

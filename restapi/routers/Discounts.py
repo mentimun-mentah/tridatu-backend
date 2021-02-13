@@ -40,7 +40,7 @@ exclude_keys = {
 async def get_all_discounts(query_string: get_all_query_discount = Depends(), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     return await ProductFetch.get_all_discounts_paginate(**query_string)
@@ -62,7 +62,7 @@ async def get_all_discounts(query_string: get_all_query_discount = Depends(), au
 async def get_discount_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
@@ -94,7 +94,7 @@ async def get_discount_product(product_id: int = Path(...,gt=0), authorize: Auth
 async def create_discount_product(request: Request, discount_data: DiscountCreate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     redis_conn = request.app.state.redis
@@ -106,7 +106,7 @@ async def create_discount_product(request: Request, discount_data: DiscountCreat
             raise HTTPException(status_code=400,detail="Product already has discount.")
 
         variant_data_db = await VariantFetch.get_variant_by_product_id(product['id'])
-        variant_data_input = json.loads(redis_conn.get(discount_data.ticket_variant))
+        variant_data_input = VariantLogic.convert_type_data_variant(json.loads(redis_conn.get(discount_data.ticket_variant)))
         variant_db = VariantCreateUpdate.parse_obj(variant_data_db).dict(exclude=exclude_keys,exclude_none=True)
         variant_input = VariantCreateUpdate.parse_obj(variant_data_input).dict(exclude=exclude_keys,exclude_none=True)
 
@@ -149,7 +149,7 @@ async def create_discount_product(request: Request, discount_data: DiscountCreat
 async def update_discount_product(request: Request, discount_data: DiscountUpdate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     redis_conn = request.app.state.redis
@@ -167,7 +167,7 @@ async def update_discount_product(request: Request, discount_data: DiscountUpdat
 
         # validation variant input
         variant_data_db = await VariantFetch.get_variant_by_product_id(product['id'])
-        variant_data_input = json.loads(redis_conn.get(discount_data.ticket_variant))
+        variant_data_input = VariantLogic.convert_type_data_variant(json.loads(redis_conn.get(discount_data.ticket_variant)))
         variant_db = VariantCreateUpdate.parse_obj(variant_data_db).dict(exclude=exclude_keys,exclude_none=True)
         variant_input = VariantCreateUpdate.parse_obj(variant_data_input).dict(exclude=exclude_keys,exclude_none=True)
 
@@ -222,7 +222,7 @@ async def update_discount_product(request: Request, discount_data: DiscountUpdat
 async def non_active_discount(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):

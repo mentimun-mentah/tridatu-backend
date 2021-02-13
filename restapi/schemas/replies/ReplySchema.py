@@ -1,27 +1,28 @@
-from pydantic import BaseModel, constr, conint, validator
+from pydantic import BaseModel, constr, validator
 from typing import List
+from datetime import datetime
 
 class ReplySchema(BaseModel):
     class Config:
-        min_anystr_length = 5
+        min_anystr_length = 1
         anystr_strip_whitespace = True
 
 class ReplyCreate(ReplySchema):
-    message: constr(strict=True)
-    comment_id: conint(strict=True, gt=0)
+    message: constr(strict=True, min_length=5)
+    comment_id: constr(strict=True, regex=r'^[0-9]*$')
+
+    @validator('comment_id')
+    def parse_str_to_int(cls, v):
+        return int(v) if v else None
 
 class ReplyData(ReplySchema):
-    replies_id: int
+    replies_id: str
     replies_message: str
-    replies_created_at: str
+    replies_created_at: datetime
     users_username: str
     users_avatar: str
     users_role: str
 
-    @validator('replies_created_at',pre=True)
-    def convert_datetime_to_str(cls, v):
-        return v.isoformat()
-
 class ReplyCommentData(ReplySchema):
-    comments_id: int
+    comments_id: str
     comments_replies: List[ReplyData]

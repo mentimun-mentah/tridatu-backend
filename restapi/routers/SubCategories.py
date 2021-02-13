@@ -30,7 +30,7 @@ router = APIRouter()
 async def create_sub_category(sub_category: SubCategoryCreateUpdate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if not await CategoryFetch.filter_by_id(sub_category.category_id):
@@ -57,7 +57,7 @@ async def create_sub_category(sub_category: SubCategoryCreateUpdate, authorize: 
 async def get_sub_category_by_id(sub_category_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if sub_category := await SubCategoryFetch.filter_by_id(sub_category_id):
@@ -91,7 +91,7 @@ async def update_sub_category(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if sub_category := await SubCategoryFetch.filter_by_id(sub_category_id):
@@ -129,7 +129,7 @@ async def update_sub_category(
 async def delete_sub_category(sub_category_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if sub_category := await SubCategoryFetch.filter_by_id(sub_category_id):

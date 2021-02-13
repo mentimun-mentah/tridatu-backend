@@ -21,7 +21,7 @@ router = APIRouter()
 async def add_wholesale_to_temp_storage(wholesale_data: WholeSaleCreateUpdate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     ticket = WholeSaleCrud.add_wholesale_to_redis_storage(wholesale_data.dict(exclude={'variant'}))

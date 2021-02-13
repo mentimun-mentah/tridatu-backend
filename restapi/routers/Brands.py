@@ -46,7 +46,7 @@ async def create_brand(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if await BrandFetch.filter_by_name(name):
@@ -77,7 +77,7 @@ async def get_all_brands():
 async def get_brand_by_id(brand_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if brand := await BrandFetch.filter_by_id(brand_id):
@@ -116,7 +116,7 @@ async def update_brand(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if brand := await BrandFetch.filter_by_id(brand_id):
@@ -154,7 +154,7 @@ async def update_brand(
 async def delete_brand(brand_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if brand := await BrandFetch.filter_by_id(brand_id):

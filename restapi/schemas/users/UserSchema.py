@@ -6,13 +6,12 @@ class UserSchema(BaseModel):
 
     class Config:
         min_anystr_length = 1
-        max_anystr_length = 100
         anystr_strip_whitespace = True
 
 class UserRegister(UserSchema):
-    username: constr(strict=True, min_length=3)
-    confirm_password: constr(strict=True, min_length=6)
-    password: constr(strict=True, min_length=6)
+    username: constr(strict=True, min_length=3, max_length=100)
+    confirm_password: constr(strict=True, min_length=6, max_length=100)
+    password: constr(strict=True, min_length=6, max_length=100)
 
     @validator('password')
     def validate_password(cls, v, values, **kwargs):
@@ -24,11 +23,11 @@ class UserEmail(UserSchema):
     pass
 
 class UserLogin(UserSchema):
-    password: constr(strict=True, min_length=6)
+    password: constr(strict=True, min_length=6, max_length=100)
 
 class UserResetPassword(UserSchema):
-    confirm_password: constr(strict=True, min_length=6)
-    password: constr(strict=True, min_length=6)
+    confirm_password: constr(strict=True, min_length=6, max_length=100)
+    password: constr(strict=True, min_length=6, max_length=100)
 
     @validator('password')
     def validate_password(cls, v, values, **kwargs):

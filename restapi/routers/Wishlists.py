@@ -27,7 +27,7 @@ router = APIRouter()
 async def love_product(res: Response, product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if product := await ProductFetch.filter_by_id(product_id):
             if not await WishlistLogic.check_wishlist(product['id'],user['id']):
@@ -52,7 +52,7 @@ async def love_product(res: Response, product_id: int = Path(...,gt=0), authoriz
 async def unlove_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if product := await ProductFetch.filter_by_id(product_id):
             if await WishlistLogic.check_wishlist(product['id'],user['id']):
@@ -65,7 +65,7 @@ async def unlove_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = 
 async def user_wishlist(query_string: get_user_query_wishlist = Depends(), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         results = await WishlistFetch.get_user_wishlist_paginate(user['id'],**query_string)
         [data.__setitem__('products_love',True) for data in results['data']]

@@ -11,7 +11,7 @@ from pydantic import BaseModel, constr, validator
 from typing import Literal
 
 class UserAccountSchema(BaseModel):
-    username: constr(strict=True, min_length=3)
+    username: constr(strict=True, min_length=3, max_length=100)
     phone: constr(strict=True, max_length=20)
     gender: Literal['Laki-laki','Perempuan','Lainnya']
 
@@ -31,5 +31,4 @@ class UserAccountSchema(BaseModel):
 
     class Config:
         min_anystr_length = 1
-        max_anystr_length = 100
         anystr_strip_whitespace = True

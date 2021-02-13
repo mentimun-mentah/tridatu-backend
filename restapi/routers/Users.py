@@ -71,8 +71,8 @@ async def user_confirm(token: str, authorize: AuthJWT = Depends()):
         if not confirmation['activated']:
             await ConfirmationCrud.user_activated(token)
 
-        access_token = authorize.create_access_token(subject=confirmation['user_id'],fresh=True)
-        refresh_token = authorize.create_refresh_token(subject=confirmation['user_id'])
+        access_token = authorize.create_access_token(subject=str(confirmation['user_id']),fresh=True)
+        refresh_token = authorize.create_refresh_token(subject=str(confirmation['user_id']))
         # set jwt in cookies
         response = RedirectResponse(settings.frontend_uri)
         authorize.set_access_cookies(access_token,response)
@@ -142,8 +142,8 @@ async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
             if confirm['activated']:
                 access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
 
-                access_token = authorize.create_access_token(subject=user['id'],fresh=True,expires_time=access_expires)
-                refresh_token = authorize.create_refresh_token(subject=user['id'])
+                access_token = authorize.create_access_token(subject=str(user['id']),fresh=True,expires_time=access_expires)
+                refresh_token = authorize.create_refresh_token(subject=str(user['id']))
                 # set jwt in cookies
                 authorize.set_access_cookies(access_token)
                 authorize.set_refresh_cookies(refresh_token)
@@ -163,7 +163,7 @@ async def login(user_data: UserLogin, authorize: AuthJWT = Depends()):
 async def fresh_token(user_data: UserConfirmPassword, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if not UserLogic.password_is_same_as_hash(user_data.password,user['password']):
             raise HTTPException(status_code=422,detail="Password does not match with our records.")
@@ -171,7 +171,7 @@ async def fresh_token(user_data: UserConfirmPassword, authorize: AuthJWT = Depen
         # set fresh access token in cookie
         access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
 
-        access_token = authorize.create_access_token(subject=user['id'],fresh=True,expires_time=access_expires)
+        access_token = authorize.create_access_token(subject=str(user['id']),fresh=True,expires_time=access_expires)
         authorize.set_access_cookies(access_token)
         return {"detail": "Successfully make a fresh token."}
 
@@ -186,11 +186,11 @@ async def fresh_token(user_data: UserConfirmPassword, authorize: AuthJWT = Depen
 async def refresh_token(authorize: AuthJWT = Depends()):
     authorize.jwt_refresh_token_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         access_expires = None if user['role'] != 'admin' else settings.access_expires_admin
 
-        new_token = authorize.create_access_token(subject=user_id,expires_time=access_expires)
+        new_token = authorize.create_access_token(subject=str(user_id),expires_time=access_expires)
         authorize.set_access_cookies(new_token)
         return {"detail": "The token has been refreshed."}
 
@@ -329,7 +329,7 @@ async def password_reset(token: str, user_data: UserResetPassword):
 async def add_password(user_data: UserAddPassword, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if user['password']:
             raise HTTPException(status_code=400,detail="Your account already has a password.")
@@ -352,7 +352,7 @@ async def add_password(user_data: UserAddPassword, authorize: AuthJWT = Depends(
 async def update_password(user_data: UserUpdatePassword, authorize: AuthJWT = Depends()):
     authorize.fresh_jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if not user['password']:
             raise HTTPException(status_code=400,detail="Please add your password first.")
@@ -378,7 +378,7 @@ async def update_password(user_data: UserUpdatePassword, authorize: AuthJWT = De
 async def update_avatar(file: UploadFile = Depends(single_image_required), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         # if user avatar not same as default, delete the old one
         if user['avatar'] != 'default.jpg':
@@ -405,7 +405,7 @@ async def update_avatar(file: UploadFile = Depends(single_image_required), autho
 async def update_account(user_data: UserAccountSchema, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         # check phone number exists
         if user_phone := await UserFetch.filter_by_phone(user_data.phone):
@@ -419,7 +419,7 @@ async def update_account(user_data: UserAccountSchema, authorize: AuthJWT = Depe
 async def my_user(authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         user_data = {index:value for index,value in user.items()}
         user_data['password'] = True if user_data['password'] else False

@@ -32,7 +32,7 @@ async def create_comment(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if user['role'] == 'admin':
             raise HTTPException(status_code=403,detail="Admin cannot create comments in their own product.")
@@ -76,7 +76,7 @@ async def get_all_comments(query_string: get_all_query_comment = Depends()):
 async def delete_comment(comment_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if comment := await CommentFetch.filter_by_id(comment_id):
             if user['id'] != comment['user_id']:
