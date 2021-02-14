@@ -88,12 +88,18 @@ async def get_all_carts(query_string: get_all_query_cart = Depends(), authorize:
     if user := await UserFetch.filter_by_id(user_id):
         return await CartFetch.get_all_carts(user['id'], **query_string)
 
-@router.delete('/delete')
+@router.delete('/delete',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"0 items were removed."}}}
+        }
+    }
+)
 async def delete_cart(cart_data: CartDelete, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
     user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
-        print(user)
-        print(int(cart_data.cartIds[-1]))
-        return
+        await CartCrud.delete_cart(user['id'],cart_data.cartIds)
+        return {"detail": f"{len(cart_data.cartIds)} items were removed."}

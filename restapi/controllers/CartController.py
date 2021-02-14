@@ -18,6 +18,10 @@ class CartCrud:
     async def update_cart(id_: int, **kwargs) -> None:
         await database.execute(query=cart.update().where(cart.c.id == id_),values=kwargs)
 
+    @staticmethod
+    async def delete_cart(user_id: int, id_: list) -> None:
+        await database.execute(query=cart.delete().where((cart.c.id.in_(id_)) & (cart.c.user_id == user_id)))
+
 class CartFetch:
     @staticmethod
     async def get_all_carts(user_id: int, **kwargs) -> list:
