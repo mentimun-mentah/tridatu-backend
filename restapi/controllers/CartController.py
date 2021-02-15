@@ -101,6 +101,17 @@ class CartFetch:
         }
 
     @staticmethod
+    async def get_all_carts_product_id(user_id: int, id_: list) -> list:
+        variant_alias = select([variant.c.id, variant.c.product_id]).alias('variants')
+        cart_alias = select([cart.join(variant_alias)]).apply_labels().alias('carts')
+
+        query = select([cart_alias]).distinct(cart_alias.c.variants_product_id) \
+            .where((cart_alias.c.carts_id.in_(id_)) & (cart_alias.c.carts_user_id == user_id))
+
+        cart_db = await database.fetch_all(query=query)
+        return [item['variants_product_id'] for item in cart_db]
+
+    @staticmethod
     async def filter_by_user_variant(user_id: int, variant_id: int) -> cart:
         query = select([cart]).where((cart.c.user_id == user_id) & (cart.c.variant_id == variant_id))
         return await database.fetch_one(query=query)

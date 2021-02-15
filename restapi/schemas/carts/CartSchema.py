@@ -44,6 +44,7 @@ class CartData(CartSchema):
     products_id: str
     products_name: str
     products_slug: str
+    products_love: bool
     products_image_product: str
     products_preorder: Optional[int]
     products_discount_status: Literal['ongoing','will_come','not_active','have_ended']

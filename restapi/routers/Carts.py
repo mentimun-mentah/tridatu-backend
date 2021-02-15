@@ -3,6 +3,7 @@ from fastapi_jwt_auth import AuthJWT
 from controllers.CartController import CartFetch, CartCrud
 from controllers.UserController import UserFetch
 from controllers.VariantController import VariantFetch
+from controllers.WishlistController import WishlistCrud, WishlistLogic
 from schemas.carts.CartSchema import CartCreateUpdate, CartDelete, CartData, CartDataNav, CartQtyItemData
 from dependencies.CartDependant import get_all_query_cart
 from typing import List
@@ -86,7 +87,12 @@ async def get_all_carts(query_string: get_all_query_cart = Depends(), authorize:
 
     user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
-        return await CartFetch.get_all_carts(user['id'], **query_string)
+        results = await CartFetch.get_all_carts(user['id'], **query_string)
+        [
+            data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
+            for data in results
+        ]
+        return results
 
 @router.delete('/delete',
     responses={
@@ -103,3 +109,25 @@ async def delete_cart(cart_data: CartDelete, authorize: AuthJWT = Depends()):
     if user := await UserFetch.filter_by_id(user_id):
         await CartCrud.delete_cart(user['id'],cart_data.cartIds)
         return {"detail": f"{len(cart_data.cartIds)} items were removed."}
+
+@router.delete('/move-to-wishlist',
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/json":{"example": {"detail":"0 items successfully moved to the wishlist."}}}
+        }
+    }
+)
+async def move_to_wishlist(cart_data: CartDelete, authorize: AuthJWT = Depends()):
+    authorize.jwt_required()
+
+    user_id = int(authorize.get_jwt_subject())
+    if user := await UserFetch.filter_by_id(user_id):
+        # move variant-product to wishlist
+        products_id = await CartFetch.get_all_carts_product_id(user['id'],cart_data.cartIds)
+        wishlist_data = [{'product_id': id_, 'user_id': user['id']} for id_ in products_id]
+        await WishlistCrud.create_wishlist_many(wishlist_data)
+        # delete variant on cart
+        await CartCrud.delete_cart(user['id'],cart_data.cartIds)
+
+        return {"detail": f"{len(cart_data.cartIds)} items successfully moved to the wishlist."}
