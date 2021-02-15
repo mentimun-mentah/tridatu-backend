@@ -214,7 +214,7 @@ class VariantCrud:
 
     @staticmethod
     async def delete_variant_by_id(variant_id: list) -> None:
-        [await database.execute(query=variant.delete().where(variant.c.id == id_)) for id_ in variant_id]
+        await database.execute(query=variant.delete().where(variant.c.id.in_(variant_id)))
 
     @staticmethod
     def add_variant_to_redis_storage(data_variant: dict) -> str:

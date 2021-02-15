@@ -174,7 +174,8 @@ def get_all_query_product(
     brand: str = Query(None,min_length=1,description="Example 1,2,3"),
     pre_order: bool = Query(None),
     condition: bool = Query(None),
-    wholesale: bool = Query(None)
+    wholesale: bool = Query(None),
+    is_discount: bool = Query(None)
 ):
     return {
         "page": page,
@@ -188,5 +189,6 @@ def get_all_query_product(
         "brand": parse_int_list(brand,','),
         "pre_order": pre_order,
         "condition": condition,
-        "wholesale": wholesale
+        "wholesale": wholesale,
+        "is_discount": is_discount
     }

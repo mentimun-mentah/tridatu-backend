@@ -537,7 +537,7 @@ class TestProduct(OperationTest):
         response = client.get(
             url +
             '?page=a&per_page=a&q=123&live=a&order_by=a&p_min=a' +
-            '&p_max=a&item_sub_cat=a&brand=a&pre_order=a&condition=a&wholesale=a'
+            '&p_max=a&item_sub_cat=a&brand=a&pre_order=a&condition=a&wholesale=a&is_discount=a'
         )
         assert response.status_code == 422
         for x in response.json()['detail']:
@@ -551,6 +551,7 @@ class TestProduct(OperationTest):
             if x['loc'][-1] == 'pre_order': assert x['msg'] == 'value could not be parsed to a boolean'
             if x['loc'][-1] == 'condition': assert x['msg'] == 'value could not be parsed to a boolean'
             if x['loc'][-1] == 'wholesale': assert x['msg'] == 'value could not be parsed to a boolean'
+            if x['loc'][-1] == 'is_discount': assert x['msg'] == 'value could not be parsed to a boolean'
 
     def test_get_all_products(self,client):
         url = self.prefix + '/all-products'
