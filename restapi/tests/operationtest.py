@@ -14,6 +14,9 @@ from models.ItemSubCategoryModel import item_sub_category
 from models.ProductModel import product
 from models.CommentModel import comment
 from models.ReplyModel import reply
+from models.VariantModel import variant
+from models.CartModel import cart
+from models.WishlistModel import wishlist
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -187,6 +190,13 @@ class OperationTest:
         kwargs.update({"updated_at": func.now()})
         await database.execute(query=product.update().where(product.c.name == name),values=kwargs)
 
+    # ================ WISHLIST SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_len_of_wishlist_user(self,user_id: int):
+        query = select([func.count()]).where(wishlist.c.user_id == user_id).select_from(wishlist).as_scalar()
+        return await database.execute(query=query)
+
     # ================ COMMENT SECTION ================
 
     @pytest.mark.asyncio
@@ -206,3 +216,29 @@ class OperationTest:
         query = select([reply]).where((reply.c.message == message) & (reply.c.comment_id == comment_id))
         reply_data = await database.fetch_one(query=query)
         return reply_data['id']
+
+    # ================ VARIANT SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_all_variant_by_product_id(self, product_id: int):
+        query = select([variant]).where(variant.c.product_id == product_id)
+        variant_data = await database.fetch_all(query=query)
+        return [{key:value for key,value in data.items()} for data in variant_data]
+
+    @pytest.mark.asyncio
+    async def change_variant_stock_zero(self, id_: int):
+        query = variant.update().where(variant.c.id == id_)
+        await database.execute(query=query,values={'stock': 0})
+
+    # ================ CART SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_qty_cart(self, variant_id: int, user_id: int):
+        query  = select([cart]).where((cart.c.variant_id == variant_id) & (cart.c.user_id == user_id))
+        cart_data = await database.fetch_one(query=query)
+        return cart_data['qty']
+
+    @pytest.mark.asyncio
+    async def get_all_cart_by_user_id(self, user_id: int):
+        cart_data = await database.fetch_all(query=select([cart]).where(cart.c.user_id == user_id))
+        return [{key:value for key,value in data.items()} for data in cart_data]

@@ -94,7 +94,7 @@ async def get_all_carts(query_string: get_all_query_cart = Depends(), authorize:
         ]
         return results
 
-@router.delete('/delete',
+@router.post('/delete',
     responses={
         200: {
             "description": "Successful Response",
@@ -110,7 +110,7 @@ async def delete_cart(cart_data: CartDelete, authorize: AuthJWT = Depends()):
         await CartCrud.delete_cart(user['id'],cart_data.cartIds)
         return {"detail": f"{len(cart_data.cartIds)} items were removed."}
 
-@router.delete('/move-to-wishlist',
+@router.post('/move-to-wishlist',
     responses={
         200: {
             "description": "Successful Response",
