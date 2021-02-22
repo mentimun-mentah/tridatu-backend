@@ -2,6 +2,7 @@ import json
 from pydantic import BaseModel, conlist, conint, constr, validator
 from controllers.VariantController import VariantLogic
 from config import redis_conn
+from schemas import errors
 
 class WholeSaleSchema(BaseModel):
     class Config:
@@ -25,28 +26,28 @@ class WholeSaleCreateUpdate(WholeSaleSchema):
     def validate_variant(cls, v):
         # check if variant exists on redis
         if redis_conn.get(v) is None:
-            raise ValueError("variant not found!")
+            raise errors.WholeSaleVariantMissingError()
 
         # all price in variant must be same
         variant_data = VariantLogic.convert_data_to_db(json.loads(redis_conn.get(v)),0)
         variant_price_unique = list(set([item['price'] for item in variant_data]))
         if len(variant_price_unique) > 1:
-            raise ValueError("wholesale prices are only available for all variant that are priced the same")
+            raise errors.WholeSaleVariantNotSameError()
 
         return variant_price_unique[0]
 
     @validator('items')
     def validate_items(cls, v, values, **kwargs):
         if 'variant' not in values:
-            raise ValueError("variant not found!")
+            raise errors.WholeSaleVariantMissingError()
 
         initial_price = round(values['variant'] / 2)
         for idx in range(len(v)):
             if v[idx].price < initial_price:
-                raise ValueError(f"price {idx}: The price shall not be 50% lower than the initial price")
+                raise errors.WholeSalePriceNotGeHalfInitialPriceError(idx=idx)
             if idx > 0:
                 if v[idx].min_qty <= v[idx - 1].min_qty:
-                    raise ValueError(f"min_qty {idx}: must be more > than before")
+                    raise errors.WholeSaleMinQtyNotGtBeforeError(idx=idx)
                 if v[idx].price >= v[idx - 1].price:
-                    raise ValueError(f"price {idx}: The price must be less than the previous price")
+                    raise errors.WholeSalePriceNotLtBeforeError(idx=idx)
         return v

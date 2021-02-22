@@ -9,6 +9,7 @@ from phonenumbers import (
 )
 from pydantic import BaseModel, validator, constr, conint
 from typing import List, Optional
+from schemas import errors
 
 class AddressSchema(BaseModel):
     label: constr(strict=True, max_length=100)
@@ -22,13 +23,13 @@ class AddressSchema(BaseModel):
     def validate_phone(cls, v):
         try:
             n = parse_phone_number(v, "ID")
-        except NumberParseException as e:
-            raise ValueError('Please provide a valid mobile phone number') from e
+        except NumberParseException:
+            raise errors.PhoneNumberError()
 
         MOBILE_NUMBER_TYPES = PhoneNumberType.MOBILE, PhoneNumberType.FIXED_LINE_OR_MOBILE
 
         if not is_valid_number(n) or number_type(n) not in MOBILE_NUMBER_TYPES:
-            raise ValueError('Please provide a valid mobile phone number')
+            raise errors.PhoneNumberError()
 
         return format_number(n, PhoneNumberFormat.INTERNATIONAL)
 

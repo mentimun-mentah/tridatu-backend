@@ -1,4 +1,5 @@
 from pydantic import BaseModel, constr, validator
+from schemas import errors
 
 class UserPasswordSchema(BaseModel):
     confirm_password: constr(strict=True, min_length=6, max_length=100)
@@ -7,7 +8,7 @@ class UserPasswordSchema(BaseModel):
     @validator('password')
     def validate_password(cls, v, values, **kwargs):
         if 'confirm_password' in values and values['confirm_password'] != v:
-            raise ValueError("Password must match with confirmation.")
+            raise errors.PasswordConfirmError()
         return v
 
     class Config:

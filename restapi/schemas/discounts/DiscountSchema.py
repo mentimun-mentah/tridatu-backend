@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import List, Literal, Optional
 from pytz import timezone
 from config import settings
+from schemas import errors
 
 tz = timezone(settings.timezone)
 tf = '%d %b %Y %H:%M'
@@ -40,7 +41,7 @@ class DiscountCreate(DiscountSchema):
     @validator('discount_start')
     def validate_discount_start(cls, v):
         if datetime.now(tz) > v:
-            raise ValueError("the start time must be after the current time")
+            raise errors.DiscountStartTimeError()
         return v
 
     @validator('discount_end')
@@ -48,9 +49,9 @@ class DiscountCreate(DiscountSchema):
         if 'discount_start' in values:
             discount_between = (v - values['discount_start'])
             if (round(discount_between.seconds / 3600, 2) < 1 and discount_between.days < 1) or datetime.now(tz) > v:
-                raise ValueError("the expiration time must be at least one hour longer than the start time")
+                raise errors.DiscountEndMinExpError()
             if discount_between.days > 180:
-                raise ValueError("promo period must be less than 180 days")
+                raise errors.DiscountEndMaxExpError()
         return v
 
 class DiscountUpdate(DiscountSchema):

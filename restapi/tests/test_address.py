@@ -130,13 +130,13 @@ class TestAddress(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'phone':
-                assert x['msg'] == "Please provide a valid mobile phone number"
+                assert x['msg'] == "value is not a valid mobile phone number"
 
         response = client.post(url,json={'phone': '8762732'})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'phone':
-                assert x['msg'] == "Please provide a valid mobile phone number"
+                assert x['msg'] == "value is not a valid mobile phone number"
 
     def test_create_address(self,client):
         # user login
@@ -338,13 +338,13 @@ class TestAddress(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'phone':
-                assert x['msg'] == "Please provide a valid mobile phone number"
+                assert x['msg'] == "value is not a valid mobile phone number"
 
         response = await async_client.put(url,json={'phone': '8762732'})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'phone':
-                assert x['msg'] == "Please provide a valid mobile phone number"
+                assert x['msg'] == "value is not a valid mobile phone number"
 
     @pytest.mark.asyncio
     async def test_update_address(self,async_client):

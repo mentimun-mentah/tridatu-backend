@@ -273,7 +273,7 @@ class TestVariant(OperationTest):
         response = client.post(url,json={'va1_name': 'warna', 'va2_name': 'warna'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'va2_name': assert x['msg'] == 'Names cannot be the same.'
+            if x['loc'][-1] == 'va2_name': assert x['msg'] == 'the name must be different with each other'
 
         # option duplicate in va1_items
         response = client.post(url,json={

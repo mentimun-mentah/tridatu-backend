@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, constr, validator
 from typing import Literal, Optional
+from schemas import errors
 
 class UserSchema(BaseModel):
     email: EmailStr
@@ -16,7 +17,7 @@ class UserRegister(UserSchema):
     @validator('password')
     def validate_password(cls, v, values, **kwargs):
         if 'confirm_password' in values and values['confirm_password'] != v:
-            raise ValueError("Password must match with confirmation.")
+            raise errors.PasswordConfirmError()
         return v
 
 class UserEmail(UserSchema):
@@ -32,7 +33,7 @@ class UserResetPassword(UserSchema):
     @validator('password')
     def validate_password(cls, v, values, **kwargs):
         if 'confirm_password' in values and values['confirm_password'] != v:
-            raise ValueError("Password must match with confirmation.")
+            raise errors.PasswordConfirmError()
         return v
 
 class UserData(UserSchema):

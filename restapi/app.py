@@ -7,8 +7,11 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from starlette.middleware.sessions import SessionMiddleware
 from config import database, redis_conn, settings
+from I18N import PydanticError
 from routers import (
     Users, OAuth2, Address, Outlets,
     Brands, Categories, SubCategories, ItemSubCategories,
@@ -46,6 +49,29 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
         content={"detail": exc.message}
     )
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    if lang := request.headers.get('accept-language') or 'en':
+        # set language from docs to id
+        if lang in ['en-US,en;q=0.9']:
+            lang = 'id'
+
+        if lang not in ['id','en']:
+            return ORJSONResponse(
+                status_code=422,
+                content={"detail": "The languages available were id and en."}
+            )
+
+        for error in exc.errors():
+            msg = PydanticError[lang].get(error['type']) or error['msg']
+            if ctx := error.get('ctx'):
+                if error['type'] == 'value_error.const':
+                    ctx.update({'permitted': ', '.join(repr(v) for v in ctx['permitted'])})
+                if error['type'] == 'type_error.enum':
+                    ctx.update({'permitted': ', '.join(repr(v.value) for v in ctx['enum_values'])})
+                msg = msg.format(**ctx)
+            error['msg'] = msg
+    return await request_validation_exception_handler(request, exc)
 
 if settings.stage_app == "development":
     @app.get("/docs",include_in_schema=False)

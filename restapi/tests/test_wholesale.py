@@ -159,14 +159,14 @@ class TestWholeSale(OperationTest):
         response = client.post(url,json={'variant':'a', 'items': [{'min_qty': 2, 'price': '123'}]})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'variant': assert x['msg'] == 'variant not found!'
-            if x['loc'][-1] == 'items': assert x['msg'] == 'variant not found!'
+            if x['loc'][-1] == 'variant': assert x['msg'] == 'variant not found'
+            if x['loc'][-1] == 'items': assert x['msg'] == 'variant not found'
         # all price in variant must be same
         response = client.post(url,json={'variant': self.double_variant,'items': [{'min_qty': 2, 'price': '123'}]})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'variant': assert x['msg'] == 'wholesale prices are only available for all variant that are priced the same'
-            if x['loc'][-1] == 'items': assert x['msg'] == 'variant not found!'
+            if x['loc'][-1] == 'items': assert x['msg'] == 'variant not found'
         # price in items must be greater than 50% initial price from variant
         response = client.post(url,json={'variant': self.without_variant,'items': [{'min_qty': 2, 'price': '123'}]})
         assert response.status_code == 422

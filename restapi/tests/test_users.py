@@ -72,7 +72,7 @@ class TestUser(OperationTest):
         response = client.post(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'password must match with password confirmation'
 
     def test_register_new_user(self,client):
         url = self.prefix + '/register'
@@ -496,7 +496,7 @@ class TestUser(OperationTest):
         response = client.put(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'password must match with password confirmation'
         # email not found in database
         response = client.put(url,json={'email': 'ngawrubeta@example.com','password':'asdasd','confirm_password':'asdasd'})
         assert response.status_code == 404
@@ -574,7 +574,7 @@ class TestUser(OperationTest):
         response = client.post(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'password must match with password confirmation'
         # user login
         response = client.post(self.prefix + '/login',json={
             'email': self.account_2['email'],
@@ -646,7 +646,7 @@ class TestUser(OperationTest):
         response = client.put(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'password must match with password confirmation'
         # user login
         response = client.post(self.prefix + '/login',json={
             'email': self.account_2['email'],
@@ -808,12 +808,12 @@ class TestUser(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'phone':
-                assert x['msg'] == "Please provide a valid mobile phone number"
+                assert x['msg'] == "value is not a valid mobile phone number"
         response = client.put(url,json={'phone':'8762732'})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'phone':
-                assert x['msg'] == "Please provide a valid mobile phone number"
+                assert x['msg'] == "value is not a valid mobile phone number"
 
     def test_update_account(self,client):
         # user login
