@@ -6,9 +6,10 @@ from controllers.VariantController import VariantFetch
 from controllers.WishlistController import WishlistCrud, WishlistLogic
 from schemas.carts.CartSchema import CartCreateUpdate, CartDelete, CartData, CartDataNav, CartQtyItemData
 from dependencies.CartDependant import get_all_query_cart
+from localization import LocalizationRoute
 from typing import List
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 @router.post('/put-product',status_code=201,
     responses={

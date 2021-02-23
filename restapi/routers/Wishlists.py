@@ -5,8 +5,9 @@ from controllers.ProductController import ProductFetch
 from controllers.WishlistController import WishlistLogic, WishlistCrud, WishlistFetch
 from dependencies.WishlistDependant import get_user_query_wishlist
 from schemas.products.ProductSchema import ProductPaginate
+from localization import LocalizationRoute
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 @router.post('/love/{product_id}',status_code=201,
     responses={

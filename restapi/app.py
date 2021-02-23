@@ -5,13 +5,19 @@ from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.exceptions import RequestValidationError
-from fastapi.exception_handlers import request_validation_exception_handler
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from localization import (
+    SystemLocalizationMiddleware,
+    TranslateORJSONResponse,
+    http_exception_handler_translate,
+    request_validation_exception_handler_translate
+)
 from config import database, redis_conn, settings
-from I18N import PydanticError
 from routers import (
     Users, OAuth2, Address, Outlets,
     Brands, Categories, SubCategories, ItemSubCategories,
@@ -20,10 +26,13 @@ from routers import (
     Carts
 )
 
-app = FastAPI(default_response_class=ORJSONResponse,docs_url=None,redoc_url=None)
+localization_middleware = SystemLocalizationMiddleware(default_language_code=settings.default_language_code)
+
+app = FastAPI(default_response_class=TranslateORJSONResponse,docs_url=None,redoc_url=None)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+app.add_middleware(BaseHTTPMiddleware, dispatch=localization_middleware)
 app.add_middleware(SessionMiddleware, secret_key=settings.authjwt_secret_key)
 app.add_middleware(
     CORSMiddleware,
@@ -33,14 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup():
-    app.state.redis = redis_conn
-    await database.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
+# register error handlers for localization errors
+app.add_exception_handler(StarletteHTTPException, http_exception_handler_translate)
+app.add_exception_handler(RequestValidationError, request_validation_exception_handler_translate)
 
 @app.exception_handler(AuthJWTException)
 def authjwt_exception_handler(request: Request, exc: AuthJWTException):
@@ -49,29 +53,14 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
         content={"detail": exc.message}
     )
 
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request, exc):
-    if lang := request.headers.get('accept-language') or 'en':
-        # set language from docs to id
-        if lang in ['en-US,en;q=0.9']:
-            lang = 'id'
+@app.on_event("startup")
+async def startup():
+    app.state.redis = redis_conn
+    await database.connect()
 
-        if lang not in ['id','en']:
-            return ORJSONResponse(
-                status_code=422,
-                content={"detail": "The languages available were id and en."}
-            )
-
-        for error in exc.errors():
-            msg = PydanticError[lang].get(error['type']) or error['msg']
-            if ctx := error.get('ctx'):
-                if error['type'] == 'value_error.const':
-                    ctx.update({'permitted': ', '.join(repr(v) for v in ctx['permitted'])})
-                if error['type'] == 'type_error.enum':
-                    ctx.update({'permitted': ', '.join(repr(v.value) for v in ctx['enum_values'])})
-                msg = msg.format(**ctx)
-            error['msg'] = msg
-    return await request_validation_exception_handler(request, exc)
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
 
 if settings.stage_app == "development":
     @app.get("/docs",include_in_schema=False)

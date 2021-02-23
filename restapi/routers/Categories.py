@@ -8,9 +8,10 @@ from schemas.categories.CategorySchema import (
     CategoryDataWithoutLabels,
     CategoryWithChildrenData
 )
+from localization import LocalizationRoute
 from typing import List
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 @router.post('/create',status_code=201,
     responses={

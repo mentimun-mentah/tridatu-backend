@@ -38,6 +38,7 @@ class Settings(BaseSettings):
 
     timezone: str
     stage_app: Literal['production','development']
+    default_language_code: Literal['id','en']
 
     access_expires: Optional[int] = None
     access_expires_admin: Optional[int] = None

@@ -16,9 +16,10 @@ from schemas.users.UserPasswordSchema import UserAddPassword, UserUpdatePassword
 from schemas.users.UserAccountSchema import UserAccountSchema
 from libs.MagicImage import MagicImage, SingleImageRequired
 from libs.MailSmtp import send_email
+from localization import LocalizationRoute
 from config import settings
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 # dependencies injection for validation an image
 single_image_required = SingleImageRequired(

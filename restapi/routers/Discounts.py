@@ -7,10 +7,11 @@ from controllers.VariantController import VariantFetch, VariantCrud, VariantLogi
 from schemas.discounts.DiscountSchema import DiscountCreate, DiscountUpdate, DiscountDataProduct, DiscountPaginate
 from schemas.variants.VariantSchema import VariantCreateUpdate
 from dependencies.DiscountDependant import get_all_query_discount
+from localization import LocalizationRoute
 from pytz import timezone
 from config import settings
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 tz = timezone(settings.timezone)
 

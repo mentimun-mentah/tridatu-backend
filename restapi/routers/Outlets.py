@@ -4,9 +4,10 @@ from controllers.OutletController import OutletCrud, OutletFetch
 from controllers.UserController import UserFetch
 from schemas.outlets.OutletSchema import OutletSchema
 from libs.MagicImage import MagicImage, SingleImageRequired
+from localization import LocalizationRoute
 from typing import List
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 # dependencies injection for validation an image
 single_image_required = SingleImageRequired(

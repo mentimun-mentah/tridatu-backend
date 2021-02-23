@@ -6,9 +6,10 @@ from controllers.CommentController import CommentFetch
 from schemas.replies.ReplySchema import ReplyCreate, ReplyCommentData
 from libs.MessageCooldown import MessageCooldown
 from libs.Parser import parse_int_list
+from localization import LocalizationRoute
 from typing import List, Union
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 @router.post('/create',status_code=201,
     responses={

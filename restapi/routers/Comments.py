@@ -6,8 +6,9 @@ from controllers.CommentController import CommentCrud, CommentFetch
 from dependencies.CommentDependant import get_all_query_comment
 from schemas.comments.CommentSchema import CommentCreate, CommentPaginate
 from libs.MessageCooldown import MessageCooldown
+from localization import LocalizationRoute
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 @router.post('/create',status_code=201,
     responses={

@@ -22,10 +22,11 @@ from schemas.products.ProductSchema import (
 from models.ProductModel import product
 from libs.MagicImage import MagicImage
 from libs.Visitor import Visitor
+from localization import LocalizationRoute
 from slugify import slugify
 from typing import List
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 @router.post('/create',status_code=201,
     responses={

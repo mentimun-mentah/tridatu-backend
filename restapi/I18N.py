@@ -234,3 +234,49 @@ PydanticError = {
         'value_error.wholesale_price.not_lt': 'harga {idx}: Harga harus lebih kecil dari harga sebelumnya'
     }
 }
+
+ResponseMessages = {
+    'en': {
+        # address endpoint
+        'create_address': {
+            201: {"detail": "Successfully add a new address."}
+        },
+        'update_address': {
+            200: {"detail": "Successfully update the address."}
+        },
+        'main_address_true': {
+            200: {"detail": "Successfully set the address to main address."}
+        },
+        'delete_address': {
+            200: {"detail": "Successfully delete the address."}
+        }
+    },
+    'id': {
+        # address endpoint
+        'create_address': {
+            201: {"detail": "Berhasil menambahkan alamat baru."}
+        },
+        'update_address': {
+            200: {"detail": "Berhasil memperbarui alamat."}
+        },
+        'main_address_true': {
+            200: {"detail": "Berhasil mengatur alamat ke alamat utama."}
+        },
+        'delete_address': {
+            200: {"detail": "Berhasil menghapus alamat."}
+        }
+    }
+}
+
+HttpError = {
+    'en': {
+        # address endpoint
+        'address.not_found': {'message': 'Address not found!', 'code': 'address.not_found'},
+        'address.not_match': {'message': 'Address not match with the current user.', 'code': 'address.not_match'}
+    },
+    'id': {
+        # address endpoint
+        'address.not_found': {'message': 'Alamat tidak ditemukan!', 'code': 'address.not_found'},
+        'address.not_match': {'message': 'Alamat tidak sesuai dengan pengguna saat ini.', 'code': 'address.not_match'}
+    }
+}

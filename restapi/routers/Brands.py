@@ -4,9 +4,10 @@ from controllers.BrandController import BrandCrud, BrandFetch
 from controllers.UserController import UserFetch
 from schemas.brands.BrandSchema import BrandSchema
 from libs.MagicImage import MagicImage, SingleImageRequired, SingleImageOptional
+from localization import LocalizationRoute
 from typing import List
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 # dependencies injection for validation an image
 single_image_required = SingleImageRequired(

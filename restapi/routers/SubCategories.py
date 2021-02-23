@@ -4,8 +4,9 @@ from controllers.SubCategoryController import SubCategoryFetch, SubCategoryCrud
 from controllers.CategoryController import CategoryFetch
 from controllers.UserController import UserFetch
 from schemas.sub_categories.SubCategorySchema import SubCategoryCreateUpdate, SubCategoryData
+from localization import LocalizationRoute
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
 
 @router.post('/create',status_code=201,
     responses={
