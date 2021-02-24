@@ -7,27 +7,31 @@ from controllers.WishlistController import WishlistCrud, WishlistLogic
 from schemas.carts.CartSchema import CartCreateUpdate, CartDelete, CartData, CartDataNav, CartQtyItemData
 from dependencies.CartDependant import get_all_query_cart
 from localization import LocalizationRoute
+from I18N import ResponseMessages, HttpError
+from config import settings
 from typing import List
 
 router = APIRouter(route_class=LocalizationRoute)
+# default language response
+lang = settings.default_language_code
 
 @router.post('/put-product',status_code=201,
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Shopping cart successfully updated."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['put_product_to_cart'][200]}}
         },
         201: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"The product has been successfully added to the shopping cart."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['put_product_to_cart'][201]}}
         },
         400: {
             "description": "Qty greater than stock product & Cart can only contain 20 items",
-            "content": {"application/json": {"example": {"detail":"string"}}}
+            "content": {"application/json": {"example": {"detail": "string"}}}
         },
         404: {
             "description": "Variant not found",
-            "content": {"application/json": {"example": {"detail":"Variant not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['carts.variant_not_found']['message']}}}
         }
     }
 )
@@ -45,8 +49,10 @@ async def put_product_to_cart(res: Response, cart_data: CartCreateUpdate, author
                 cart_qty += cart_db['qty']
 
             if cart_qty > variant['stock']:
-                msg = "The amount you input exceeds the available stock."
-                if cart_db: msg = f"This item has {variant['stock']} stock left and you already have {cart_db['qty']} in your basket."
+                msg = HttpError[lang]['carts.stock_not_enough_1']
+                if cart_db:
+                    msg = HttpError[lang]['carts.stock_not_enough_2']
+                    msg['ctx'].update({'stock': variant['stock'], 'qty': cart_db['qty']})
 
                 raise HTTPException(status_code=400,detail=msg)
 
@@ -57,14 +63,14 @@ async def put_product_to_cart(res: Response, cart_data: CartCreateUpdate, author
             if cart_db:
                 res.status_code = 200
                 await CartCrud.update_cart(cart_db['id'],**kwargs)
-                return {"detail": "Shopping cart successfully updated."}
+                return ResponseMessages[lang]['put_product_to_cart'][200]
 
             if cart_total['total_item'] >= 20:
-                raise HTTPException(status_code=400,detail="The basket can only contain 20 items. Delete some items to add others.")
+                raise HTTPException(status_code=400,detail=HttpError[lang]['carts.max_items'])
 
             await CartCrud.create_cart(**kwargs)
-            return {"detail": "The product has been successfully added to the shopping cart."}
-        raise HTTPException(status_code=404,detail="Variant not found!")
+            return ResponseMessages[lang]['put_product_to_cart'][201]
+        raise HTTPException(status_code=404,detail=HttpError[lang]['carts.variant_not_found'])
 
 @router.get('/qty-item-on-cart',response_model=CartQtyItemData)
 async def get_qty_and_item_on_cart(authorize: AuthJWT = Depends()):
@@ -99,7 +105,7 @@ async def get_all_carts(query_string: get_all_query_cart = Depends(), authorize:
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"0 items were removed."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['delete_cart'][200]}}
         }
     }
 )
@@ -109,13 +115,15 @@ async def delete_cart(cart_data: CartDelete, authorize: AuthJWT = Depends()):
     user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         await CartCrud.delete_cart(user['id'],cart_data.cartIds)
-        return {"detail": f"{len(cart_data.cartIds)} items were removed."}
+        response = ResponseMessages[lang]['delete_cart'][200].copy()
+        response.update({'ctx': {'item': len(cart_data.cartIds)}})
+        return response
 
 @router.post('/move-to-wishlist',
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"0 items successfully moved to the wishlist."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['move_to_wishlist'][200]}}
         }
     }
 )
@@ -131,4 +139,6 @@ async def move_to_wishlist(cart_data: CartDelete, authorize: AuthJWT = Depends()
         # delete variant on cart
         await CartCrud.delete_cart(user['id'],cart_data.cartIds)
 
-        return {"detail": f"{len(cart_data.cartIds)} items successfully moved to the wishlist."}
+        response = ResponseMessages[lang]['move_to_wishlist'][200].copy()
+        response.update({'ctx': {'item': len(cart_data.cartIds)}})
+        return response

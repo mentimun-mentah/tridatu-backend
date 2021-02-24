@@ -245,7 +245,14 @@ ResponseMessages = {
         # brands endpoint
         'create_brand': {201: {"detail": "Successfully add a new brand."}},
         'update_brand': {200: {"detail": "Successfully update the brand."}},
-        'delete_brand': {200: {"detail": "Successfully delete the brand."}}
+        'delete_brand': {200: {"detail": "Successfully delete the brand."}},
+        # carts endpoint
+        'put_product_to_cart': {
+            200: {"detail": "Shopping cart successfully updated."},
+            201: {"detail": "The product has been successfully added to the shopping cart."}
+        },
+        'delete_cart': {200: {"detail": "{item} items were removed."}},
+        'move_to_wishlist': {200: {"detail": "{item} items successfully moved to the wishlist."}}
     },
     'id': {
         # address endpoint
@@ -256,7 +263,14 @@ ResponseMessages = {
         # brands endpoint
         'create_brand': {201: {"detail": "Berhasil menambahkan brand baru."}},
         'update_brand': {200: {"detail": "Berhasil memperbarui brand."}},
-        'delete_brand': {200: {"detail": "Berhasil menghapus brand."}}
+        'delete_brand': {200: {"detail": "Berhasil menghapus brand."}},
+        # carts endpoint
+        'put_product_to_cart': {
+            200: {"detail": "Keranjang belanja berhasil diperbarui."},
+            201: {"detail": "Produk telah berhasil ditambahkan ke keranjang belanjaan."}
+        },
+        'delete_cart': {200: {"detail": "{item} item telah dihapus."}},
+        'move_to_wishlist': {200: {"detail": "{item} item berhasil dipindahkan ke wishlist."}}
     }
 }
 
@@ -288,7 +302,19 @@ HttpError = {
         'address.not_match': {'message': 'Address not match with the current user.', 'code': 'address.not_match'},
         # brands endpoint
         'brands.name_taken': {'message': 'The name has already been taken.', 'code': 'brands.name_taken'},
-        'brands.not_found': {'message': 'Brand not found!', 'code': 'brands.not_found'}
+        'brands.not_found': {'message': 'Brand not found!', 'code': 'brands.not_found'},
+        # carts endpoint
+        'carts.stock_not_enough_1': {'message': 'The amount you input exceeds the available stock.', 'code': 'carts.stock_not_enough_1'},
+        'carts.stock_not_enough_2': {
+            'message': 'This item has {stock} stock left and you already have {qty} in your basket.',
+            'code': 'carts.stock_not_enough_2',
+            'ctx': {}
+        },
+        'carts.max_items': {
+            'message': 'The basket can only contain 20 items. Delete some items to add others.',
+            'code': 'carts.max_items'
+        },
+        'carts.variant_not_found': {'message': 'Variant not found!', 'code': 'carts.variant_not_found'},
     },
     'id': {
         # user controller
@@ -317,6 +343,18 @@ HttpError = {
         'address.not_match': {'message': 'Alamat tidak sesuai dengan pengguna saat ini.', 'code': 'address.not_match'},
         # brands endpoint
         'brands.name_taken': {'message': 'Nama sudah dipakai.', 'code': 'brands.name_taken'},
-        'brands.not_found': {'message': 'Brand tidak ditemukan!', 'code': 'brands.not_found'}
+        'brands.not_found': {'message': 'Brand tidak ditemukan!', 'code': 'brands.not_found'},
+        # carts endpoint
+        'carts.stock_not_enough_1': {'message': 'Jumlah yang Anda masukkan melebihi stok yang tersedia.', 'code': 'carts.stock_not_enough_1'},
+        'carts.stock_not_enough_2': {
+            'message': 'Item ini memiliki sisa stok {stock} dan Anda sudah memiliki {qty} di keranjang Anda.',
+            'code': 'carts.stock_not_enough_2',
+            'ctx': {}
+        },
+        'carts.max_items': {
+            'message': 'Keranjang hanya dapat memuat 20 item. Hapus beberapa item untuk menambahkan yang lain.',
+            'code': 'carts.max_items'
+        },
+        'carts.variant_not_found': {'message': 'Varian tidak ditemukan!', 'code': 'carts.variant_not_found'},
     }
 }

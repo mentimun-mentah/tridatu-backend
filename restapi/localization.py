@@ -54,8 +54,10 @@ class TranslateORJSONResponse(ORJSONResponse):
         self.headers.__delitem__('content-length')
         self.headers.__delitem__('content-type')
 
+        ctx = content.pop('ctx', None) if isinstance(content, dict) else None
         if msg := ResponseMessages[language_code].get(endpoint):
             content = msg.get(self.status_code)
+            if ctx: content = {key:value.format(**ctx) for key,value in content.items()}
 
         return TranslateORJSONResponse(
             content, status_code=self.status_code,
