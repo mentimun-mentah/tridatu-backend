@@ -26,7 +26,10 @@ from routers import (
     Carts
 )
 
-localization_middleware = SystemLocalizationMiddleware(default_language_code=settings.default_language_code)
+localization_middleware = SystemLocalizationMiddleware(
+    default_language_code=settings.default_language_code,
+    default_language_code_doc='id'
+)
 
 app = FastAPI(default_response_class=TranslateORJSONResponse,docs_url=None,redoc_url=None)
 

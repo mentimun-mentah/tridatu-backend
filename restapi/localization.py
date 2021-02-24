@@ -10,14 +10,15 @@ from I18N import (
     ResponseMessages,
     HttpError
 )
-from typing import Callable, Any
+from typing import Optional, Callable, Any
 
 class SystemLocalizationMiddleware:
     """
     Middleware to get Accept-Language and save to request.state.
     """
-    def __init__(self, default_language_code: str) -> None:
+    def __init__(self, default_language_code: str, default_language_code_doc: Optional[str] = None) -> None:
         self.default_language_code = default_language_code
+        self.default_language_code_doc = default_language_code_doc or default_language_code
 
     async def __call__(self, request: Request, call_next):
         language_code = request.headers.get('accept-language') or self.default_language_code
@@ -25,7 +26,7 @@ class SystemLocalizationMiddleware:
         language_code = language_code.split(',')[0]
         # set language_code from doc to default
         if language_code == 'en-US':
-            language_code = self.default_language_code
+            language_code = self.default_language_code_doc
 
         if language_code not in ['id','en']:
             return ORJSONResponse(
@@ -105,7 +106,9 @@ async def http_exception_handler_translate(request, exc):
 
     # check if detail is dictionary or not
     if isinstance(exc.detail, dict):
+        ctx = exc.detail.get('ctx')
         if error := HttpError[language_code].get(exc.detail.get('code')):
             exc.detail = error['message']
+            if ctx: exc.detail = exc.detail.format(**ctx)
 
     return await http_exception_handler(request, exc)

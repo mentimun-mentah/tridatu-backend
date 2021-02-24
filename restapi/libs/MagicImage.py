@@ -2,7 +2,12 @@ import os, shutil, dhash
 from uuid import uuid4
 from fastapi import File, UploadFile, HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
+from I18N import HttpError
+from config import settings
 from typing import Optional, List, IO
+
+# default language response
+lang = settings.default_language_code
 
 def validate_multiple_upload_images(
     images: List[UploadFile],
@@ -25,31 +30,36 @@ def validate_multiple_upload_images(
                 image_hash.append(dhash.format_hex(row_hash,col_hash))
 
                 if img.format.lower() not in allow_file_ext and img.mode != 'RGB':
-                    msg = "The image at index {} must be between {}.".format(index,', '.join(allow_file_ext))
+                    msg = HttpError[lang]['multiple_image.ext.not_allowed']
+                    msg['ctx'].update({'index': index, 'extension': ', '.join(allow_file_ext)})
                     raise HTTPException(status_code=422,detail=msg)
         except UnidentifiedImageError:
-            msg = f"Cannot identify the image at index {index}."
+            msg = HttpError[lang]['multiple_image.not_img']
+            msg['ctx'].update({'index': index})
             raise HTTPException(status_code=422,detail=msg)
 
         # validation size image
         size = image.file
         size.seek(0,os.SEEK_END)
         if size.tell() > max_file_size_mb:
-            msg_size = f"An image at index {index} cannot greater than {max_file_size} Mb."
+            msg_size = HttpError[lang]['multiple_image.not_lt']
+            msg_size['ctx'].update({'index': index, 'max_file_size': max_file_size})
             raise HTTPException(status_code=413,detail=msg_size)
         size.seek(0)
 
     # image must be unique in a list of images
     if len(set(image_hash)) != len(image_hash):
-        raise HTTPException(status_code=409,detail="Each image must be unique.")
+        raise HTTPException(status_code=409,detail=HttpError[lang]['multiple_image.not_unique'])
 
     # check minimum or maximum image in list
     if min_file_in_list and len(images) < min_file_in_list:
-        msg_min_file = f"At least {min_file_in_list} image must be upload."
+        msg_min_file = HttpError[lang]['multiple_image.min_items']
+        msg_min_file['ctx'].update({'min_file_in_list': min_file_in_list})
         raise HTTPException(status_code=422,detail=msg_min_file)
 
     if max_file_in_list and len(images) > max_file_in_list:
-        msg_max_file = f"Maximal {max_file_in_list} images to be upload."
+        msg_max_file = HttpError[lang]['multiple_image.max_items']
+        msg_max_file['ctx'].update({'max_file_in_list': max_file_in_list})
         raise HTTPException(status_code=422,detail=msg_max_file)
 
     return images
@@ -65,17 +75,19 @@ def validate_single_upload_image(
     try:
         with Image.open(image.file) as img:
             if img.format.lower() not in allow_file_ext and img.mode != 'RGB':
-                msg = "Image must be between {}.".format(', '.join(allow_file_ext))
+                msg = HttpError[lang]['single_image.ext.not_allowed']
+                msg['ctx'].update({'extension': ', '.join(allow_file_ext)})
                 raise HTTPException(status_code=422,detail=msg)
     except UnidentifiedImageError:
-        msg = "Cannot identify the image."
+        msg = HttpError[lang]['single_image.not_img']
         raise HTTPException(status_code=422,detail=msg)
 
     # validation size image
     size = image.file
     size.seek(0,os.SEEK_END)
     if size.tell() > max_file_size_mb:
-        msg_size = f"An image cannot greater than {max_file_size} Mb."
+        msg_size = HttpError[lang]['single_image.not_lt']
+        msg_size['ctx'].update({'max_file_size': max_file_size})
         raise HTTPException(status_code=413,detail=msg_size)
     size.seek(0)
 

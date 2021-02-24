@@ -238,45 +238,85 @@ PydanticError = {
 ResponseMessages = {
     'en': {
         # address endpoint
-        'create_address': {
-            201: {"detail": "Successfully add a new address."}
-        },
-        'update_address': {
-            200: {"detail": "Successfully update the address."}
-        },
-        'main_address_true': {
-            200: {"detail": "Successfully set the address to main address."}
-        },
-        'delete_address': {
-            200: {"detail": "Successfully delete the address."}
-        }
+        'create_address': {201: {"detail": "Successfully add a new address."}},
+        'update_address': {200: {"detail": "Successfully update the address."}},
+        'main_address_true': {200: {"detail": "Successfully set the address to main address."}},
+        'delete_address': {200: {"detail": "Successfully delete the address."}},
+        # brands endpoint
+        'create_brand': {201: {"detail": "Successfully add a new brand."}},
+        'update_brand': {200: {"detail": "Successfully update the brand."}},
+        'delete_brand': {200: {"detail": "Successfully delete the brand."}}
     },
     'id': {
         # address endpoint
-        'create_address': {
-            201: {"detail": "Berhasil menambahkan alamat baru."}
-        },
-        'update_address': {
-            200: {"detail": "Berhasil memperbarui alamat."}
-        },
-        'main_address_true': {
-            200: {"detail": "Berhasil mengatur alamat ke alamat utama."}
-        },
-        'delete_address': {
-            200: {"detail": "Berhasil menghapus alamat."}
-        }
+        'create_address': {201: {"detail": "Berhasil menambahkan alamat baru."}},
+        'update_address': {200: {"detail": "Berhasil memperbarui alamat."}},
+        'main_address_true': {200: {"detail": "Berhasil mengatur alamat ke alamat utama."}},
+        'delete_address': {200: {"detail": "Berhasil menghapus alamat."}},
+        # brands endpoint
+        'create_brand': {201: {"detail": "Berhasil menambahkan brand baru."}},
+        'update_brand': {200: {"detail": "Berhasil memperbarui brand."}},
+        'delete_brand': {200: {"detail": "Berhasil menghapus brand."}}
     }
 }
 
 HttpError = {
     'en': {
+        # user controller
+        'user_controller.not_admin': {'message': 'Only users with admin privileges can do this action.', 'code': 'user_controller.not_admin'},
+        'user_controller.not_found': {'message': 'User not found!', 'code': 'user_controller.not_found'},
+        # magic image
+        'single_image.not_lt': {'message': 'An image cannot greater than {max_file_size} Mb.', 'code': 'single_image.not_lt', 'ctx': {}},
+        'single_image.not_img': {'message': 'Cannot identify the image.', 'code': 'single_image.not_img'},
+        'single_image.ext.not_allowed': {'message': 'Image must be between {extension}.', 'code': 'single_image.ext.not_allowed', 'ctx': {}},
+        'multiple_image.ext.not_allowed': {
+            'message': 'The image at index {index} must be between {extension}.',
+            'code': 'multiple_image.ext.not_allowed',
+            'ctx': {}
+        },
+        'multiple_image.not_img': {'message': 'Cannot identify the image at index {index}.', 'code': 'multiple_image.not_img', 'ctx': {}},
+        'multiple_image.not_lt': {
+            'message': 'An image at index {index} cannot greater than {max_file_size} Mb.',
+            'code': 'multiple_image.not_lt',
+            'ctx': {}
+        },
+        'multiple_image.not_unique': {'message': 'Each image must be unique.', 'code': 'multiple_image.not_unique'},
+        'multiple_image.min_items': {'message': 'At least {min_file_in_list} image must be upload.', 'code': 'multiple_image.min_items', 'ctx': {}},
+        'multiple_image.max_items': {'message': 'Maximal {max_file_in_list} images to be upload.', 'code': 'multiple_image.max_items', 'ctx': {}},
         # address endpoint
         'address.not_found': {'message': 'Address not found!', 'code': 'address.not_found'},
-        'address.not_match': {'message': 'Address not match with the current user.', 'code': 'address.not_match'}
+        'address.not_match': {'message': 'Address not match with the current user.', 'code': 'address.not_match'},
+        # brands endpoint
+        'brands.name_taken': {'message': 'The name has already been taken.', 'code': 'brands.name_taken'},
+        'brands.not_found': {'message': 'Brand not found!', 'code': 'brands.not_found'}
     },
     'id': {
+        # user controller
+        'user_controller.not_admin': {'message': 'Hanya user dengan role admin yang dapat melakukan tindakan ini.','code': 'user_controller.not_admin'},
+        'user_controller.not_found': {'message': 'User tidak ditemukan!', 'code': 'user_controller.not_found'},
+        # magic image
+        'single_image.not_lt': {'message': 'Gambar tidak boleh lebih dari {max_file_size} Mb.', 'code': 'single_image.not_lt', 'ctx': {}},
+        'single_image.not_img': {'message': 'Tidak dapat mengidentifikasi gambar.', 'code': 'single_image.not_img'},
+        'single_image.ext.not_allowed': {'message': 'Gambar harus di antara {extension}.', 'code': 'single_image.ext.not_allowed', 'ctx': {}},
+        'multiple_image.ext.not_allowed': {
+            'message': 'Gambar di indeks {index} harus di antara {extension}.',
+            'code': 'multiple_image.ext.not_allowed',
+            'ctx': {}
+        },
+        'multiple_image.not_img': {'message': 'Tidak dapat mengidentifikasi gambar pada indeks {index}.', 'code': 'multiple_image.not_img', 'ctx': {}},
+        'multiple_image.not_lt': {
+            'message': 'Gambar di indeks {index} tidak boleh lebih dari {max_file_size} Mb.',
+            'code': 'multiple_image.not_lt',
+            'ctx': {}
+        },
+        'multiple_image.not_unique': {'message': 'Setiap gambar harus unik.', 'code': 'multiple_image.not_unique'},
+        'multiple_image.min_items': {'message': 'Setidaknya {min_file_in_list} gambar harus diupload.', 'code': 'multiple_image.min_items', 'ctx': {}},
+        'multiple_image.max_items': {'message': 'Maksimal {max_file_in_list} gambar untuk diupload.', 'code': 'multiple_image.max_items', 'ctx': {}},
         # address endpoint
         'address.not_found': {'message': 'Alamat tidak ditemukan!', 'code': 'address.not_found'},
-        'address.not_match': {'message': 'Alamat tidak sesuai dengan pengguna saat ini.', 'code': 'address.not_match'}
+        'address.not_match': {'message': 'Alamat tidak sesuai dengan pengguna saat ini.', 'code': 'address.not_match'},
+        # brands endpoint
+        'brands.name_taken': {'message': 'Nama sudah dipakai.', 'code': 'brands.name_taken'},
+        'brands.not_found': {'message': 'Brand tidak ditemukan!', 'code': 'brands.not_found'}
     }
 }
