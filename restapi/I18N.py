@@ -263,7 +263,19 @@ ResponseMessages = {
         # discounts endpoint
         'create_discount_product': {201: {"detail": "Successfully set discount on product."}},
         'update_discount_product': {200: {"detail": "Successfully updated discount on product."}},
-        'non_active_discount': {200: {"detail": "Successfully unset discount on the product."}}
+        'non_active_discount': {200: {"detail": "Successfully unset discount on the product."}},
+        # item_sub_categories endpoint
+        'create_item_sub_category': {201: {"detail": "Successfully add a new item-sub-category."}},
+        'update_item_sub_category': {200: {"detail": "Successfully update the item-sub-category."}},
+        'delete_item_sub_category': {200: {"detail": "Successfully delete the item-sub-category."}},
+        # outlets endpoint
+        'create_outlet': {201: {"detail": "Successfully add a new outlet."}},
+        'delete_outlet': {200: {"detail": "Successfully delete the outlet."}},
+        # products endpoint
+        'create_product': {201: {"detail": "Successfully add a new product."}},
+        'change_product_alive_archive': {200: {"detail": "Successfully change the product to {msg}."}},
+        'update_product': {200: {"detail": "Successfully update the product."}},
+        'delete_product': {200: {"detail": "Successfully delete the product."}}
     },
     'id': {
         # address endpoint
@@ -292,7 +304,19 @@ ResponseMessages = {
         # discounts endpoint
         'create_discount_product': {201: {"detail": "Berhasil menetapkan diskon pada produk."}},
         'update_discount_product': {200: {"detail": "Diskon produk berhasil diperbarui."}},
-        'non_active_discount': {200: {"detail": "Berhasil membatalkan diskon pada produk."}}
+        'non_active_discount': {200: {"detail": "Berhasil membatalkan diskon pada produk."}},
+        # item_sub_categories endpoint
+        'create_item_sub_category': {201: {"detail": "Berhasil menambahkan item-sub-kategori baru."}},
+        'update_item_sub_category': {200: {"detail": "Berhasil memperbarui item-sub-kategori."}},
+        'delete_item_sub_category': {200: {"detail": "Berhasil menghapus item-sub-kategori."}},
+        # outlets endpoint
+        'create_outlet': {201: {"detail": "Berhasil menambahkan outlet baru."}},
+        'delete_outlet': {200: {"detail": "Berhasil menghapus outlet."}},
+        # products endpoint
+        'create_product': {201: {"detail": "Berhasil menambahkan produk baru."}},
+        'change_product_alive_archive': {200: {"detail": "Berhasil mengubah produk menjadi {msg}."}},
+        'update_product': {200: {"detail": "Berhasil memperbarui produk."}},
+        'delete_product': {200: {"detail": "Berhasil menghapus produk."}}
     }
 }
 
@@ -357,7 +381,54 @@ HttpError = {
         'discounts.missing': {'message': 'You must set a discount on the product before update it.', 'code': 'discounts.missing'},
         'discounts.start_time': {'message': 'The new start time must be after the set start time.', 'code': 'discounts.start_time'},
         'discounts.min_exp': {'message': 'The expiration time must be at least one hour longer than the start time.', 'code': 'discounts.min_exp'},
-        'discounts.max_exp': {'message': 'Promo period must be less than 180 days.', 'code': 'discounts.max_exp'}
+        'discounts.max_exp': {'message': 'Promo period must be less than 180 days.', 'code': 'discounts.max_exp'},
+        # item_sub_categories endpoint
+        'item_sub_categories.sub_not_found': {'message': 'Sub-category not found!', 'code': 'item_sub_categories.sub_not_found'},
+        'item_sub_categories.name_taken': {'message': 'The name has already been taken.', 'code': 'item_sub_categories.name_taken'},
+        'item_sub_categories.not_found': {'message': 'Item sub-category not found!', 'code': 'item_sub_categories.not_found'},
+        # outlets endpoint
+        'outlets.not_found': {'message': 'Outlet not found!', 'code': 'outlets.not_found'},
+        # product dependant
+        'products.no_variant_image_exist': {
+            'message': 'The image variant must not be filled.',
+            'code': 'products.no_variant_image_exist'
+        },
+        'products.len_image_variant': {
+            'message': 'You must fill all variant images or even without images.',
+            'code': 'products.len_image_variant'
+        },
+        'products.variant_not_found': {'message': 'Ticket variant not found!', 'code': 'products.variant_not_found'},
+        'products.wholesale_not_found': {'message': 'Ticket wholesale not found!', 'code': 'products.wholesale_not_found'},
+        'products.variant_product_id_not_found': {
+            'message': 'You must fill an id on variant product.',
+            'code': 'products.variant_product_id_not_found'
+        },
+        'products.image_product_delete.ext.not_allowed': {
+            'message': 'Invalid image format on image_product_delete',
+            'code': 'products.image_product_delete.ext.not_allowed'
+        },
+        'products.image_size_guide_delete.ext.not_allowed': {
+            'message': 'Invalid image format on image_size_guide_delete',
+            'code': 'products.image_size_guide_delete.ext.not_allowed'
+        },
+        # products endpoint
+        'products.name_taken': {'message': 'The name has already been taken.', 'code': 'products.name_taken'},
+        'products.item_sub_category_not_found': {'message': 'Item sub-category not found!', 'code': 'products.item_sub_category_not_found'},
+        'products.brand_not_found': {'message': 'Brand not found!', 'code': 'products.brand_not_found'},
+        'products.not_found': {'message': 'Product not found!', 'code': 'products.not_found'},
+        'products.image_variant_not_found_in_db': {
+            'message': 'The image on variant not found in db.',
+            'code': 'products.image_variant_not_found_in_db'
+        },
+        'products.image_size_guide_delete_not_same_with_db': {
+            'message': 'image_size_guide_delete not same with database.',
+            'code': 'products.image_size_guide_delete_not_same_with_db'
+        },
+        'products.image_product_not_gt': {
+            'message': 'Image is required, make sure this product has at least one image.',
+            'code': 'products.image_product_not_gt'
+        },
+        'products.image_product_max_items': {'message': 'Maximal 10 images to be upload.', 'code': 'products.image_product_max_items'}
     },
     'id': {
         # user controller
@@ -419,6 +490,53 @@ HttpError = {
         'discounts.missing': {'message': 'Anda harus menetapkan diskon pada produk sebelum memperbaruinya.', 'code': 'discounts.missing'},
         'discounts.start_time': {'message': 'Waktu mulai baru harus setelah waktu mulai yang ditetapkan.', 'code': 'discounts.start_time'},
         'discounts.min_exp': {'message': 'Waktu kedaluwarsa setidaknya harus satu jam lebih lama dari waktu mulai.', 'code': 'discounts.min_exp'},
-        'discounts.max_exp': {'message': 'Periode promo harus kurang dari 180 hari.', 'code': 'discounts.max_exp'}
+        'discounts.max_exp': {'message': 'Periode promo harus kurang dari 180 hari.', 'code': 'discounts.max_exp'},
+        # item_sub_categories endpoint
+        'item_sub_categories.sub_not_found': {'message': 'Sub-kategori tidak ditemukan!', 'code': 'item_sub_categories.sub_not_found'},
+        'item_sub_categories.name_taken': {'message': 'Nama sudah dipakai.', 'code': 'item_sub_categories.name_taken'},
+        'item_sub_categories.not_found': {'message': 'Item sub-kategori tidak ditemukan!', 'code': 'item_sub_categories.not_found'},
+        # outlets endpoint
+        'outlets.not_found': {'message': 'Outlet tidak ditemukan!', 'code': 'outlets.not_found'},
+        # product dependant
+        'products.no_variant_image_exist': {
+            'message': 'Varian gambar tidak boleh diisi.',
+            'code': 'products.no_variant_image_exist'
+        },
+        'products.len_image_variant': {
+            'message': 'Anda harus mengisi semua gambar varian atau bahkan tanpa gambar.',
+            'code': 'products.len_image_variant'
+        },
+        'products.variant_not_found': {'message': 'Varian tiket tidak ditemukan!', 'code': 'products.variant_not_found'},
+        'products.wholesale_not_found': {'message': 'Grosir tiket tidak ditemukan!', 'code': 'products.wholesale_not_found'},
+        'products.variant_product_id_not_found': {
+            'message': 'Anda harus mengisi id pada varian produk.',
+            'code': 'products.variant_product_id_not_found'
+        },
+        'products.image_product_delete.ext.not_allowed': {
+            'message': 'Format gambar pada image_product_delete tidak valid',
+            'code': 'products.image_product_delete.ext.not_allowed'
+        },
+        'products.image_size_guide_delete.ext.not_allowed': {
+            'message': 'Format gambar pada image_size_guide_delete tidak valid',
+            'code': 'products.image_size_guide_delete.ext.not_allowed'
+        },
+        # products endpoint
+        'products.name_taken': {'message': 'Nama sudah dipakai.', 'code': 'products.name_taken'},
+        'products.item_sub_category_not_found': {'message': 'Item sub-kategori tidak ditemukan!', 'code': 'products.item_sub_category_not_found'},
+        'products.brand_not_found': {'message': 'Brand tidak ditemukan!', 'code': 'products.brand_not_found'},
+        'products.not_found': {'message': 'Produk tidak ditemukan!', 'code': 'products.not_found'},
+        'products.image_variant_not_found_in_db': {
+            'message': 'Gambar pada varian tidak ditemukan dalam db.',
+            'code': 'products.image_variant_not_found_in_db'
+        },
+        'products.image_size_guide_delete_not_same_with_db': {
+            'message': 'image_size_guide_delete tidak sama dengan database.',
+            'code': 'products.image_size_guide_delete_not_same_with_db'
+        },
+        'products.image_product_not_gt': {
+            'message': 'Gambar diperlukan, pastikan produk ini memiliki setidaknya satu gambar.',
+            'code': 'products.image_product_not_gt'
+        },
+        'products.image_product_max_items': {'message': 'Maksimal 10 gambar untuk diupload.', 'code': 'products.image_product_max_items'}
     }
 }

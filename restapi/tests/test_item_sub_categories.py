@@ -124,7 +124,7 @@ class TestItemSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
-        assert response.json() == {"detail": "Successfully add a new item sub-category."}
+        assert response.json() == {"detail": "Successfully add a new item-sub-category."}
 
     @pytest.mark.asyncio
     async def test_name_duplicate_create_item_sub_category(self,async_client):
@@ -143,7 +143,7 @@ class TestItemSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 400
-        assert response.json() == {"detail": "The name has already been taken in the item sub-category."}
+        assert response.json() == {"detail": "The name has already been taken."}
 
     def test_validation_get_item_sub_category_by_id(self,client):
         url = self.prefix + '/get-item-sub-category/'
@@ -260,7 +260,7 @@ class TestItemSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 200
-        assert response.json() == {"detail": "Successfully update the item sub-category."}
+        assert response.json() == {"detail": "Successfully update the item-sub-category."}
 
     @pytest.mark.asyncio
     async def test_name_duplicate_update_item_sub_category(self,async_client):
@@ -279,7 +279,7 @@ class TestItemSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
-        assert response.json() == {"detail": "Successfully add a new item sub-category."}
+        assert response.json() == {"detail": "Successfully add a new item-sub-category."}
 
         url = self.prefix + '/update/'
         item_sub_category_id = await self.get_item_sub_category_id(self.name2)
@@ -289,7 +289,7 @@ class TestItemSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 400
-        assert response.json() == {"detail": "The name has already been taken in the item sub-category."}
+        assert response.json() == {"detail": "The name has already been taken."}
 
     def test_validation_delete_item_sub_category(self,client):
         url = self.prefix + '/delete/'
@@ -331,12 +331,12 @@ class TestItemSubCategory(OperationTest):
         # delete item sub-category one
         response = await async_client.delete(url + str(item_sub_category_id),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200
-        assert response.json() == {"detail": "Successfully delete the item sub-category."}
+        assert response.json() == {"detail": "Successfully delete the item-sub-category."}
         # delete item sub-category two
         item_sub_category_id = await self.get_item_sub_category_id(self.name2)
         response = await async_client.delete(url + str(item_sub_category_id),headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 200
-        assert response.json() == {"detail": "Successfully delete the item sub-category."}
+        assert response.json() == {"detail": "Successfully delete the item-sub-category."}
 
     @pytest.mark.asyncio
     async def test_delete_category(self,async_client):

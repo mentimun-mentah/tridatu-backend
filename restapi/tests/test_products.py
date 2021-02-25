@@ -165,7 +165,7 @@ class TestProduct(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
-        assert response.json() == {"detail": "Successfully add a new item sub-category."}
+        assert response.json() == {"detail": "Successfully add a new item-sub-category."}
 
     def test_validation_create_product(self,client):
         url = self.prefix + '/create'

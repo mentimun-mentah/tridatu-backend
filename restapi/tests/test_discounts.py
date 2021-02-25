@@ -125,7 +125,7 @@ class TestDiscount(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
-        assert response.json() == {"detail": "Successfully add a new item sub-category."}
+        assert response.json() == {"detail": "Successfully add a new item-sub-category."}
 
     @pytest.mark.asyncio
     async def test_create_product(self,async_client):
