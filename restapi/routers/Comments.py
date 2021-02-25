@@ -7,14 +7,18 @@ from dependencies.CommentDependant import get_all_query_comment
 from schemas.comments.CommentSchema import CommentCreate, CommentPaginate
 from libs.MessageCooldown import MessageCooldown
 from localization import LocalizationRoute
+from I18N import ResponseMessages, HttpError
+from config import settings
 
 router = APIRouter(route_class=LocalizationRoute)
+# default language response
+lang = settings.default_language_code
 
 @router.post('/create',status_code=201,
     responses={
         201: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Comment successfully added."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['create_comment'][201]}}
         },
         403: {
             "description": "Admin cannot create comment or Cooldown 15 seconds",
@@ -22,7 +26,7 @@ router = APIRouter(route_class=LocalizationRoute)
         },
         404: {
             "description": "Product not found",
-            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['comments.product_not_found']['message']}}}
         },
     }
 )
@@ -36,10 +40,10 @@ async def create_comment(
     user_id = int(authorize.get_jwt_subject())
     if user := await UserFetch.filter_by_id(user_id):
         if user['role'] == 'admin':
-            raise HTTPException(status_code=403,detail="Admin cannot create comments in their own product.")
+            raise HTTPException(status_code=403,detail=HttpError[lang]['comments.is_admin'])
 
         if comment.commentable_type == 'product' and not await ProductFetch.filter_by_id(comment.commentable_id):
-            raise HTTPException(status_code=404,detail="Product not found!")
+            raise HTTPException(status_code=404,detail=HttpError[lang]['comments.product_not_found'])
 
         if message_cooldown.cooldown_message_sending(
             message_type=comment.commentable_type,
@@ -48,11 +52,11 @@ async def create_comment(
         ) is True:
             raise HTTPException(
                 status_code=403,
-                detail="You've already added comment a moment ago. Please try again later."
+                detail=HttpError[lang]['comments.cooldown']
             )
 
         await CommentCrud.create_comment(**comment.dict(),user_id=user['id'])
-        return {"detail": "Comment successfully added."}
+        return ResponseMessages[lang]['create_comment'][201]
 
 @router.get('/all-comments',response_model=CommentPaginate)
 async def get_all_comments(query_string: get_all_query_comment = Depends()):
@@ -62,15 +66,15 @@ async def get_all_comments(query_string: get_all_query_comment = Depends()):
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Comment successfully deleted."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['delete_comment'][200]}}
         },
         400: {
             "description": "Comment not match with user",
-            "content": {"application/json":{"example": {"detail":"Comment not match with the current user."}}}
+            "content": {"application/json":{"example": {"detail": HttpError[lang]['comments.not_match']['message']}}}
         },
         404: {
             "description": "Comment not found",
-            "content": {"application/json":{"example": {"detail":"Comment not found!"}}}
+            "content": {"application/json":{"example": {"detail": HttpError[lang]['comments.not_found']['message']}}}
         }
     }
 )
@@ -81,8 +85,8 @@ async def delete_comment(comment_id: int = Path(...,gt=0), authorize: AuthJWT = 
     if user := await UserFetch.filter_by_id(user_id):
         if comment := await CommentFetch.filter_by_id(comment_id):
             if user['id'] != comment['user_id']:
-                raise HTTPException(status_code=400,detail="Comment not match with the current user.")
+                raise HTTPException(status_code=400,detail=HttpError[lang]['comments.not_match'])
 
             await CommentCrud.delete_comment(comment['id'])  # delete comment
-            return {"detail": "Comment successfully deleted."}
-        raise HTTPException(status_code=404,detail="Comment not found!")
+            return ResponseMessages[lang]['delete_comment'][200]
+        raise HTTPException(status_code=404,detail=HttpError[lang]['comments.not_found'])

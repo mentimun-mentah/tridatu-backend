@@ -252,7 +252,18 @@ ResponseMessages = {
             201: {"detail": "The product has been successfully added to the shopping cart."}
         },
         'delete_cart': {200: {"detail": "{item} items were removed."}},
-        'move_to_wishlist': {200: {"detail": "{item} items successfully moved to the wishlist."}}
+        'move_to_wishlist': {200: {"detail": "{item} items successfully moved to the wishlist."}},
+        # categories endpoint
+        'create_category': {201: {"detail": "Successfully add a new category."}},
+        'update_category': {200: {"detail": "Successfully update the category."}},
+        'delete_category': {200: {"detail": "Successfully delete the category."}},
+        # comments endpoint
+        'create_comment': {201: {"detail": "Comment successfully added."}},
+        'delete_comment': {200: {"detail": "Comment successfully deleted."}},
+        # discounts endpoint
+        'create_discount_product': {201: {"detail": "Successfully set discount on product."}},
+        'update_discount_product': {200: {"detail": "Successfully updated discount on product."}},
+        'non_active_discount': {200: {"detail": "Successfully unset discount on the product."}}
     },
     'id': {
         # address endpoint
@@ -270,7 +281,18 @@ ResponseMessages = {
             201: {"detail": "Produk telah berhasil ditambahkan ke keranjang belanjaan."}
         },
         'delete_cart': {200: {"detail": "{item} item telah dihapus."}},
-        'move_to_wishlist': {200: {"detail": "{item} item berhasil dipindahkan ke wishlist."}}
+        'move_to_wishlist': {200: {"detail": "{item} item berhasil dipindahkan ke wishlist."}},
+        # categories endpoint
+        'create_category': {201: {"detail": "Berhasil menambahkan kategori baru."}},
+        'update_category': {200: {"detail": "Berhasil memperbarui kategori."}},
+        'delete_category': {200: {"detail": "Berhasil menghapus kategori."}},
+        # comments endpoint
+        'create_comment': {201: {"detail": "Komentar berhasil ditambahkan."}},
+        'delete_comment': {200: {"detail": "Komentar berhasil dihapus."}},
+        # discounts endpoint
+        'create_discount_product': {201: {"detail": "Berhasil menetapkan diskon pada produk."}},
+        'update_discount_product': {200: {"detail": "Diskon produk berhasil diperbarui."}},
+        'non_active_discount': {200: {"detail": "Berhasil membatalkan diskon pada produk."}}
     }
 }
 
@@ -315,6 +337,27 @@ HttpError = {
             'code': 'carts.max_items'
         },
         'carts.variant_not_found': {'message': 'Variant not found!', 'code': 'carts.variant_not_found'},
+        # categories endpoint
+        'categories.name_taken': {'message': 'The name has already been taken.', 'code': 'categories.name_taken'},
+        'categories.not_found': {'message': 'Category not found!', 'code': 'categories.not_found'},
+        # comments endpoint
+        'comments.is_admin': {'message': 'Admin cannot create comments in their own product.', 'code': 'comments.is_admin'},
+        'comments.product_not_found': {'message': 'Product not found!', 'code': 'comments.product_not_found'},
+        'comments.cooldown': {
+            'message': "You've already added comment a moment ago. Please try again later.",
+            'code': 'comments.cooldown'
+        },
+        'comments.not_match': {'message': 'Comment not match with the current user.', 'code': 'comments.not_match'},
+        'comments.not_found': {'message': 'Comment not found!', 'code': 'comments.not_found'},
+        # discounts endpoint
+        'discounts.product_not_found': {'message': 'Product not found!', 'code': 'discounts.product_not_found'},
+        'discounts.variant_not_found': {'message': 'Ticket variant not found!', 'code': 'discounts.variant_not_found'},
+        'discounts.has_discount': {'message': 'Product already has discount.', 'code': 'discounts.has_discount'},
+        'discounts.variant_not_same': {'message': 'Variant not same with product.', 'code': 'discounts.variant_not_same'},
+        'discounts.missing': {'message': 'You must set a discount on the product before update it.', 'code': 'discounts.missing'},
+        'discounts.start_time': {'message': 'The new start time must be after the set start time.', 'code': 'discounts.start_time'},
+        'discounts.min_exp': {'message': 'The expiration time must be at least one hour longer than the start time.', 'code': 'discounts.min_exp'},
+        'discounts.max_exp': {'message': 'Promo period must be less than 180 days.', 'code': 'discounts.max_exp'}
     },
     'id': {
         # user controller
@@ -356,5 +399,26 @@ HttpError = {
             'code': 'carts.max_items'
         },
         'carts.variant_not_found': {'message': 'Varian tidak ditemukan!', 'code': 'carts.variant_not_found'},
+        # categories endpoint
+        'categories.name_taken': {'message': 'Nama sudah dipakai.', 'code': 'categories.name_taken'},
+        'categories.not_found': {'message': 'Kategori tidak ditemukan!', 'code': 'categories.not_found'},
+        # comments endpoint
+        'comments.is_admin': {'message': 'Admin tidak dapat membuat komentar di produk mereka sendiri.', 'code': 'comments.is_admin'},
+        'comments.product_not_found': {'message': 'Produk tidak ditemukan!', 'code': 'comments.product_not_found'},
+        'comments.cooldown': {
+            'message': "Anda sudah menambahkan komentar beberapa saat yang lalu. Silakan coba lagi nanti.",
+            'code': 'comments.cooldown'
+        },
+        'comments.not_match': {'message': 'Komentar tidak cocok dengan pengguna saat ini.', 'code': 'comments.not_match'},
+        'comments.not_found': {'message': 'Komentar tidak ditemukan!', 'code': 'comments.not_found'},
+        # discounts endpoint
+        'discounts.product_not_found': {'message': 'Produk tidak ditemukan!', 'code': 'discounts.product_not_found'},
+        'discounts.variant_not_found': {'message': 'Varian tiket tidak ditemukan!', 'code': 'discounts.variant_not_found'},
+        'discounts.has_discount': {'message': 'Produk sudah ada diskon.', 'code': 'discounts.has_discount'},
+        'discounts.variant_not_same': {'message': 'Varian tidak sama dengan produk.', 'code': 'discounts.variant_not_same'},
+        'discounts.missing': {'message': 'Anda harus menetapkan diskon pada produk sebelum memperbaruinya.', 'code': 'discounts.missing'},
+        'discounts.start_time': {'message': 'Waktu mulai baru harus setelah waktu mulai yang ditetapkan.', 'code': 'discounts.start_time'},
+        'discounts.min_exp': {'message': 'Waktu kedaluwarsa setidaknya harus satu jam lebih lama dari waktu mulai.', 'code': 'discounts.min_exp'},
+        'discounts.max_exp': {'message': 'Periode promo harus kurang dari 180 hari.', 'code': 'discounts.max_exp'}
     }
 }

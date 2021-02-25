@@ -9,23 +9,27 @@ from schemas.categories.CategorySchema import (
     CategoryWithChildrenData
 )
 from localization import LocalizationRoute
+from I18N import ResponseMessages, HttpError
+from config import settings
 from typing import List
 
 router = APIRouter(route_class=LocalizationRoute)
+# default language response
+lang = settings.default_language_code
 
 @router.post('/create',status_code=201,
     responses={
         201: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully add a new category."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['create_category'][201]}}
         },
         400: {
             "description": "Name already taken",
-            "content": {"application/json":{"example": {"detail":"The name has already been taken."}}}
+            "content": {"application/json":{"example": {"detail": HttpError[lang]['categories.name_taken']['message']}}}
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         }
     }
 )
@@ -36,10 +40,10 @@ async def create_category(category: CategoryCreateUpdate, authorize: AuthJWT = D
     await UserFetch.user_is_admin(user_id)
 
     if await CategoryFetch.filter_by_name(category.name):
-        raise HTTPException(status_code=400,detail="The name has already been taken.")
+        raise HTTPException(status_code=400,detail=HttpError[lang]['categories.name_taken'])
 
     await CategoryCrud.create_category(category.name)
-    return {"detail": "Successfully add a new category."}
+    return ResponseMessages[lang]['create_category'][201]
 
 @router.get('/',response_model=List[CategoryWithChildrenData])
 async def get_categories_with_children(q: str = Query(None,min_length=1)):
@@ -53,11 +57,11 @@ async def get_all_categories(with_sub: bool = Query(...), q: str = Query(None,mi
     responses={
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Category not found",
-            "content": {"application/json": {"example": {"detail":"Category not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['categories.not_found']['message']}}}
         }
     }
 )
@@ -69,25 +73,25 @@ async def get_category_by_id(category_id: int = Path(...,gt=0), authorize: AuthJ
 
     if category := await CategoryFetch.filter_by_id(category_id):
         return {index:value for index,value in category.items()}
-    raise HTTPException(status_code=404,detail="Category not found!")
+    raise HTTPException(status_code=404,detail=HttpError[lang]['categories.not_found'])
 
 @router.put('/update/{category_id}',
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully update the category."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['update_category'][200]}}
         },
         400: {
             "description": "Name already taken",
-            "content": {"application/json":{"example": {"detail":"The name has already been taken."}}}
+            "content": {"application/json":{"example": {"detail": HttpError[lang]['categories.name_taken']['message']}}}
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Category not found",
-            "content": {"application/json": {"example": {"detail":"Category not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['categories.not_found']['message']}}}
         }
     }
 )
@@ -103,25 +107,25 @@ async def update_category(
 
     if category := await CategoryFetch.filter_by_id(category_id):
         if category['name'] != category_data.name and await CategoryFetch.filter_by_name(category_data.name):
-            raise HTTPException(status_code=400,detail="The name has already been taken.")
+            raise HTTPException(status_code=400,detail=HttpError[lang]['categories.name_taken'])
 
         await CategoryCrud.update_category(category['id'],name=category_data.name)
-        return {"detail": "Successfully update the category."}
-    raise HTTPException(status_code=404,detail="Category not found!")
+        return ResponseMessages[lang]['update_category'][200]
+    raise HTTPException(status_code=404,detail=HttpError[lang]['categories.not_found'])
 
 @router.delete('/delete/{category_id}',
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully delete the category."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['delete_category'][200]}}
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Category not found",
-            "content": {"application/json": {"example": {"detail":"Category not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['categories.not_found']['message']}}}
         }
     }
 )
@@ -133,5 +137,5 @@ async def delete_category(category_id: int = Path(...,gt=0), authorize: AuthJWT 
 
     if category := await CategoryFetch.filter_by_id(category_id):
         await CategoryCrud.delete_category(category['id'])
-        return {"detail": "Successfully delete the category."}
-    raise HTTPException(status_code=404,detail="Category not found!")
+        return ResponseMessages[lang]['delete_category'][200]
+    raise HTTPException(status_code=404,detail=HttpError[lang]['categories.not_found'])
