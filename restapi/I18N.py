@@ -275,7 +275,10 @@ ResponseMessages = {
         'create_product': {201: {"detail": "Successfully add a new product."}},
         'change_product_alive_archive': {200: {"detail": "Successfully change the product to {msg}."}},
         'update_product': {200: {"detail": "Successfully update the product."}},
-        'delete_product': {200: {"detail": "Successfully delete the product."}}
+        'delete_product': {200: {"detail": "Successfully delete the product."}},
+        # replies endpoint
+        'create_reply': {201: {"detail": "Successfully reply to this comment."}},
+        'delete_reply': {200: {"detail": "Reply successfully deleted."}}
     },
     'id': {
         # address endpoint
@@ -316,7 +319,10 @@ ResponseMessages = {
         'create_product': {201: {"detail": "Berhasil menambahkan produk baru."}},
         'change_product_alive_archive': {200: {"detail": "Berhasil mengubah produk menjadi {msg}."}},
         'update_product': {200: {"detail": "Berhasil memperbarui produk."}},
-        'delete_product': {200: {"detail": "Berhasil menghapus produk."}}
+        'delete_product': {200: {"detail": "Berhasil menghapus produk."}},
+        # replies endpoint
+        'create_reply': {201: {"detail": "Berhasil membalas komentar ini."}},
+        'delete_reply': {200: {"detail": "Balasan berhasil dihapus."}}
     }
 }
 
@@ -428,7 +434,17 @@ HttpError = {
             'message': 'Image is required, make sure this product has at least one image.',
             'code': 'products.image_product_not_gt'
         },
-        'products.image_product_max_items': {'message': 'Maximal 10 images to be upload.', 'code': 'products.image_product_max_items'}
+        'products.image_product_max_items': {'message': 'Maximal 10 images to be upload.', 'code': 'products.image_product_max_items'},
+        # replies endpoint
+        'replies.comment_not_found': {'message': 'Comment not found!', 'code': 'replies.comment_not_found'},
+        'replies.cooldown': {
+            'message': "You've already added comment a moment ago. Please try again later.",
+            'code': 'replies.cooldown'
+        },
+        'replies.not_match': {'message': 'Reply not match with the current user.', 'code': 'replies.not_match'},
+        'replies.not_found': {'message': 'Reply not found!', 'code': 'replies.not_found'},
+        # shipping endpoint
+        'shipping.failed_make_request': {'message': 'Failed to make a request to rajaongkir.', 'code': 'shipping.failed_make_request'}
     },
     'id': {
         # user controller
@@ -537,6 +553,16 @@ HttpError = {
             'message': 'Gambar diperlukan, pastikan produk ini memiliki setidaknya satu gambar.',
             'code': 'products.image_product_not_gt'
         },
-        'products.image_product_max_items': {'message': 'Maksimal 10 gambar untuk diupload.', 'code': 'products.image_product_max_items'}
+        'products.image_product_max_items': {'message': 'Maksimal 10 gambar untuk diupload.', 'code': 'products.image_product_max_items'},
+        # replies endpoint
+        'replies.comment_not_found': {'message': 'Komentar tidak ditemukan!', 'code': 'replies.comment_not_found'},
+        'replies.cooldown': {
+            'message': "Anda sudah menambahkan komentar beberapa saat yang lalu. Silakan coba lagi nanti.",
+            'code': 'replies.cooldown'
+        },
+        'replies.not_match': {'message': 'Balasan tidak cocok dengan pengguna saat ini.', 'code': 'replies.not_match'},
+        'replies.not_found': {'message': 'Balasan tidak ditemukan!', 'code': 'replies.not_found'},
+        # shipping endpoint
+        'shipping.failed_make_request': {'message': 'Gagal melakukan request ke rajaongkir.', 'code': 'shipping.failed_make_request'}
     }
 }

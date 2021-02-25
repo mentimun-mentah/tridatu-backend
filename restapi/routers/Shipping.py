@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Query, HTTPException
 from controllers.ShippingController import ShippingFetch, ShippingLogic
 from schemas.shipping.ShippingSchema import ShippingSearchData, ShippingGetCost, ShippingDataCost
+from localization import LocalizationRoute
+from I18N import HttpError
 from httpx import AsyncClient
 from config import settings
 from typing import List
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
+# default language response
+lang = settings.default_language_code
 
 @router.get('/search/city-or-district',response_model=List[ShippingSearchData])
 async def search_shipping_city_or_district(
@@ -57,4 +61,4 @@ async def get_cost_from_courier(cost: ShippingGetCost):
         try:
             return ShippingLogic.extract_data_from_rajaongkir(r.json())
         except Exception:
-            raise HTTPException(status_code=500,detail="Failed to make a request to rajaongkir.")
+            raise HTTPException(status_code=500,detail=HttpError[lang]['shipping.failed_make_request'])
