@@ -26,7 +26,7 @@ async def search_shipping_city_or_district(
         },
         500: {
             "description": "Internal server error from rajaongkir",
-            "content": {"application/json":{"example": {"detail":"Failed to make a request to rajaongkir."}}}
+            "content": {"application/json":{"example": {"detail": HttpError[lang]['shipping.failed_make_request']['message']}}}
         }
     }
 )

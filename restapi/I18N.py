@@ -278,7 +278,32 @@ ResponseMessages = {
         'delete_product': {200: {"detail": "Successfully delete the product."}},
         # replies endpoint
         'create_reply': {201: {"detail": "Successfully reply to this comment."}},
-        'delete_reply': {200: {"detail": "Reply successfully deleted."}}
+        'delete_reply': {200: {"detail": "Reply successfully deleted."}},
+        # sub_categories endpoint
+        'create_sub_category': {201: {"detail": "Successfully add a new sub-category."}},
+        'update_sub_category': {200: {"detail": "Successfully update the sub-category."}},
+        'delete_sub_category': {200: {"detail": "Successfully delete the sub-category."}},
+        # users endpoint
+        'register': {201: {"detail":"Check your email to activated your account."}},
+        'resend_email': {200: {"detail":"Email confirmation has send."}},
+        'login': {200: {"detail":"Successfully login."}},
+        'fresh_token': {200: {"detail": "Successfully make a fresh token."}},
+        'refresh_token': {200: {"detail": "The token has been refreshed."}},
+        'access_revoke': {200: {"detail": "An access token has revoked."}},
+        'refresh_revoke': {200: {"detail": "An refresh token has revoked."}},
+        'delete_cookies': {200: {"detail": "All cookies have been deleted."}},
+        'password_reset_send': {200: {"detail": "We have sent a password reset link to your email."}},
+        'password_reset': {200: {"detail": "Successfully reset your password."}},
+        'add_password': {201: {"detail": "Success add a password to your account."}},
+        'update_password': {200: {"detail": "Success update your password."}},
+        'update_avatar': {200: {"detail": "The image profile has updated."}},
+        'update_account': {200: {"detail": "Success updated your account."}},
+        # wishlists endpoint
+        'love_product': {
+            200: {"detail": "Product already on the wishlist."},
+            201: {"detail": "Product successfully added to wishlist."}
+        },
+        'unlove_product': {200: {"detail": "Product has been removed from the wishlist."}}
     },
     'id': {
         # address endpoint
@@ -322,7 +347,32 @@ ResponseMessages = {
         'delete_product': {200: {"detail": "Berhasil menghapus produk."}},
         # replies endpoint
         'create_reply': {201: {"detail": "Berhasil membalas komentar ini."}},
-        'delete_reply': {200: {"detail": "Balasan berhasil dihapus."}}
+        'delete_reply': {200: {"detail": "Balasan berhasil dihapus."}},
+        # sub_categories endpoint
+        'create_sub_category': {201: {"detail": "Berhasil menambahkan subkategori baru."}},
+        'update_sub_category': {200: {"detail": "Berhasil memperbarui subkategori."}},
+        'delete_sub_category': {200: {"detail": "Berhasil menghapus subkategori."}},
+        # users endpoint
+        'register': {201: {"detail":"Periksa email Anda untuk mengaktifkan akun Anda."}},
+        'resend_email': {200: {"detail":"Konfirmasi email telah dikirim."}},
+        'login': {200: {"detail":"Berhasil masuk."}},
+        'fresh_token': {200: {"detail": "Berhasil membuat token baru."}},
+        'refresh_token': {200: {"detail": "Token telah disegarkan."}},
+        'access_revoke': {200: {"detail": "Token akses telah dicabut."}},
+        'refresh_revoke': {200: {"detail": "Token penyegaran telah dicabut."}},
+        'delete_cookies': {200: {"detail": "Semua cookie telah dihapus."}},
+        'password_reset_send': {200: {"detail": "Kami telah mengirimkan tautan pengaturan ulang kata sandi ke email Anda."}},
+        'password_reset': {200: {"detail": "Berhasil mengatur ulang kata sandi Anda."}},
+        'add_password': {201: {"detail": "Berhasil menambahkan kata sandi ke akun Anda."}},
+        'update_password': {200: {"detail": "Berhasil memperbarui kata sandi Anda."}},
+        'update_avatar': {200: {"detail": "Profil gambar telah diperbarui."}},
+        'update_account': {200: {"detail": "Berhasil memperbarui akun Anda."}},
+        # wishlists endpoint
+        'love_product': {
+            200: {"detail": "Produk sudah ada di wishlist."},
+            201: {"detail": "Produk berhasil ditambahkan ke wishlist."}
+        },
+        'unlove_product': {200: {"detail": "Produk telah dihapus dari wishlist."}}
     }
 }
 
@@ -444,7 +494,29 @@ HttpError = {
         'replies.not_match': {'message': 'Reply not match with the current user.', 'code': 'replies.not_match'},
         'replies.not_found': {'message': 'Reply not found!', 'code': 'replies.not_found'},
         # shipping endpoint
-        'shipping.failed_make_request': {'message': 'Failed to make a request to rajaongkir.', 'code': 'shipping.failed_make_request'}
+        'shipping.failed_make_request': {'message': 'Failed to make a request to rajaongkir.', 'code': 'shipping.failed_make_request'},
+        # sub_categories endpoint
+        'sub_categories.category_not_found': {'message': 'Category not found!', 'code': 'sub_categories.category_not_found'},
+        'sub_categories.name_taken': {'message': 'The name has already been taken.', 'code': 'sub_categories.name_taken'},
+        'sub_categories.not_found': {'message': 'Sub-category not found!', 'code': 'sub_categories.not_found'},
+        # users endpoint
+        'users.email_taken': {'message': 'The email has already been taken.', 'code': 'users.email_taken'},
+        'users.token_not_found': {'message': 'Token not found!', 'code': 'users.token_not_found'},
+        'users.already_activated': {'message': 'Your account already activated.', 'code': 'users.already_activated'},
+        'users.email_cooldown': {'message': 'You can try 5 minute later.', 'code': 'users.email_cooldown'},
+        'users.email_not_found_1': {'message': 'Email not found.', 'code': 'users.email_not_found_1'},
+        'users.email_not_found_2': {'message': "We can't find a user with that e-mail address.", 'code': 'users.email_not_found_2'},
+        'users.not_activated_email': {'message': 'Please check your email to activate your account.', 'code': 'users.not_activated_email'},
+        'users.invalid_credential': {'message': 'Invalid credential.', 'code': 'users.invalid_credential'},
+        'users.password_not_match': {'message': 'Password does not match with our records.', 'code': 'users.password_not_match'},
+        'users.not_activated': {'message': 'Please activate your account first.', 'code': 'users.not_activated'},
+        'users.password_reset_invalid': {'message': 'The password reset token is invalid.', 'code': 'users.password_reset_invalid'},
+        'users.already_password': {'message': 'Your account already has a password.', 'code': 'users.already_password'},
+        'users.password_missing': {'message': 'Please add your password first.', 'code': 'users.password_missing'},
+        'users.phone_taken': {'message': 'The phone number has already been taken.', 'code': 'users.phone_taken'},
+        # wishlists endpoint
+        'wishlists.product_not_found': {'message': 'Product not found!', 'code': 'wishlists.product_not_found'},
+        'wishlists.product_not_on_wishlist': {'message': 'Product not on the wishlist.', 'code': 'wishlists.product_not_on_wishlist'}
     },
     'id': {
         # user controller
@@ -563,6 +635,28 @@ HttpError = {
         'replies.not_match': {'message': 'Balasan tidak cocok dengan pengguna saat ini.', 'code': 'replies.not_match'},
         'replies.not_found': {'message': 'Balasan tidak ditemukan!', 'code': 'replies.not_found'},
         # shipping endpoint
-        'shipping.failed_make_request': {'message': 'Gagal melakukan request ke rajaongkir.', 'code': 'shipping.failed_make_request'}
+        'shipping.failed_make_request': {'message': 'Gagal melakukan request ke rajaongkir.', 'code': 'shipping.failed_make_request'},
+        # sub_categories endpoint
+        'sub_categories.category_not_found': {'message': 'Kategori tidak ditemukan!', 'code': 'sub_categories.category_not_found'},
+        'sub_categories.name_taken': {'message': 'Nama sudah dipakai.', 'code': 'sub_categories.name_taken'},
+        'sub_categories.not_found': {'message': 'Sub-kategori tidak ditemukan!', 'code': 'sub_categories.not_found'},
+        # users endpoint
+        'users.email_taken': {'message': 'Email sudah diambil.', 'code': 'users.email_taken'},
+        'users.token_not_found': {'message': 'Token tidak ditemukan!', 'code': 'users.token_not_found'},
+        'users.already_activated': {'message': 'Akun anda sudah diaktifkan.', 'code': 'users.already_activated'},
+        'users.email_cooldown': {'message': 'Anda dapat mencoba 5 menit kemudian.', 'code': 'users.email_cooldown'},
+        'users.email_not_found_1': {'message': 'Email tidak ditemukan.', 'code': 'users.email_not_found_1'},
+        'users.email_not_found_2': {'message': "Kami tidak dapat menemukan pengguna dengan alamat email tersebut.", 'code': 'users.email_not_found_2'},
+        'users.not_activated_email': {'message': 'Silahkan cek email Anda untuk mengaktifkan akun Anda.', 'code': 'users.not_activated_email'},
+        'users.invalid_credential': {'message': 'Kredensial tidak sah.', 'code': 'users.invalid_credential'},
+        'users.password_not_match': {'message': 'Kata sandi tidak cocok dengan catatan kami.', 'code': 'users.password_not_match'},
+        'users.not_activated': {'message': 'Silakan aktifkan akun anda terlebih dahulu.', 'code': 'users.not_activated'},
+        'users.password_reset_invalid': {'message': 'Token pengaturan ulang kata sandi tidak valid.', 'code': 'users.password_reset_invalid'},
+        'users.already_password': {'message': 'Akun anda sudah memiliki kata sandi.', 'code': 'users.already_password'},
+        'users.password_missing': {'message': 'Silakan tambahkan kata sandi anda terlebih dahulu.', 'code': 'users.password_missing'},
+        'users.phone_taken': {'message': 'Nomor telepon sudah dipakai orang lain.', 'code': 'users.phone_taken'},
+        # wishlists endpoint
+        'wishlists.product_not_found': {'message': 'Produk tidak ditemukan!', 'code': 'wishlists.product_not_found'},
+        'wishlists.product_not_on_wishlist': {'message': 'Produk tidak ada di wishlist.', 'code': 'wishlists.product_not_on_wishlist'}
     }
 }

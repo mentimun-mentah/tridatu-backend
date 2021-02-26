@@ -20,7 +20,7 @@ class TestWishlist(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user admin
         confirm_id = await self.get_confirmation(self.account_1['email'])
         await self.set_account_to_activated(confirm_id)
@@ -36,7 +36,7 @@ class TestWishlist(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user
         confirm_id = await self.get_confirmation(self.account_2['email'])
         await self.set_account_to_activated(confirm_id)
@@ -309,7 +309,7 @@ class TestWishlist(OperationTest):
         assert response.json() == {"detail": "Product has been removed from the wishlist."}
         # product not on wishlist
         response = await async_client.delete(url + str(product_id_one),headers={'X-CSRF-TOKEN': csrf_access_token})
-        assert response.status_code == 200
+        assert response.status_code == 404
         assert response.json() == {"detail": "Product not on the wishlist."}
         # delete product two on wishlist
         response = await async_client.delete(url + str(product_id_two),headers={'X-CSRF-TOKEN': csrf_access_token})

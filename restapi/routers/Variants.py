@@ -3,8 +3,13 @@ from fastapi_jwt_auth import AuthJWT
 from controllers.VariantController import VariantCrud
 from controllers.UserController import UserFetch
 from schemas.variants.VariantSchema import VariantCreateUpdate
+from localization import LocalizationRoute
+from I18N import HttpError
+from config import settings
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
+# default language response
+lang = settings.default_language_code
 
 @router.post('/create-ticket',status_code=201,
     responses={
@@ -14,7 +19,7 @@ router = APIRouter()
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
     }
 )
