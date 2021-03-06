@@ -83,6 +83,8 @@
         "value_error.invalidbytesize": "tidak dapat mengubah value dan unit dari byte string",
         "value_error.invalidbytesizeunit": "tidak dapat menafsirkan byte unit: {unit}",
 
+        "type_error.datetime_zone": "strptime () argumen 1 harus str, bukan {type_data}",
+        "value_error.datetime_zone": "data waktu '{input_user}' tidak cocok dengan format '{tf}'",
         "value_error.phone_number": "value harus berupa nomor ponsel",
         "value_error.password_confirm": "kata sandi harus sesuai dengan konfirmasi kata sandi",
         "value_error.discount_start.time": "waktu mulai harus setelah waktu saat ini",
@@ -182,7 +184,9 @@
             "200": {"detail": "Produk sudah ada di wishlist."},
             "201": {"detail": "Produk berhasil ditambahkan ke wishlist."}
         },
-        "unlove_product": {"200": {"detail": "Produk telah dihapus dari wishlist."}}
+        "unlove_product": {"200": {"detail": "Produk telah dihapus dari wishlist."}},
+
+        "create_promo": {"201": {"detail": "Berhasil menambahkan promo baru."}}
   },
   "HttpError": {
         "user_controller.not_admin": {"message": "Hanya user dengan role admin yang dapat melakukan tindakan ini.","code": "user_controller.not_admin"},
@@ -322,6 +326,19 @@
         "users.phone_taken": {"message": "Nomor telepon sudah dipakai orang lain.", "code": "users.phone_taken"},
 
         "wishlists.product_not_found": {"message": "Produk tidak ditemukan!", "code": "wishlists.product_not_found"},
-        "wishlists.product_not_on_wishlist": {"message": "Produk tidak ada di wishlist.", "code": "wishlists.product_not_on_wishlist"}
+        "wishlists.product_not_on_wishlist": {"message": "Produk tidak ada di wishlist.", "code": "wishlists.product_not_on_wishlist"},
+
+        "promos.datetime_zone_format": {
+          "message": "Data waktu '{input_user}' tidak cocok dengan format '{tf}'",
+          "code": "promos.datetime_zone_format",
+          "ctx": {}
+        },
+        "promos.desc_missing": {"message": "Harap isi inputan desc.", "code": "promos.desc_missing"},
+        "promos.terms_condition_missing": {"message": "Harap isi inputan terms_condition.", "code": "promos.terms_condition_missing"},
+        "promos.image_missing": {"message": "Harap isi inputan image.", "code": "promos.image_missing"},
+        "promos.start_time_create": {"message": "Waktu mulai harus setelah waktu saat ini.", "code": "promos.start_time_create"},
+        "promos.min_exp": {"message": "Waktu kedaluwarsa harus setidaknya satu hari lebih lama dari waktu mulai.", "code": "promos.min_exp"},
+        "promos.max_exp": {"message": "Periode promo harus kurang dari 180 hari.", "code": "promos.max_exp"},
+        "promos.name_taken": {"message": "Nama sudah dipakai.", "code": "promos.name_taken"}
   }
 }

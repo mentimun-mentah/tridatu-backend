@@ -23,7 +23,7 @@ from routers import (
     Brands, Categories, SubCategories, ItemSubCategories,
     Products, Variants, Wishlists, Shipping,
     Comments, Replies, WholeSale, Discounts,
-    Carts
+    Carts, Promos
 )
 
 localization_middleware = SystemLocalizationMiddleware(
@@ -181,3 +181,4 @@ app.include_router(Shipping.router,tags=['shipping'],prefix="/shipping")
 app.include_router(Comments.router,tags=['comments'],prefix="/comments")
 app.include_router(Replies.router,tags=['replies'],prefix="/replies")
 app.include_router(Carts.router,tags=['carts'],prefix="/carts")
+app.include_router(Promos.router,tags=['promos'],prefix="/promos")

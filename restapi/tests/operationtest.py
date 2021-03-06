@@ -17,6 +17,7 @@ from models.ReplyModel import reply
 from models.VariantModel import variant
 from models.CartModel import cart
 from models.WishlistModel import wishlist
+from models.PromoModel import promo
 
 class OperationTest:
     name = 'testtesttttttt'
@@ -29,6 +30,7 @@ class OperationTest:
     outlet_dir = base_dir + 'outlets/'
     brand_dir = base_dir + 'brands/'
     product_dir = base_dir + 'products/'
+    promo_dir = base_dir + 'promos/'
 
     # ================ USER SECTION ================
 
@@ -242,3 +244,11 @@ class OperationTest:
     async def get_all_cart_by_user_id(self, user_id: int):
         cart_data = await database.fetch_all(query=select([cart]).where(cart.c.user_id == user_id))
         return [{key:value for key,value in data.items()} for data in cart_data]
+
+    # ================ PROMO SECTION ================
+
+    @pytest.mark.asyncio
+    async def get_promo_image(self,name: str):
+        query = select([promo]).where(promo.c.name == name)
+        promo_data = await database.fetch_one(query=query)
+        return promo_data['image']

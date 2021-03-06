@@ -36,7 +36,12 @@ class DiscountCreate(DiscountSchema):
 
     @validator('discount_start', 'discount_end', pre=True)
     def parse_discount_format(cls, v):
-        return tz.localize(datetime.strptime(v,tf))
+        try:
+            return tz.localize(datetime.strptime(v,tf))
+        except ValueError:
+            raise errors.DatetimeFormatValueError(input_user=v,tf=tf)
+        except TypeError:
+            raise errors.DatetimeFormatTypeError(type_data=type(v).__name__)
 
     @validator('discount_start')
     def validate_discount_start(cls, v):
@@ -76,7 +81,12 @@ class DiscountUpdate(DiscountSchema):
 
     @validator('discount_start', 'discount_end', pre=True)
     def parse_discount_format(cls, v):
-        return tz.localize(datetime.strptime(v,tf))
+        try:
+            return tz.localize(datetime.strptime(v,tf))
+        except ValueError:
+            raise errors.DatetimeFormatValueError(input_user=v,tf=tf)
+        except TypeError:
+            raise errors.DatetimeFormatTypeError(type_data=type(v).__name__)
 
 class DiscountData(DiscountSchema):
     products_id: str
