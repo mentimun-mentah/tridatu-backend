@@ -7,10 +7,14 @@ from controllers.VariantController import VariantFetch, VariantCrud, VariantLogi
 from schemas.discounts.DiscountSchema import DiscountCreate, DiscountUpdate, DiscountDataProduct, DiscountPaginate
 from schemas.variants.VariantSchema import VariantCreateUpdate
 from dependencies.DiscountDependant import get_all_query_discount
+from localization import LocalizationRoute
+from I18N import ResponseMessages, HttpError
 from pytz import timezone
 from config import settings
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
+# default language response
+lang = settings.default_language_code
 
 tz = timezone(settings.timezone)
 
@@ -33,14 +37,14 @@ exclude_keys = {
     responses={
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         }
     }
 )
 async def get_all_discounts(query_string: get_all_query_discount = Depends(), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     return await ProductFetch.get_all_discounts_paginate(**query_string)
@@ -51,31 +55,31 @@ async def get_all_discounts(query_string: get_all_query_discount = Depends(), au
     responses={
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Product not found",
-            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['discounts.product_not_found']['message']}}}
         }
     }
 )
 async def get_discount_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
         product_data = {f"products_{index}":value for index,value in product.items() if index in ['name','discount_start','discount_end']}
         product_data.update({'products_variant': await VariantFetch.get_variant_by_product_id(product['id'])})
         return product_data
-    raise HTTPException(status_code=404,detail="Product not found!")
+    raise HTTPException(status_code=404,detail=HttpError[lang]['discounts.product_not_found'])
 
 @router.post('/create',status_code=201,
     responses={
         201: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully set discount on product."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['create_discount_product'][201]}}
         },
         400: {
             "description": "Variant not same with product & Product already has discount",
@@ -83,7 +87,7 @@ async def get_discount_product(product_id: int = Path(...,gt=0), authorize: Auth
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Product & Ticket variant not found",
@@ -94,24 +98,24 @@ async def get_discount_product(product_id: int = Path(...,gt=0), authorize: Auth
 async def create_discount_product(request: Request, discount_data: DiscountCreate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     redis_conn = request.app.state.redis
 
     if product := await ProductFetch.filter_by_id(discount_data.product_id):
         if redis_conn.get(discount_data.ticket_variant) is None:
-            raise HTTPException(status_code=404,detail="Ticket variant not found!")
+            raise HTTPException(status_code=404,detail=HttpError[lang]['discounts.variant_not_found'])
         if product['discount_start'] is not None and product['discount_end'] is not None:
-            raise HTTPException(status_code=400,detail="Product already has discount.")
+            raise HTTPException(status_code=400,detail=HttpError[lang]['discounts.has_discount'])
 
         variant_data_db = await VariantFetch.get_variant_by_product_id(product['id'])
-        variant_data_input = json.loads(redis_conn.get(discount_data.ticket_variant))
+        variant_data_input = VariantLogic.convert_type_data_variant(json.loads(redis_conn.get(discount_data.ticket_variant)))
         variant_db = VariantCreateUpdate.parse_obj(variant_data_db).dict(exclude=exclude_keys,exclude_none=True)
         variant_input = VariantCreateUpdate.parse_obj(variant_data_input).dict(exclude=exclude_keys,exclude_none=True)
 
         if variant_db != variant_input:
-            raise HTTPException(status_code=400,detail="Variant not same with product.")
+            raise HTTPException(status_code=400,detail=HttpError[lang]['discounts.variant_not_same'])
 
         variant_discount = VariantLogic.convert_data_to_db(variant_data_input,product['id'])
 
@@ -123,14 +127,14 @@ async def create_discount_product(request: Request, discount_data: DiscountCreat
             await ProductCrud.update_product(product['id'],**discount_data.dict(include={'discount_start','discount_end'}))
             await VariantCrud.update_variant(variant_discount)
 
-        return {"detail": "Successfully set discount on product."}
-    raise HTTPException(status_code=404,detail="Product not found!")
+        return ResponseMessages[lang]['create_discount_product'][201]
+    raise HTTPException(status_code=404,detail=HttpError[lang]['discounts.product_not_found'])
 
 @router.put('/update',
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully updated discount on product."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['update_discount_product'][200]}}
         },
         400: {
             "description": "Must set discount before update it & Variant not same with product",
@@ -138,7 +142,7 @@ async def create_discount_product(request: Request, discount_data: DiscountCreat
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Product & Ticket variant not found",
@@ -149,7 +153,7 @@ async def create_discount_product(request: Request, discount_data: DiscountCreat
 async def update_discount_product(request: Request, discount_data: DiscountUpdate, authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     redis_conn = request.app.state.redis
@@ -161,18 +165,18 @@ async def update_discount_product(request: Request, discount_data: DiscountUpdat
         discount_start, discount_end, discount_status = discount_db['discount_start'], discount_db['discount_end'], discount_db['discount_status']
 
         if redis_conn.get(discount_data.ticket_variant) is None:
-            raise HTTPException(status_code=404,detail="Ticket variant not found!")
+            raise HTTPException(status_code=404,detail=HttpError[lang]['discounts.variant_not_found'])
         if discount_start is None and discount_end is None:
-            raise HTTPException(status_code=400,detail="You must set a discount on the product before update it.")
+            raise HTTPException(status_code=400,detail=HttpError[lang]['discounts.missing'])
 
         # validation variant input
         variant_data_db = await VariantFetch.get_variant_by_product_id(product['id'])
-        variant_data_input = json.loads(redis_conn.get(discount_data.ticket_variant))
+        variant_data_input = VariantLogic.convert_type_data_variant(json.loads(redis_conn.get(discount_data.ticket_variant)))
         variant_db = VariantCreateUpdate.parse_obj(variant_data_db).dict(exclude=exclude_keys,exclude_none=True)
         variant_input = VariantCreateUpdate.parse_obj(variant_data_input).dict(exclude=exclude_keys,exclude_none=True)
 
         if variant_db != variant_input:
-            raise HTTPException(status_code=400,detail="Variant not same with product.")
+            raise HTTPException(status_code=400,detail=HttpError[lang]['discounts.variant_not_same'])
 
         # validation period promo
         discount_start, discount_end = tz.localize(discount_start), tz.localize(discount_end)
@@ -183,11 +187,11 @@ async def update_discount_product(request: Request, discount_data: DiscountUpdat
         discount_between = (discount_data.discount_end - discount_data.discount_start)
 
         if discount_start > discount_data.discount_start:
-            raise HTTPException(status_code=422,detail="The new start time must be after the set start time.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['discounts.start_time'])
         if (round(discount_between.seconds / 3600, 2) < 1 and discount_between.days < 1) or discount_start > discount_data.discount_end:
-            raise HTTPException(status_code=422,detail="The expiration time must be at least one hour longer than the start time.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['discounts.min_exp'])
         if discount_between.days > 180:
-            raise HTTPException(status_code=422,detail="Promo period must be less than 180 days.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['discounts.max_exp'])
 
         # update data
         variant_discount = VariantLogic.convert_data_to_db(variant_data_input,product['id'])
@@ -200,29 +204,29 @@ async def update_discount_product(request: Request, discount_data: DiscountUpdat
         await ProductCrud.update_product(product['id'],**discount_data.dict(include={'discount_start','discount_end'}))
         await VariantCrud.update_variant(variant_discount)
 
-        return {"detail": "Successfully updated discount on product."}
-    raise HTTPException(status_code=404,detail="Product not found!")
+        return ResponseMessages[lang]['update_discount_product'][200]
+    raise HTTPException(status_code=404,detail=HttpError[lang]['discounts.product_not_found'])
 
 @router.delete('/non-active/{product_id}',
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully unset discount on the product."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['non_active_discount'][200]}}
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Product not found",
-            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['discounts.product_not_found']['message']}}}
         }
     }
 )
 async def non_active_discount(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
@@ -233,5 +237,5 @@ async def non_active_discount(product_id: int = Path(...,gt=0), authorize: AuthJ
         await ProductCrud.update_product(product['id'],**{'discount_start': None, 'discount_end': None})
         await VariantCrud.update_variant(variant_discount)
 
-        return {"detail": "Successfully unset discount on the product."}
-    raise HTTPException(status_code=404,detail="Product not found!")
+        return ResponseMessages[lang]['non_active_discount'][200]
+    raise HTTPException(status_code=404,detail=HttpError[lang]['discounts.product_not_found'])

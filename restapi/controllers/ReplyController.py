@@ -34,7 +34,8 @@ class ReplyFetch:
 
             return results
         else:
-            query = select([reply.join(user)]).where(reply.c.comment_id == comment_id[0]).apply_labels()
+            query = select([reply.join(user)]).where(reply.c.comment_id == comment_id[0]) \
+                .order_by(reply.c.id.asc()).apply_labels()
             reply_db = await database.fetch_all(query=query)
             reply_data = [{index:value for index,value in item.items()} for item in reply_db]
 

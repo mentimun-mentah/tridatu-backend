@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth
 from pydantic import BaseSettings, PostgresDsn, validator
-from typing import Optional
+from typing import Optional, Literal
 
 with open("public_key.txt") as f:
     public_key = f.read().strip()
@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     authjwt_public_key: str = public_key
     authjwt_private_key: str = private_key
     authjwt_denylist_enabled: bool = True
+    authjwt_cookie_domain: Optional[str] = None
     authjwt_cookie_secure: bool
     authjwt_cookie_samesite: str = "lax"
 
@@ -36,6 +37,8 @@ class Settings(BaseSettings):
     smtp_tls: bool
 
     timezone: str
+    stage_app: Literal['production','development']
+    default_language_code: Literal['id','en']
 
     access_expires: Optional[int] = None
     access_expires_admin: Optional[int] = None

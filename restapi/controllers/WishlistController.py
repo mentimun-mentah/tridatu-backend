@@ -19,6 +19,14 @@ class WishlistCrud:
         return await database.execute(wishlist.insert(),values={'product_id': product_id, 'user_id': user_id})
 
     @staticmethod
+    async def create_wishlist_many(wishlist_db: list) -> None:
+        wishlist_db = [
+            data for data in wishlist_db
+            if await WishlistLogic.check_wishlist(data['product_id'],data['user_id']) is False
+        ]
+        await database.execute_many(query=wishlist.insert(),values=wishlist_db)
+
+    @staticmethod
     async def delete_wishlist(product_id: int, user_id: int) -> None:
         query = wishlist.delete().where((wishlist.c.product_id == product_id) & (wishlist.c.user_id == user_id))
         await database.execute(query=query)

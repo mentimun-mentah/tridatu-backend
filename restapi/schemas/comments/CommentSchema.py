@@ -1,27 +1,29 @@
-from pydantic import BaseModel, constr, conint, validator
+from pydantic import BaseModel, constr, validator
 from typing import Literal, List, Optional
+from datetime import datetime
 
 class CommentSchema(BaseModel):
     class Config:
-        min_anystr_length = 5
+        min_anystr_length = 1
         anystr_strip_whitespace = True
 
 class CommentCreate(CommentSchema):
-    message: constr(strict=True)
-    commentable_id: conint(strict=True, gt=0)
+    message: constr(strict=True, min_length=5)
+    commentable_id: constr(strict=True, regex=r'^[0-9]*$')
     commentable_type: Literal['product']
 
+    @validator('commentable_id')
+    def parse_commentable_id(cls, v):
+        return int(v) if v else None
+
 class CommentData(CommentSchema):
-    comments_id: int
+    comments_id: str
     comments_message: str
-    comments_created_at: str
+    comments_user_id: str
+    comments_created_at: datetime
     users_username: str
     users_avatar: str
     total_replies: int
-
-    @validator('comments_created_at',pre=True)
-    def convert_datetime_to_str(cls, v):
-        return v.isoformat()
 
 class CommentPaginate(BaseModel):
     data: List[CommentData]

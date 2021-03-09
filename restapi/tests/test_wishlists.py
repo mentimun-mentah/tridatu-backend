@@ -20,7 +20,7 @@ class TestWishlist(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user admin
         confirm_id = await self.get_confirmation(self.account_1['email'])
         await self.set_account_to_activated(confirm_id)
@@ -36,7 +36,7 @@ class TestWishlist(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user
         confirm_id = await self.get_confirmation(self.account_2['email'])
         await self.set_account_to_activated(confirm_id)
@@ -55,8 +55,8 @@ class TestWishlist(OperationTest):
         # create without
         response = await async_client.post(url,json={
             'va1_items': [{
-                'va1_price': 11000,
-                'va1_stock': 0,
+                'va1_price': '11000',
+                'va1_stock': '0',
                 'va1_code': '1271521-899-SM',
                 'va1_barcode': '889362033471'
             }]
@@ -71,15 +71,15 @@ class TestWishlist(OperationTest):
             'va1_items': [
                 {
                     'va1_option': 'XL',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_code': None,
                     'va1_barcode': None
                 },
                 {
                     'va1_option': 'M',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_code': None,
                     'va1_barcode': None
                 }
@@ -119,7 +119,7 @@ class TestWishlist(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
-        assert response.json() == {"detail": "Successfully add a new item sub-category."}
+        assert response.json() == {"detail": "Successfully add a new item-sub-category."}
 
     @pytest.mark.asyncio
     async def test_create_product(self,async_client):
@@ -260,7 +260,7 @@ class TestWishlist(OperationTest):
         assert 'iter_pages' in response.json()
 
         # check data exists and type data
-        assert type(response.json()['data'][0]['products_id']) == int
+        assert type(response.json()['data'][0]['products_id']) == str
         assert type(response.json()['data'][0]['products_name']) == str
         assert type(response.json()['data'][0]['products_slug']) == str
         assert type(response.json()['data'][0]['products_image_product']) == str
@@ -270,8 +270,8 @@ class TestWishlist(OperationTest):
         assert type(response.json()['data'][0]['products_discount_status']) == str
         assert type(response.json()['data'][0]['products_created_at']) == str
         assert type(response.json()['data'][0]['products_updated_at']) == str
-        assert type(response.json()['data'][0]['variants_min_price']) == int
-        assert type(response.json()['data'][0]['variants_max_price']) == int
+        assert type(response.json()['data'][0]['variants_min_price']) == str
+        assert type(response.json()['data'][0]['variants_max_price']) == str
         assert type(response.json()['data'][0]['variants_discount']) == int
 
     def test_validation_unlove_product(self,client):
@@ -309,7 +309,7 @@ class TestWishlist(OperationTest):
         assert response.json() == {"detail": "Product has been removed from the wishlist."}
         # product not on wishlist
         response = await async_client.delete(url + str(product_id_one),headers={'X-CSRF-TOKEN': csrf_access_token})
-        assert response.status_code == 200
+        assert response.status_code == 404
         assert response.json() == {"detail": "Product not on the wishlist."}
         # delete product two on wishlist
         response = await async_client.delete(url + str(product_id_two),headers={'X-CSRF-TOKEN': csrf_access_token})

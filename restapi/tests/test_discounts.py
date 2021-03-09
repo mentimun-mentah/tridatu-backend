@@ -26,7 +26,7 @@ class TestDiscount(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user admin
         confirm_id = await self.get_confirmation(self.account_1['email'])
         await self.set_account_to_activated(confirm_id)
@@ -42,7 +42,7 @@ class TestDiscount(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user
         confirm_id = await self.get_confirmation(self.account_2['email'])
         await self.set_account_to_activated(confirm_id)
@@ -61,8 +61,8 @@ class TestDiscount(OperationTest):
         # create without
         response = await async_client.post(url,json={
             'va1_items': [{
-                'va1_price': 1000,
-                'va1_stock': 0,
+                'va1_price': '1000',
+                'va1_stock': '0',
                 'va1_code': '1271521-899-SM',
                 'va1_barcode': '889362033471'
             }]
@@ -77,15 +77,15 @@ class TestDiscount(OperationTest):
             'va1_items': [
                 {
                     'va1_option': 'XL',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_code': None,
                     'va1_barcode': None
                 },
                 {
                     'va1_option': 'M',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_code': None,
                     'va1_barcode': None
                 }
@@ -125,7 +125,7 @@ class TestDiscount(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
-        assert response.json() == {"detail": "Successfully add a new item sub-category."}
+        assert response.json() == {"detail": "Successfully add a new item-sub-category."}
 
     @pytest.mark.asyncio
     async def test_create_product(self,async_client):
@@ -296,15 +296,15 @@ class TestDiscount(OperationTest):
         assert 'iter_pages' in response.json()
 
         # check data exists and type data
-        assert type(response.json()['data'][0]['products_id']) == int
+        assert type(response.json()['data'][0]['products_id']) == str
         assert type(response.json()['data'][0]['products_name']) == str
         assert type(response.json()['data'][0]['products_slug']) == str
         assert type(response.json()['data'][0]['products_image_product']) == str
         assert type(response.json()['data'][0]['products_discount_start']) == str
         assert type(response.json()['data'][0]['products_discount_end']) == str
         assert type(response.json()['data'][0]['products_discount_status']) == str
-        assert type(response.json()['data'][0]['variants_min_price']) == int
-        assert type(response.json()['data'][0]['variants_max_price']) == int
+        assert type(response.json()['data'][0]['variants_min_price']) == str
+        assert type(response.json()['data'][0]['variants_max_price']) == str
         assert type(response.json()['data'][0]['variants_discount']) == int
 
     def test_validation_get_discount_product(self,client):
@@ -362,20 +362,20 @@ class TestDiscount(OperationTest):
             if x['loc'][-1] == 'discount_end': assert x['msg'] == 'field required'
         # all field blank
         response = client.post(url,json={
-            'product_id': 0,
+            'product_id': '',
             'ticket_variant': '',
             'discount_start': '',
             'discount_end': ''
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'product_id': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'ensure this value has at least 1 characters'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at least 1 characters'
             if x['loc'][-1] == 'discount_start': assert x['msg'] == "time data '' does not match format '%d %b %Y %H:%M'"
             if x['loc'][-1] == 'discount_end': assert x['msg'] == "time data '' does not match format '%d %b %Y %H:%M'"
         # test limit value
         response = client.post(url,json={
-            'product_id': 200,
+            'product_id': '200',
             'ticket_variant': 'a' * 200,
             'discount_start': 'a' * 200,
             'discount_end': 'a' * 200
@@ -385,17 +385,22 @@ class TestDiscount(OperationTest):
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
         response = client.post(url,json={
-            'product_id': '200',
+            'product_id': 200,
             'ticket_variant': 200,
             'discount_start': 200,
             'discount_end': 200
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'product_id': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'discount_start': assert x['msg'] == "strptime() argument 1 must be str, not int"
             if x['loc'][-1] == 'discount_end': assert x['msg'] == "strptime() argument 1 must be str, not int"
+        # invalid format
+        response = client.post(url,json={'product_id': '1A'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'string does not match regex \"^[0-9]*$\"'
 
         discount_start = datetime.now(tz) + timedelta(minutes=1)
         discount_end = datetime.now(tz) + timedelta(hours=1,minutes=1)
@@ -450,7 +455,7 @@ class TestDiscount(OperationTest):
         discount_end = datetime.now(tz) + timedelta(hours=1,minutes=1)
         # check user is admin
         response = await async_client.post(url,json={
-            'product_id': product_id,
+            'product_id': str(product_id),
             'ticket_variant': self.without_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -465,7 +470,7 @@ class TestDiscount(OperationTest):
         csrf_access_token = response.cookies.get('csrf_access_token')
         # product not found
         response = await async_client.post(url,json={
-            'product_id': 999999,
+            'product_id': '999999',
             'ticket_variant': self.without_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -474,7 +479,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'Product not found!'}
         # ticket variant not found
         response = await async_client.post(url,json={
-            'product_id': product_id,
+            'product_id': str(product_id),
             'ticket_variant': 'a' * 20,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -483,7 +488,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'Ticket variant not found!'}
         # variant not same with product
         response = await async_client.post(url,json={
-            'product_id': product_id,
+            'product_id': str(product_id),
             'ticket_variant': self.single_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -492,7 +497,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'Variant not same with product.'}
 
         response = await async_client.post(url,json={
-            'product_id': product_id,
+            'product_id': str(product_id),
             'ticket_variant': self.without_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -502,7 +507,7 @@ class TestDiscount(OperationTest):
 
         # if variant doesn't have discount active still can create discount
         response = await async_client.post(url,json={
-            'product_id': product_id,
+            'product_id': str(product_id),
             'ticket_variant': self.without_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -512,7 +517,7 @@ class TestDiscount(OperationTest):
 
         # set discount on product
         response = await async_client.post(url,json={
-            'product_id': product_id,
+            'product_id': str(product_id),
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -522,7 +527,7 @@ class TestDiscount(OperationTest):
 
         # product already has discount
         response = await async_client.post(url,json={
-            'product_id': product_id,
+            'product_id': str(product_id),
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -542,20 +547,20 @@ class TestDiscount(OperationTest):
             if x['loc'][-1] == 'discount_end': assert x['msg'] == 'field required'
         # all field blank
         response = client.put(url,json={
-            'product_id': 0,
+            'product_id': '',
             'ticket_variant': '',
             'discount_start': '',
             'discount_end': ''
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'product_id': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'ensure this value has at least 1 characters'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at least 1 characters'
             if x['loc'][-1] == 'discount_start': assert x['msg'] == "time data '' does not match format '%d %b %Y %H:%M'"
             if x['loc'][-1] == 'discount_end': assert x['msg'] == "time data '' does not match format '%d %b %Y %H:%M'"
         # test limit value
         response = client.put(url,json={
-            'product_id': 200,
+            'product_id': '200',
             'ticket_variant': 'a' * 200,
             'discount_start': 'a' * 200,
             'discount_end': 'a' * 200
@@ -565,17 +570,22 @@ class TestDiscount(OperationTest):
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'ensure this value has at most 100 characters'
         # check all field type data
         response = client.put(url,json={
-            'product_id': '200',
+            'product_id': 200,
             'ticket_variant': 200,
             'discount_start': 200,
             'discount_end': 200
         })
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'product_id': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'ticket_variant': assert x['msg'] == 'str type expected'
             if x['loc'][-1] == 'discount_start': assert x['msg'] == "strptime() argument 1 must be str, not int"
             if x['loc'][-1] == 'discount_end': assert x['msg'] == "strptime() argument 1 must be str, not int"
+        # invalid format
+        response = client.put(url,json={'product_id': '1A'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'product_id': assert x['msg'] == 'string does not match regex \"^[0-9]*$\"'
 
     @pytest.mark.asyncio
     async def test_update_discount_product(self,async_client):
@@ -593,7 +603,7 @@ class TestDiscount(OperationTest):
         discount_end = datetime.now(tz) + timedelta(hours=1,minutes=1)
         # check user is admin
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -608,7 +618,7 @@ class TestDiscount(OperationTest):
         csrf_access_token = response.cookies.get('csrf_access_token')
         # product not found
         response = await async_client.put(url,json={
-            'product_id': 999999,
+            'product_id': '999999',
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -617,7 +627,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'Product not found!'}
         # ticket variant not found
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': 'a' * 20,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -626,7 +636,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'Ticket variant not found!'}
         # product doesn't have discount
         response = await async_client.put(url,json={
-            'product_id': product_id_two,
+            'product_id': str(product_id_two),
             'ticket_variant': self.single_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -635,7 +645,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'You must set a discount on the product before update it.'}
         # variant not same with product
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.single_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -645,7 +655,7 @@ class TestDiscount(OperationTest):
 
         # discount start must be after set start time
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start - timedelta(minutes=5), tf),
             'discount_end': format(discount_end, tf)
@@ -654,7 +664,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'The new start time must be after the set start time.'}
         # discount_end must be longer one hour than start time
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end - timedelta(minutes=5), tf)
@@ -663,7 +673,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'The expiration time must be at least one hour longer than the start time.'}
         # discount_end cannot less than set start time
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end - timedelta(days=30), tf)
@@ -672,7 +682,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'The expiration time must be at least one hour longer than the start time.'}
         # discount_end must be less than 180 days
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end + timedelta(days=181), tf)
@@ -687,7 +697,7 @@ class TestDiscount(OperationTest):
         })
         # check discount start is set from db when promo is ongoing
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.without_variant_discount,
             'discount_start': format(discount_start - timedelta(days=30), tf),
             'discount_end': format(discount_end + timedelta(minutes=5), tf)
@@ -697,7 +707,7 @@ class TestDiscount(OperationTest):
 
         # when product doesn't have active promo then set product to not_active
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.without_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)
@@ -706,7 +716,7 @@ class TestDiscount(OperationTest):
         assert response.json() == {'detail': 'Successfully updated discount on product.'}
 
         response = await async_client.put(url,json={
-            'product_id': product_id_one,
+            'product_id': str(product_id_one),
             'ticket_variant': self.without_variant,
             'discount_start': format(discount_start, tf),
             'discount_end': format(discount_end, tf)

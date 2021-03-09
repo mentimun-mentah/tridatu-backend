@@ -3,7 +3,11 @@ from fastapi import UploadFile, File, Form, Query, Depends, HTTPException
 from libs.MagicImage import validate_multiple_upload_images, validate_single_upload_image
 from libs.Parser import parse_int_list, parse_str_list
 from typing import Optional, List, Literal
-from config import redis_conn
+from I18N import HttpError
+from config import redis_conn, settings
+
+# default language response
+lang = settings.default_language_code
 
 def upload_image_product(image_product: List[UploadFile] = File(...)):
     return validate_multiple_upload_images(
@@ -61,20 +65,20 @@ def create_form_product(
         variant_data = json.loads(variant_data)
         # image cannot be passed if no variant
         if 'va1_name' not in variant_data and image_variant:
-            raise HTTPException(status_code=422,detail="The image variant must not be filled.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['products.no_variant_image_exist'])
 
         # without image or all image must be filled if single or double variant
         len_va1_items = len(variant_data['va1_items'])
         len_image_variant = len(image_variant or [])
         if len_image_variant != 0 and len_image_variant != len_va1_items:
-            raise HTTPException(status_code=422,detail="You must fill all variant images or even without images.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['products.len_image_variant'])
     else:
-        raise HTTPException(status_code=404,detail="Ticket variant not found!")
+        raise HTTPException(status_code=404,detail=HttpError[lang]['products.variant_not_found'])
 
     wholesale_data = None
 
     if ticket_wholesale and not redis_conn.get(ticket_wholesale):
-        raise HTTPException(status_code=404,detail="Ticket wholesale not found!")
+        raise HTTPException(status_code=404,detail=HttpError[lang]['products.wholesale_not_found'])
     if ticket_wholesale and redis_conn.get(ticket_wholesale):
         wholesale_data = json.loads(redis_conn.get(ticket_wholesale))['items']
 
@@ -115,30 +119,30 @@ def update_form_product(
         variant_data = json.loads(variant_data)
         # image cannot be passed if no variant
         if 'va1_name' not in variant_data and image_variant:
-            raise HTTPException(status_code=422,detail="The image variant must not be filled.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['products.no_variant_image_exist'])
 
         if 'va1_product_id' not in variant_data:
-            raise HTTPException(status_code=422,detail="You must fill an id on variant product.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['products.variant_product_id_not_found'])
         # without image or all image must be filled if single or double variant
         len_va1_image = len([x.get('va1_image') for x in variant_data['va1_items'] if x.get('va1_image')])
         len_va1_items = len(variant_data['va1_items'])
         len_image_variant = len(image_variant or [])
         if (len_va1_image + len_image_variant) != 0 and (len_va1_image + len_image_variant) != len_va1_items:
-            raise HTTPException(status_code=422,detail="You must fill all variant images or even without images.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['products.len_image_variant'])
     else:
-        raise HTTPException(status_code=404,detail="Ticket variant not found!")
+        raise HTTPException(status_code=404,detail=HttpError[lang]['products.variant_not_found'])
 
     image_product_delete = parse_str_list(image_product_delete,",")
     if image_product_delete and False in [img.endswith(('.jpg','.png','.jpeg')) for img in image_product_delete]:
-        raise HTTPException(status_code=422,detail="Invalid image format on image_product_delete")
+        raise HTTPException(status_code=422,detail=HttpError[lang]['products.image_product_delete.ext.not_allowed'])
 
     if image_size_guide_delete and image_size_guide_delete.endswith(('.jpg','.png','.jpeg')) is False:
-        raise HTTPException(status_code=422,detail="Invalid image format on image_size_guide_delete")
+        raise HTTPException(status_code=422,detail=HttpError[lang]['products.image_size_guide_delete.ext.not_allowed'])
 
     wholesale_data = None
 
     if ticket_wholesale and not redis_conn.get(ticket_wholesale):
-        raise HTTPException(status_code=404,detail="Ticket wholesale not found!")
+        raise HTTPException(status_code=404,detail=HttpError[lang]['products.wholesale_not_found'])
     if ticket_wholesale and redis_conn.get(ticket_wholesale):
         wholesale_data = json.loads(redis_conn.get(ticket_wholesale))['items']
 
@@ -174,7 +178,8 @@ def get_all_query_product(
     brand: str = Query(None,min_length=1,description="Example 1,2,3"),
     pre_order: bool = Query(None),
     condition: bool = Query(None),
-    wholesale: bool = Query(None)
+    wholesale: bool = Query(None),
+    is_discount: bool = Query(None)
 ):
     return {
         "page": page,
@@ -188,5 +193,6 @@ def get_all_query_product(
         "brand": parse_int_list(brand,','),
         "pre_order": pre_order,
         "condition": condition,
-        "wholesale": wholesale
+        "wholesale": wholesale,
+        "is_discount": is_discount
     }

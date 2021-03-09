@@ -22,7 +22,7 @@ class TestProduct(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user admin
         confirm_id = await self.get_confirmation(self.account_1['email'])
         await self.set_account_to_activated(confirm_id)
@@ -38,7 +38,7 @@ class TestProduct(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user
         confirm_id = await self.get_confirmation(self.account_2['email'])
         await self.set_account_to_activated(confirm_id)
@@ -57,8 +57,8 @@ class TestProduct(OperationTest):
         # create without
         response = await async_client.post(url,json={
             'va1_items': [{
-                'va1_price': 11000,
-                'va1_stock': 0,
+                'va1_price': '11000',
+                'va1_stock': '0',
                 'va1_code': '1271521-899-SM',
                 'va1_barcode': '889362033471'
             }]
@@ -73,15 +73,15 @@ class TestProduct(OperationTest):
             'va1_items': [
                 {
                     'va1_option': 'XL',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_code': None,
                     'va1_barcode': None
                 },
                 {
                     'va1_option': 'M',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_code': None,
                     'va1_barcode': None
                 }
@@ -94,20 +94,20 @@ class TestProduct(OperationTest):
         # create single variant wrong image
         response = await async_client.post(url,json={
             'va1_name': 'ukuran',
-            'va1_product_id': 1,
+            'va1_product_id': '1',
             'va1_items': [
                 {
-                    'va1_id': 0,
+                    'va1_id': '0',
                     'va1_option': 'XL',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_image': 'lol.jpeg'
                 },
                 {
-                    'va1_id': 0,
+                    'va1_id': '0',
                     'va1_option': 'M',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_image': 'test.jpeg'
                 }
             ]
@@ -129,7 +129,7 @@ class TestProduct(OperationTest):
         # create wholesale
         response = client.post(url,json={
             'variant': self.without_variant,
-            'items': [{'min_qty': 2, 'price': 8000},{'min_qty': 3, 'price': 7000}]
+            'items': [{'min_qty': 2, 'price': '8000'},{'min_qty': 3, 'price': '7000'}]
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 201
         # assign to variable
@@ -165,7 +165,7 @@ class TestProduct(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
-        assert response.json() == {"detail": "Successfully add a new item sub-category."}
+        assert response.json() == {"detail": "Successfully add a new item-sub-category."}
 
     def test_validation_create_product(self,client):
         url = self.prefix + '/create'
@@ -537,7 +537,7 @@ class TestProduct(OperationTest):
         response = client.get(
             url +
             '?page=a&per_page=a&q=123&live=a&order_by=a&p_min=a' +
-            '&p_max=a&item_sub_cat=a&brand=a&pre_order=a&condition=a&wholesale=a'
+            '&p_max=a&item_sub_cat=a&brand=a&pre_order=a&condition=a&wholesale=a&is_discount=a'
         )
         assert response.status_code == 422
         for x in response.json()['detail']:
@@ -551,6 +551,7 @@ class TestProduct(OperationTest):
             if x['loc'][-1] == 'pre_order': assert x['msg'] == 'value could not be parsed to a boolean'
             if x['loc'][-1] == 'condition': assert x['msg'] == 'value could not be parsed to a boolean'
             if x['loc'][-1] == 'wholesale': assert x['msg'] == 'value could not be parsed to a boolean'
+            if x['loc'][-1] == 'is_discount': assert x['msg'] == 'value could not be parsed to a boolean'
 
     def test_get_all_products(self,client):
         url = self.prefix + '/all-products'
@@ -565,7 +566,7 @@ class TestProduct(OperationTest):
         assert 'iter_pages' in response.json()
 
         # check data exists and type data
-        assert type(response.json()['data'][0]['products_id']) == int
+        assert type(response.json()['data'][0]['products_id']) == str
         assert type(response.json()['data'][0]['products_name']) == str
         assert type(response.json()['data'][0]['products_slug']) == str
         assert type(response.json()['data'][0]['products_image_product']) == str
@@ -575,8 +576,8 @@ class TestProduct(OperationTest):
         assert type(response.json()['data'][0]['products_discount_status']) == str
         assert type(response.json()['data'][0]['products_created_at']) == str
         assert type(response.json()['data'][0]['products_updated_at']) == str
-        assert type(response.json()['data'][0]['variants_min_price']) == int
-        assert type(response.json()['data'][0]['variants_max_price']) == int
+        assert type(response.json()['data'][0]['variants_min_price']) == str
+        assert type(response.json()['data'][0]['variants_max_price']) == str
         assert type(response.json()['data'][0]['variants_discount']) == int
 
     def test_validation_change_product_alive_archive(self,client):

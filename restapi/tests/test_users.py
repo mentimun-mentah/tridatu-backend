@@ -19,7 +19,7 @@ class TestUser(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user
         confirm_id = await self.get_confirmation(self.account_2['email'])
         await self.set_account_to_activated(confirm_id)
@@ -72,7 +72,7 @@ class TestUser(OperationTest):
         response = client.post(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'password must match with password confirmation'
 
     def test_register_new_user(self,client):
         url = self.prefix + '/register'
@@ -86,7 +86,7 @@ class TestUser(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # email already exists
         response = client.post(url,
             json={
@@ -496,7 +496,7 @@ class TestUser(OperationTest):
         response = client.put(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'password must match with password confirmation'
         # email not found in database
         response = client.put(url,json={'email': 'ngawrubeta@example.com','password':'asdasd','confirm_password':'asdasd'})
         assert response.status_code == 404
@@ -574,7 +574,7 @@ class TestUser(OperationTest):
         response = client.post(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'password must match with password confirmation'
         # user login
         response = client.post(self.prefix + '/login',json={
             'email': self.account_2['email'],
@@ -646,7 +646,7 @@ class TestUser(OperationTest):
         response = client.put(url,json={'password':'asdasd','confirm_password':'asdasdasd'})
         assert response.status_code == 422
         for x in response.json()['detail']:
-            if x['loc'][-1] == 'password': assert x['msg'] == 'Password must match with confirmation.'
+            if x['loc'][-1] == 'password': assert x['msg'] == 'password must match with password confirmation'
         # user login
         response = client.post(self.prefix + '/login',json={
             'email': self.account_2['email'],
@@ -808,12 +808,12 @@ class TestUser(OperationTest):
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'phone':
-                assert x['msg'] == "Please provide a valid mobile phone number"
+                assert x['msg'] == "value is not a valid mobile phone number"
         response = client.put(url,json={'phone':'8762732'})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'phone':
-                assert x['msg'] == "Please provide a valid mobile phone number"
+                assert x['msg'] == "value is not a valid mobile phone number"
 
     def test_update_account(self,client):
         # user login
@@ -869,6 +869,7 @@ class TestUser(OperationTest):
         assert 'gender' in response.json()
         assert 'role' in response.json()
         assert 'avatar' in response.json()
+        assert 'id' in response.json()
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,async_client):

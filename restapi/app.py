@@ -5,21 +5,37 @@ from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from fastapi.openapi.docs import get_swagger_ui_html
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from localization import (
+    SystemLocalizationMiddleware,
+    TranslateORJSONResponse,
+    http_exception_handler_translate,
+    request_validation_exception_handler_translate
+)
 from config import database, redis_conn, settings
 from routers import (
     Users, OAuth2, Address, Outlets,
     Brands, Categories, SubCategories, ItemSubCategories,
     Products, Variants, Wishlists, Shipping,
-    Comments, Replies, WholeSale, Discounts
+    Comments, Replies, WholeSale, Discounts,
+    Carts, Promos
 )
 
-app = FastAPI(default_response_class=ORJSONResponse,docs_url=None,redoc_url=None)
+localization_middleware = SystemLocalizationMiddleware(
+    default_language_code=settings.default_language_code,
+    default_language_code_doc='id'
+)
+
+app = FastAPI(default_response_class=TranslateORJSONResponse,docs_url=None,redoc_url=None)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+app.add_middleware(BaseHTTPMiddleware, dispatch=localization_middleware)
 app.add_middleware(SessionMiddleware, secret_key=settings.authjwt_secret_key)
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +44,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# register error handlers for localization errors
+app.add_exception_handler(StarletteHTTPException, http_exception_handler_translate)
+app.add_exception_handler(RequestValidationError, request_validation_exception_handler_translate)
+
+@app.exception_handler(AuthJWTException)
+def authjwt_exception_handler(request: Request, exc: AuthJWTException):
+    return ORJSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message}
+    )
 
 @app.on_event("startup")
 async def startup():
@@ -38,20 +65,14 @@ async def startup():
 async def shutdown():
     await database.disconnect()
 
-@app.exception_handler(AuthJWTException)
-def authjwt_exception_handler(request: Request, exc: AuthJWTException):
-    return ORJSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.message}
-    )
-
-@app.get("/docs",include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url=app.openapi_url,
-        title="Tridatu Bali ID",
-        swagger_css_url="/static/swagger-ui.css",
-    )
+if settings.stage_app == "development":
+    @app.get("/docs",include_in_schema=False)
+    async def custom_swagger_ui_html():
+        return get_swagger_ui_html(
+            openapi_url=app.openapi_url,
+            title="Tridatu Bali ID",
+            swagger_css_url="/static/swagger-ui.css",
+        )
 
 def custom_openapi():
     if app.openapi_schema:
@@ -159,3 +180,5 @@ app.include_router(Wishlists.router,tags=['wishlists'],prefix="/wishlists")
 app.include_router(Shipping.router,tags=['shipping'],prefix="/shipping")
 app.include_router(Comments.router,tags=['comments'],prefix="/comments")
 app.include_router(Replies.router,tags=['replies'],prefix="/replies")
+app.include_router(Carts.router,tags=['carts'],prefix="/carts")
+app.include_router(Promos.router,tags=['promos'],prefix="/promos")

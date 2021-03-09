@@ -17,7 +17,7 @@ class TestSubCategory(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user admin
         confirm_id = await self.get_confirmation(self.account_1['email'])
         await self.set_account_to_activated(confirm_id)
@@ -33,7 +33,7 @@ class TestSubCategory(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user
         confirm_id = await self.get_confirmation(self.account_2['email'])
         await self.set_account_to_activated(confirm_id)
@@ -134,7 +134,7 @@ class TestSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 400
-        assert response.json() == {"detail": "The name has already been taken in sub category."}
+        assert response.json() == {"detail": "The name has already been taken."}
 
     def test_validation_get_sub_category_by_id(self,client):
         url = self.prefix + '/get-sub-category/'
@@ -280,7 +280,7 @@ class TestSubCategory(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 400
-        assert response.json() == {"detail": "The name has already been taken in sub category."}
+        assert response.json() == {"detail": "The name has already been taken."}
 
     def test_validation_delete_sub_category(self,client):
         url = self.prefix + '/delete/'

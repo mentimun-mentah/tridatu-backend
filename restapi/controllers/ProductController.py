@@ -138,6 +138,7 @@ class ProductFetch:
             func.min(variant.c.price).label('min_price'),
             func.max(variant.c.price).label('max_price'),
             func.max(variant.c.discount).label('discount'),
+            func.max(variant.c.stock).label('stock'),
             variant.c.product_id
         ]).group_by(variant.c.product_id).alias('variants')
 
@@ -171,11 +172,13 @@ class ProductFetch:
             if kwargs['pre_order'] is True:
                 query = query.where(product_alias.c.products_preorder.isnot(None))
             if kwargs['pre_order'] is False:
-                query = query.where(product_alias.c.products_preorder.is_(None))
+                query = query.where(product_alias.c.variants_stock > 0)
         if kwargs['condition'] is not None:
             query = query.where(product_alias.c.products_condition == kwargs['condition'])
         if kwargs['wholesale'] is True:
-            query = query.where(product_alias.c.products_id.in_(select([wholesale.c.product_id])))
+            query = query.where(product_alias.c.products_id.in_(select([wholesale.c.product_id]).distinct(wholesale.c.product_id)))
+        if kwargs['is_discount'] is True:
+            query = query.where(product_alias.c.variants_discount > 0)
 
         total = await database.execute(query=select([func.count()]).select_from(query.alias()).as_scalar())
         query = query.limit(kwargs['per_page']).offset((kwargs['page'] - 1) * kwargs['per_page'])

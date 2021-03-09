@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, String, Text, BigInteger, DateTime, ForeignKey, Boolean, func
+from sqlalchemy import Table, Column, String, Text, BigInteger, Integer, DateTime, ForeignKey, Boolean, func
 from sqlalchemy.sql import expression
 from config import metadata
 
@@ -8,7 +8,7 @@ address = Table('addresses', metadata,
     Column('receiver', String(100), nullable=False),
     Column('phone', String(20), nullable=False),
     Column('region', Text, nullable=False),
-    Column('postal_code', BigInteger, nullable=False),
+    Column('postal_code', Integer, nullable=False),
     Column('recipient_address', Text, nullable=False),
     Column('main_address', Boolean, server_default=expression.false()),
     Column('created_at', DateTime, default=func.now()),

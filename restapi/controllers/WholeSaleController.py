@@ -23,3 +23,11 @@ class WholeSaleFetch:
     async def get_wholesale_by_product_id(product_id: int, exclude: list = []) -> list:
         wholesale_db = await database.fetch_all(query=select([wholesale]).where(wholesale.c.product_id == product_id))
         return [{index:value for index,value in item.items() if index not in exclude} for item in wholesale_db]
+
+    @staticmethod
+    async def get_wholesale_filter_by_qty(product_id: int, qty: int, include: list = []) -> list:
+        query = select([wholesale]).where((wholesale.c.product_id == product_id) & (qty >= wholesale.c.min_qty)) \
+            .order_by(wholesale.c.min_qty.desc())
+
+        if wholesale_db := await database.fetch_one(query=query):
+            return {index:value for index,value in wholesale_db.items() if index in include}

@@ -22,24 +22,29 @@ from schemas.products.ProductSchema import (
 from models.ProductModel import product
 from libs.MagicImage import MagicImage
 from libs.Visitor import Visitor
+from localization import LocalizationRoute
+from I18N import ResponseMessages, HttpError
+from config import settings
 from slugify import slugify
 from typing import List
 
-router = APIRouter()
+router = APIRouter(route_class=LocalizationRoute)
+# default language response
+lang = settings.default_language_code
 
 @router.post('/create',status_code=201,
     responses={
         201: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully add a new product."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['create_product'][201]}}
         },
         400: {
             "description": "Name already taken",
-            "content": {"application/json":{"example": {"detail":"The name has already been taken."}}}
+            "content": {"application/json":{"example": {"detail": HttpError[lang]['products.name_taken']['message']}}}
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Item sub-category, Brand, Ticket variant & wholesale not found",
@@ -47,31 +52,31 @@ router = APIRouter()
         },
         409: {
             "description": "Conflict",
-            "content": {"application/json": {"example": {"detail":"Each image must be unique."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['multiple_image.not_unique']['message']}}}
         },
         413: {
             "description": "Request Entity Too Large",
-            "content": {"application/json": {"example": {"detail":"An image cannot greater than 4 Mb."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['single_image.not_lt']['message']}}}
         }
     }
 )
 async def create_product(form_data: create_form_product = Depends(), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     form_data['slug'] = slugify(form_data['name'])
 
     # check name duplicate
     if await ProductFetch.filter_by_slug(form_data['slug']):
-        raise HTTPException(status_code=400,detail="The name has already been taken.")
+        raise HTTPException(status_code=400,detail=HttpError[lang]['products.name_taken'])
     # check item_sub_category_id exists in db
     if not await ItemSubCategoryFetch.filter_by_id(form_data['item_sub_category_id']):
-        raise HTTPException(status_code=404,detail="Item sub-category not found!")
+        raise HTTPException(status_code=404,detail=HttpError[lang]['products.item_sub_category_not_found'])
     # check brand exists in db if data supplied
     if form_data['brand_id'] and not await BrandFetch.filter_by_id(form_data['brand_id']):
-        raise HTTPException(status_code=404,detail="Brand not found!")
+        raise HTTPException(status_code=404,detail=HttpError[lang]['products.brand_not_found'])
 
     # save image products to storage
     image_magic_products = MagicImage(
@@ -128,14 +133,14 @@ async def create_product(form_data: create_form_product = Depends(), authorize: 
         [data.__setitem__('product_id',product_id) for data in wholesale_data]
         await WholeSaleCrud.create_wholesale(wholesale_data)
 
-    return {"detail": "Successfully add a new product."}
+    return ResponseMessages[lang]['create_product'][201]
 
 @router.get('/all-products',response_model=ProductPaginate)
 async def get_all_products(query_string: get_all_query_product = Depends(), authorize: AuthJWT = Depends()):
     authorize.jwt_optional()
 
     results = await ProductFetch.get_all_products_paginate(**query_string)
-    if user_id := authorize.get_jwt_subject():
+    if user_id := int(authorize.get_jwt_subject() or 0):
         [
             data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
             for data in results['data']
@@ -149,29 +154,31 @@ async def get_all_products(query_string: get_all_query_product = Depends(), auth
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully change the product to 'alive'/'archive'."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['change_product_alive_archive'][200]}}
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example": {"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Product not found",
-            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['products.not_found']['message']}}}
         }
     }
 )
 async def change_product_alive_archive(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
         await ProductCrud.change_product_alive_archive(product['id'],product['live'])
         msg = 'alive' if not product['live'] else 'archive'
-        return {"detail": f"Successfully change the product to {msg}."}
-    raise HTTPException(status_code=404,detail="Product not found!")
+        response = ResponseMessages[lang]['change_product_alive_archive'][200].copy()
+        response.update({'ctx': {'msg': msg}})
+        return response
+    raise HTTPException(status_code=404,detail=HttpError[lang]['products.not_found'])
 
 @router.get('/search-by-name',response_model=List[ProductSearchByName])
 async def search_products_by_name(q: str = Query(...,min_length=1), limit: int = Query(...,gt=0)):
@@ -183,7 +190,7 @@ async def search_products_by_name(q: str = Query(...,min_length=1), limit: int =
     responses={
         404: {
             "description": "Product not found",
-            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['products.not_found']['message']}}}
         }
     }
 )
@@ -215,7 +222,7 @@ async def get_product_by_slug(
 
         # check wishlist product & product recommendation
         if recommendation is True:
-            if user_id := authorize.get_jwt_subject():
+            if user_id := int(authorize.get_jwt_subject() or 0):
                 results.__setitem__('products_love', await WishlistLogic.check_wishlist(product_data['id'],user_id))
                 [
                     data.__setitem__('products_love',await WishlistLogic.check_wishlist(data['products_id'],user_id))
@@ -226,21 +233,21 @@ async def get_product_by_slug(
                 [data.__setitem__('products_love',False) for data in results['products_recommendation']]
 
         return results
-    raise HTTPException(status_code=404,detail="Product not found!")
+    raise HTTPException(status_code=404,detail=HttpError[lang]['products.not_found'])
 
 @router.put('/update/{product_id}',
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully update the product."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['update_product'][200]}}
         },
         400: {
             "description": "Name already taken",
-            "content": {"application/json":{"example": {"detail":"The name has already been taken."}}}
+            "content": {"application/json":{"example": {"detail": HttpError[lang]['products.name_taken']['message']}}}
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example":{"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example":{"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Product, Item sub-category, Brand, Ticket variant & wholesale not found",
@@ -248,11 +255,11 @@ async def get_product_by_slug(
         },
         409: {
             "description": "Conflict",
-            "content": {"application/json": {"example": {"detail":"Each image must be unique."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['multiple_image.not_unique']['message']}}}
         },
         413: {
             "description": "Request Entity Too Large",
-            "content": {"application/json": {"example": {"detail":"An image cannot greater than 4 Mb."}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['single_image.not_lt']['message']}}}
         }
     }
 )
@@ -263,20 +270,20 @@ async def update_product(
 ):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
         form_data['slug'] = slugify(form_data['name'])
         # check name duplicate
         if product['slug'] != form_data['slug'] and await ProductFetch.filter_by_slug(form_data['slug']):
-            raise HTTPException(status_code=400,detail="The name has already been taken.")
+            raise HTTPException(status_code=400,detail=HttpError[lang]['products.name_taken'])
         # check item_sub_category_id exists in db
         if not await ItemSubCategoryFetch.filter_by_id(form_data['item_sub_category_id']):
-            raise HTTPException(status_code=404,detail="Item sub-category not found!")
+            raise HTTPException(status_code=404,detail=HttpError[lang]['products.item_sub_category_not_found'])
         # check brand exists in db if data supplied
         if form_data['brand_id'] and not await BrandFetch.filter_by_id(form_data['brand_id']):
-            raise HTTPException(status_code=404,detail="Brand not found!")
+            raise HTTPException(status_code=404,detail=HttpError[lang]['products.brand_not_found'])
 
         # validate image on input variant
         image_variant_db = await VariantFetch.get_product_variant_image(product['id'])
@@ -284,12 +291,12 @@ async def update_product(
             item.get('va1_image') for item in form_data['variant_data']['va1_items'] if item.get('va1_image')
         ]
         if True in [c not in image_variant_db for c in image_variant_input]:
-            raise HTTPException(status_code=422,detail="The image on variant not found in db.")
+            raise HTTPException(status_code=422,detail=HttpError[lang]['products.image_variant_not_found_in_db'])
 
         # validate image on input delete_size_guide is same with db
         if image_size_guide_delete := form_data['image_size_guide_delete']:
             if image_size_guide_delete != product['image_size_guide']:
-                raise HTTPException(status_code=422,detail="image_size_guide_delete not same with database.")
+                raise HTTPException(status_code=422,detail=HttpError[lang]['products.image_size_guide_delete_not_same_with_db'])
 
         # ================ IMAGE PRODUCT SECTION ================
         image_product_db = [item for item in json.loads(product['image_product']).values()]
@@ -302,12 +309,12 @@ async def update_product(
             if len(image_product_db + (form_data.get('image_product') or [])) < 1:
                 raise HTTPException(
                     status_code=422,
-                    detail="Image is required, make sure this product has at least one image."
+                    detail=HttpError[lang]['products.image_product_not_gt']
                 )
 
         if image_product := form_data['image_product']:
             if len(image_product_db + image_product) > 10:
-                raise HTTPException(status_code=422,detail="Maximal 10 images to be upload.")
+                raise HTTPException(status_code=422,detail=HttpError[lang]['products.image_product_max_items'])
             image_magic_products = MagicImage(
                 square=True,
                 file=image_product,
@@ -419,33 +426,33 @@ async def update_product(
         if previous_wholesale and form_data['wholesale_data'] is None:
             await WholeSaleCrud.delete_wholesale(product['id'])
 
-        return {"detail": "Successfully update the product."}
-    raise HTTPException(status_code=404,detail="Product not found!")
+        return ResponseMessages[lang]['update_product'][200]
+    raise HTTPException(status_code=404,detail=HttpError[lang]['products.not_found'])
 
 @router.delete('/delete/{product_id}',
     responses={
         200: {
             "description": "Successful Response",
-            "content": {"application/json":{"example": {"detail":"Successfully delete the product."}}}
+            "content": {"application/json":{"example": ResponseMessages[lang]['delete_product'][200]}}
         },
         401: {
             "description": "User without role admin",
-            "content": {"application/json": {"example":{"detail":"Only users with admin privileges can do this action."}}}
+            "content": {"application/json": {"example":{"detail": HttpError[lang]['user_controller.not_admin']['message']}}}
         },
         404: {
             "description": "Product not found",
-            "content": {"application/json": {"example": {"detail":"Product not found!"}}}
+            "content": {"application/json": {"example": {"detail": HttpError[lang]['products.not_found']['message']}}}
         }
     }
 )
 async def delete_product(product_id: int = Path(...,gt=0), authorize: AuthJWT = Depends()):
     authorize.jwt_required()
 
-    user_id = authorize.get_jwt_subject()
+    user_id = int(authorize.get_jwt_subject())
     await UserFetch.user_is_admin(user_id)
 
     if product := await ProductFetch.filter_by_id(product_id):
         await ProductCrud.delete_product(product['id'])
         MagicImage.delete_folder(name_folder=product['slug'],path_delete='products/')
-        return {"detail": "Successfully delete the product."}
-    raise HTTPException(status_code=404,detail="Product not found!")
+        return ResponseMessages[lang]['delete_product'][200]
+    raise HTTPException(status_code=404,detail=HttpError[lang]['products.not_found'])

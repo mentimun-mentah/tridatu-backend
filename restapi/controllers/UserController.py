@@ -2,10 +2,14 @@ import os, bcrypt, httpx
 from PIL import Image
 from io import BytesIO
 from uuid import uuid4
-from config import database
+from config import database, settings
 from sqlalchemy import select, func
 from models.UserModel import user
 from fastapi import HTTPException
+from I18N import HttpError
+
+# default language response
+lang = settings.default_language_code
 
 dir_avatars = os.path.join(os.path.dirname(__file__),'../static/avatars/')
 
@@ -65,8 +69,8 @@ class UserFetch:
         if user_admin := await database.fetch_one(query=select([user]).where(user.c.id == id_)):
             if user_admin['role'] == 'admin':
                 return user_admin
-            raise HTTPException(status_code=401,detail="Only users with admin privileges can do this action.")
-        raise HTTPException(status_code=404,detail="User not found!")
+            raise HTTPException(status_code=401,detail=HttpError[lang]['user_controller.not_admin'])
+        raise HTTPException(status_code=404,detail=HttpError[lang]['user_controller.not_found'])
 
     @staticmethod
     async def filter_by_email(email: str) -> user:

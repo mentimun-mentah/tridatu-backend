@@ -2,10 +2,11 @@ import json, uuid
 from config import redis_conn, database
 from sqlalchemy.sql import select
 from models.VariantModel import variant
+from typing import Union, Literal
 
 class VariantLogic:
     @staticmethod
-    def convert_data_to_db(variant_data: dict, product_id: int) -> list:
+    def convert_data_to_db(variant_data: dict, product_id: Union[int,str]) -> list:
         variant_db = list()
 
         for variant_item in variant_data['va1_items']:
@@ -14,18 +15,18 @@ class VariantLogic:
                 va1_code = variant_item['va1_code'] if 'va1_code' in variant_item else None
                 va1_barcode = variant_item['va1_barcode'] if 'va1_barcode' in variant_item else None
                 va1_data = {
-                    'price': variant_item['va1_price'],
-                    'stock': variant_item['va1_stock'],
+                    'price': int(variant_item['va1_price']),
+                    'stock': int(variant_item['va1_stock']),
                     'code': va1_code,
                     'barcode': va1_barcode,
                     'discount': 0,
                     'discount_active': False,
-                    'product_id': product_id
+                    'product_id': int(product_id)
                 }
                 if 'va1_discount' in variant_item and 'va1_discount_active' in variant_item:
                     va1_data.update({'discount': variant_item['va1_discount'], 'discount_active': variant_item['va1_discount_active']})
                 if 'va1_id' in variant_item:
-                    va1_data.update({'id': variant_item['va1_id']})
+                    va1_data.update({'id': int(variant_item['va1_id'])})
 
                 variant_db.append(va1_data)
             elif 'va2_name' in variant_data:
@@ -37,19 +38,19 @@ class VariantLogic:
                     va2_data = {
                         'name': '{}:{}'.format(variant_data['va1_name'],variant_data['va2_name']),
                         'option': '{}:{}'.format(variant_item['va1_option'],variant_two['va2_option']),
-                        'price': variant_two['va2_price'],
-                        'stock': variant_two['va2_stock'],
+                        'price': int(variant_two['va2_price']),
+                        'stock': int(variant_two['va2_stock']),
                         'code': va2_code,
                         'barcode': va2_barcode,
                         'image': va1_image,
                         'discount': 0,
                         'discount_active': False,
-                        'product_id': product_id
+                        'product_id': int(product_id)
                     }
                     if 'va2_discount' in variant_two and 'va2_discount_active' in variant_two:
                         va2_data.update({'discount': variant_two['va2_discount'], 'discount_active': variant_two['va2_discount_active']})
                     if 'va2_id' in variant_two:
-                        va2_data.update({'id': variant_two['va2_id']})
+                        va2_data.update({'id': int(variant_two['va2_id'])})
 
                     variant_db.append(va2_data)
             else:
@@ -60,19 +61,19 @@ class VariantLogic:
                 va1_data = {
                     'name': variant_data['va1_name'],
                     'option': variant_item['va1_option'],
-                    'price': variant_item['va1_price'],
-                    'stock': variant_item['va1_stock'],
+                    'price': int(variant_item['va1_price']),
+                    'stock': int(variant_item['va1_stock']),
                     'code': va1_code,
                     'barcode': va1_barcode,
                     'image': va1_image,
                     'discount': 0,
                     'discount_active': False,
-                    'product_id': product_id
+                    'product_id': int(product_id)
                 }
                 if 'va1_discount' in variant_item and 'va1_discount_active' in variant_item:
                     va1_data.update({'discount': variant_item['va1_discount'], 'discount_active': variant_item['va1_discount_active']})
                 if 'va1_id' in variant_item:
-                    va1_data.update({'id': variant_item['va1_id']})
+                    va1_data.update({'id': int(variant_item['va1_id'])})
 
                 variant_db.append(va1_data)
 
@@ -100,11 +101,11 @@ class VariantLogic:
                     # without variant
                     if var['v_name'] is None:
                         tmp.update({
-                            'va1_product_id': var['v_product_id'],
+                            'va1_product_id': str(var['v_product_id']),
                             'va1_items': [{
-                                'va1_id': var['v_id'],
-                                'va1_price': var['v_price'],
-                                'va1_stock': var['v_stock'],
+                                'va1_id': str(var['v_id']),
+                                'va1_price': str(var['v_price']),
+                                'va1_stock': str(var['v_stock']),
                                 'va1_code': var['v_code'],
                                 'va1_barcode': var['v_barcode'],
                                 'va1_discount': var['v_discount'],
@@ -114,10 +115,10 @@ class VariantLogic:
                     # single variant
                     elif var['v_name'] and len(var['v_name'].split(':')) != 2:
                         v1_items = {
-                            'va1_id': var['v_id'],
+                            'va1_id': str(var['v_id']),
                             'va1_option': var['v_option'],
-                            'va1_price': var['v_price'],
-                            'va1_stock': var['v_stock'],
+                            'va1_price': str(var['v_price']),
+                            'va1_stock': str(var['v_stock']),
                             'va1_code': var['v_code'],
                             'va1_barcode': var['v_barcode'],
                             'va1_discount': var['v_discount'],
@@ -127,7 +128,7 @@ class VariantLogic:
                         if len(tmp) == 0:
                             tmp.update({
                                 'va1_name': var['v_name'],
-                                'va1_product_id': var['v_product_id'],
+                                'va1_product_id': str(var['v_product_id']),
                                 'va1_items': [v1_items]
                             })
                         else: tmp['va1_items'].append(v1_items)
@@ -137,10 +138,10 @@ class VariantLogic:
                         v2_option = var['v_option'].split(':')[-1]
                         v1_image = var['v_image']
                         v2_items = {
-                            'va2_id': var['v_id'],
+                            'va2_id': str(var['v_id']),
                             'va2_option': v2_option,
-                            'va2_price': var['v_price'],
-                            'va2_stock': var['v_stock'],
+                            'va2_price': str(var['v_price']),
+                            'va2_stock': str(var['v_stock']),
                             'va2_code': var['v_code'],
                             'va2_barcode': var['v_barcode'],
                             'va2_discount': var['v_discount'],
@@ -150,7 +151,7 @@ class VariantLogic:
                             tmp.update({
                                 'va1_name': var['v_name'].split(':')[0],
                                 'va2_name': var['v_name'].split(':')[-1],
-                                'va1_product_id': var['v_product_id'],
+                                'va1_product_id': str(var['v_product_id']),
                                 'va1_items': [{
                                     'va1_option': v1_option,
                                     'va1_image': v1_image,
@@ -172,6 +173,32 @@ class VariantLogic:
             result.append(tmp)
         return result
 
+    @staticmethod
+    def convert_type_data_variant(variant_data: dict, type_data: Literal['str','int'] = 'str') -> dict:
+        if type_data == 'str': cnv = str
+        elif type_data == 'int': cnv = int
+        else: raise TypeError("type_data must be between str or int")
+
+        if 'va1_product_id' in variant_data and variant_data['va1_product_id'] is not None:
+            variant_data.update({'va1_product_id':cnv(variant_data['va1_product_id'])})
+
+        for va1_items in variant_data['va1_items']:
+            # update type data for va1_items
+            {
+                va1_items.update({key:cnv(value)}) for key,value in va1_items.copy().items()
+                if value is not None and key in ['va1_id','va1_price','va1_stock']
+            }
+
+            # update type data for va2_items if exists
+            if 'va2_items' in va1_items:
+                for va2_items in va1_items['va2_items']:
+                    {
+                        va2_items.update({key:cnv(value)}) for key,value in va2_items.copy().items()
+                        if value is not None and key in ['va2_id','va2_price','va2_stock']
+                    }
+
+        return variant_data
+
 class VariantCrud:
     @staticmethod
     async def create_variant(variant_db: list) -> None:
@@ -187,7 +214,7 @@ class VariantCrud:
 
     @staticmethod
     async def delete_variant_by_id(variant_id: list) -> None:
-        [await database.execute(query=variant.delete().where(variant.c.id == id_)) for id_ in variant_id]
+        await database.execute(query=variant.delete().where(variant.c.id.in_(variant_id)))
 
     @staticmethod
     def add_variant_to_redis_storage(data_variant: dict) -> str:
@@ -196,11 +223,13 @@ class VariantCrud:
         return ticket
 
 class VariantFetch:
+    @staticmethod
     async def get_produt_variant_id(product_id: int) -> list:
         query = select([variant.c.id]).where(variant.c.product_id == product_id)
         variant_db = await database.fetch_all(query=query)
         return [item['id'] for item in variant_db]
 
+    @staticmethod
     async def get_product_variant_image(product_id: int) -> list:
         query = select([variant.c.image]).where(variant.c.product_id == product_id)
         variant_db = await database.fetch_all(query=query)
@@ -208,6 +237,7 @@ class VariantFetch:
 
         return [v for i,v in enumerate(variant_image) if variant_image[i] not in variant_image[i + 1:]]
 
+    @staticmethod
     async def get_variant_by_product_id(product_id: int) -> list:
         query = select([variant]).where(variant.c.product_id == product_id)
         variant_db = await database.fetch_all(query=query)
@@ -215,3 +245,8 @@ class VariantFetch:
             [{index:value for index,value in item.items()} for item in variant_db], key=lambda v: v['id']
         )
         return VariantLogic.convert_db_to_data(variant_data)[0]
+
+    @staticmethod
+    async def filter_by_id(id_: int) -> variant:
+        query = select([variant]).where(variant.c.id == id_)
+        return await database.fetch_one(query=query)

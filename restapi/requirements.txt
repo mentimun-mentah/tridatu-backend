@@ -9,7 +9,7 @@ SQLAlchemy
 databases[postgresql]
 alembic
 fastapi
-uvicorn
+uvicorn[standard]
 bcrypt
 orjson
 jinja2

@@ -20,7 +20,7 @@ class TestReply(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user admin
         confirm_id = await self.get_confirmation(self.account_1['email'])
         await self.set_account_to_activated(confirm_id)
@@ -36,7 +36,7 @@ class TestReply(OperationTest):
             }
         )
         assert response.status_code == 201
-        assert response.json() == {"detail":"Check your email to activated user."}
+        assert response.json() == {"detail":"Check your email to activated your account."}
         # activated the user
         confirm_id = await self.get_confirmation(self.account_2['email'])
         await self.set_account_to_activated(confirm_id)
@@ -55,8 +55,8 @@ class TestReply(OperationTest):
         # create without
         response = await async_client.post(url,json={
             'va1_items': [{
-                'va1_price': 11000,
-                'va1_stock': 0,
+                'va1_price': '11000',
+                'va1_stock': '0',
                 'va1_code': '1271521-899-SM',
                 'va1_barcode': '889362033471'
             }]
@@ -71,15 +71,15 @@ class TestReply(OperationTest):
             'va1_items': [
                 {
                     'va1_option': 'XL',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_code': None,
                     'va1_barcode': None
                 },
                 {
                     'va1_option': 'M',
-                    'va1_price': 11000,
-                    'va1_stock': 1,
+                    'va1_price': '11000',
+                    'va1_stock': '1',
                     'va1_code': None,
                     'va1_barcode': None
                 }
@@ -119,7 +119,7 @@ class TestReply(OperationTest):
             headers={'X-CSRF-TOKEN': csrf_access_token}
         )
         assert response.status_code == 201
-        assert response.json() == {"detail": "Successfully add a new item sub-category."}
+        assert response.json() == {"detail": "Successfully add a new item-sub-category."}
 
     @pytest.mark.asyncio
     async def test_create_product(self,async_client):
@@ -174,7 +174,7 @@ class TestReply(OperationTest):
 
         response = await async_client.post(url,json={
             'message': self.name,
-            'commentable_id': product_id_one,
+            'commentable_id': str(product_id_one),
             'commentable_type': 'product'
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 201
@@ -188,7 +188,7 @@ class TestReply(OperationTest):
 
         response = await async_client.post(url,json={
             'message': self.name2,
-            'commentable_id': product_id_two,
+            'commentable_id': str(product_id_two),
             'commentable_type': 'product'
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 201
@@ -203,17 +203,22 @@ class TestReply(OperationTest):
             if x['loc'][-1] == 'message': assert x['msg'] == 'field required'
             if x['loc'][-1] == 'comment_id': assert x['msg'] == 'field required'
         # all field blank
-        response = client.post(url,json={'message': '', 'comment_id': 0})
+        response = client.post(url,json={'message': '', 'comment_id': ''})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'message': assert x['msg'] == 'ensure this value has at least 5 characters'
-            if x['loc'][-1] == 'comment_id': assert x['msg'] == 'ensure this value is greater than 0'
+            if x['loc'][-1] == 'comment_id': assert x['msg'] == 'ensure this value has at least 1 characters'
         # check all field type data
-        response = client.post(url,json={'message': 123, 'comment_id': '123'})
+        response = client.post(url,json={'message': 123, 'comment_id': 123})
         assert response.status_code == 422
         for x in response.json()['detail']:
             if x['loc'][-1] == 'message': assert x['msg'] == 'str type expected'
-            if x['loc'][-1] == 'comment_id': assert x['msg'] == 'value is not a valid integer'
+            if x['loc'][-1] == 'comment_id': assert x['msg'] == 'str type expected'
+        # invalid format
+        response = client.post(url,json={'comment_id': '1A'})
+        assert response.status_code == 422
+        for x in response.json()['detail']:
+            if x['loc'][-1] == 'comment_id': assert x['msg'] == 'string does not match regex \"^[0-9]*$\"'
 
     @pytest.mark.asyncio
     async def test_create_reply(self,async_client):
@@ -232,28 +237,28 @@ class TestReply(OperationTest):
         # comment not found
         response = await async_client.post(url,json={
             'message': self.name,
-            'comment_id': 99999999
+            'comment_id': '99999999'
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 404
         assert response.json() == {"detail": "Comment not found!"}
 
         response = await async_client.post(url,json={
             'message': self.name,
-            'comment_id': comment_id_one
+            'comment_id': str(comment_id_one)
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 201
         assert response.json() == {"detail": "Successfully reply to this comment."}
         # cooldown 15 second
         response = await async_client.post(url,json={
             'message': self.name,
-            'comment_id': comment_id_one
+            'comment_id': str(comment_id_one)
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 403
         assert response.json() == {"detail": "You've already added comment a moment ago. Please try again later."}
         # add reply again in another comment
         response = await async_client.post(url,json={
             'message': self.name2,
-            'comment_id': comment_id_two
+            'comment_id': str(comment_id_two)
         },headers={'X-CSRF-TOKEN': csrf_access_token})
         assert response.status_code == 201
         assert response.json() == {"detail": "Successfully reply to this comment."}
@@ -287,7 +292,7 @@ class TestReply(OperationTest):
         assert isinstance(response.json(), dict)
 
         # check data exists and type data
-        assert type(response.json()['comments_id']) == int
+        assert type(response.json()['comments_id']) == str
         assert type(response.json()['comments_replies']) == list
 
         # get replies in multiple comment
@@ -296,7 +301,7 @@ class TestReply(OperationTest):
         assert isinstance(response.json(), list) and response.json() != []
 
         # check data exists and type data
-        assert type(response.json()[0]['comments_id']) == int
+        assert type(response.json()[0]['comments_id']) == str
         assert type(response.json()[0]['comments_replies']) == list
 
     def test_validation_delete_reply(self,client):
