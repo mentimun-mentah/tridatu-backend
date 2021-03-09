@@ -287,6 +287,7 @@ class TestComment(OperationTest):
         # check data exists and type data
         assert type(response.json()['data'][0]['comments_id']) == str
         assert type(response.json()['data'][0]['comments_message']) == str
+        assert type(response.json()['data'][0]['comments_user_id']) == str
         assert type(response.json()['data'][0]['comments_created_at']) == str
         assert type(response.json()['data'][0]['users_username']) == str
         assert type(response.json()['data'][0]['users_avatar']) == str

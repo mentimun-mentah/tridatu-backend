@@ -869,6 +869,7 @@ class TestUser(OperationTest):
         assert 'gender' in response.json()
         assert 'role' in response.json()
         assert 'avatar' in response.json()
+        assert 'id' in response.json()
 
     @pytest.mark.asyncio
     async def test_delete_user_from_db(self,async_client):

@@ -19,6 +19,7 @@ class CommentCreate(CommentSchema):
 class CommentData(CommentSchema):
     comments_id: str
     comments_message: str
+    comments_user_id: str
     comments_created_at: datetime
     users_username: str
     users_avatar: str

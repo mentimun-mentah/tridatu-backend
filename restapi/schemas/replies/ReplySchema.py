@@ -18,6 +18,7 @@ class ReplyCreate(ReplySchema):
 class ReplyData(ReplySchema):
     replies_id: str
     replies_message: str
+    replies_user_id: str
     replies_created_at: datetime
     users_username: str
     users_avatar: str

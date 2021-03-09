@@ -43,3 +43,4 @@ class UserData(UserSchema):
     gender: Optional[Literal['Laki-laki','Perempuan','Lainnya']]
     role: str
     avatar: str
+    id: str
