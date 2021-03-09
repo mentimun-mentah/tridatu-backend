@@ -186,7 +186,9 @@
         },
         "unlove_product": {"200": {"detail": "Produk telah dihapus dari wishlist."}},
 
-        "create_promo": {"201": {"detail": "Berhasil menambahkan promo baru."}}
+        "create_promo": {"201": {"detail": "Berhasil menambahkan promo baru."}},
+        "update_promo": {"200": {"detail": "Berhasil memperbarui promo."}},
+        "delete_promo": {"200": {"detail": "Berhasil menghapus promo."}}
   },
   "HttpError": {
         "user_controller.not_admin": {"message": "Hanya user dengan role admin yang dapat melakukan tindakan ini.","code": "user_controller.not_admin"},
@@ -337,8 +339,10 @@
         "promos.terms_condition_missing": {"message": "Harap isi inputan terms_condition.", "code": "promos.terms_condition_missing"},
         "promos.image_missing": {"message": "Harap isi inputan image.", "code": "promos.image_missing"},
         "promos.start_time_create": {"message": "Waktu mulai harus setelah waktu saat ini.", "code": "promos.start_time_create"},
+        "promos.start_time_update": {"message": "Waktu mulai baru harus setelah waktu mulai yang ditetapkan.", "code": "promos.start_time_update"},
         "promos.min_exp": {"message": "Waktu kedaluwarsa harus setidaknya satu hari lebih lama dari waktu mulai.", "code": "promos.min_exp"},
         "promos.max_exp": {"message": "Periode promo harus kurang dari 180 hari.", "code": "promos.max_exp"},
-        "promos.name_taken": {"message": "Nama sudah dipakai.", "code": "promos.name_taken"}
+        "promos.name_taken": {"message": "Nama sudah dipakai.", "code": "promos.name_taken"},
+        "promos.not_found": {"message": "Promo tidak ditemukan!", "code": "promos.not_found"}
   }
 }

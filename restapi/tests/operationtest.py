@@ -252,3 +252,13 @@ class OperationTest:
         query = select([promo]).where(promo.c.name == name)
         promo_data = await database.fetch_one(query=query)
         return promo_data['image']
+
+    @pytest.mark.asyncio
+    async def get_promo_id(self,name: str):
+        query = select([promo]).where(promo.c.name == name)
+        promo_data = await database.fetch_one(query=query)
+        return promo_data['id']
+
+    @pytest.mark.asyncio
+    async def update_promo_by_name(self,name: str, **kwargs):
+        await database.execute(query=promo.update().where(promo.c.name == name),values=kwargs)

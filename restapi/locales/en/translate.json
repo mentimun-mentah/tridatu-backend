@@ -186,7 +186,9 @@
         },
         "unlove_product": {"200": {"detail": "Product has been removed from the wishlist."}},
 
-        "create_promo": {"201": {"detail": "Successfully add a new promo."}}
+        "create_promo": {"201": {"detail": "Successfully add a new promo."}},
+        "update_promo": {"200": {"detail": "Successfully update the promo."}},
+        "delete_promo": {"200": {"detail": "Successfully delete the promo."}}
   },
   "HttpError": {
         "user_controller.not_admin": {"message": "Only users with admin privileges can do this action.", "code": "user_controller.not_admin"},
@@ -337,8 +339,10 @@
         "promos.terms_condition_missing": {"message": "Please fill terms_condition field.", "code": "promos.terms_condition_missing"},
         "promos.image_missing": {"message": "Please fill image field.", "code": "promos.image_missing"},
         "promos.start_time_create": {"message": "The start time must be after the current time.", "code": "promos.start_time_create"},
+        "promos.start_time_update": {"message": "The new start time must be after the set start time.", "code": "promos.start_time_update"},
         "promos.min_exp": {"message": "The expiration time must be at least one day longer than the start time.", "code": "promos.min_exp"},
         "promos.max_exp": {"message": "Promo period must be less than 180 days.", "code": "promos.max_exp"},
-        "promos.name_taken": {"message": "The name has already been taken.", "code": "promos.name_taken"}
+        "promos.name_taken": {"message": "The name has already been taken.", "code": "promos.name_taken"},
+        "promos.not_found": {"message": "Promo not found!", "code": "promos.not_found"}
   }
 }
